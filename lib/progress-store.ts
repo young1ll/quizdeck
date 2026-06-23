@@ -38,18 +38,24 @@ function fromLegacy(o: Partial<Progress>): Progress {
   };
 }
 
-/** 기본 adapter. Storage를 주입받아(기본 window.localStorage) 테스트 가능 */
-export function localStorageProgressStore(storage: Storage): ProgressStore {
+/**
+ * 기본 adapter. Storage는 지연 해석(기본 window.localStorage)이라 SSR-safe하다 —
+ * 팩토리는 window를 만지지 않고, load/save(클라이언트 실행 시점)에만 접근한다.
+ * 테스트는 fake Storage를 주입한다.
+ */
+export function localStorageProgressStore(storage?: Storage): ProgressStore {
+  const get = () => storage ?? window.localStorage;
   return {
     async load(key) {
-      const raw = storage.getItem(KEY_PREFIX + key);
+      const s = get();
+      const raw = s.getItem(KEY_PREFIX + key);
       if (raw) return JSON.parse(raw) as Progress;
       // 레거시 1회 변환 — 다음 save가 새 키를 쓰며 self-heal
-      const legacy = storage.getItem(LEGACY_PREFIX + key);
+      const legacy = s.getItem(LEGACY_PREFIX + key);
       return legacy ? fromLegacy(JSON.parse(legacy) as Partial<Progress>) : null;
     },
     async save(key, progress) {
-      storage.setItem(KEY_PREFIX + key, JSON.stringify(progress));
+      get().setItem(KEY_PREFIX + key, JSON.stringify(progress));
     },
   };
 }

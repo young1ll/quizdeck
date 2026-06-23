@@ -5,11 +5,26 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
+import {
+  emptyProgress,
+  recordResult as applyRecordResult,
+  toggleStar as applyToggleStar,
+  setMemo as applySetMemo,
+  pushSession as applyPushSession,
+  setPrefs as applySetPrefs,
+} from "./progress";
+import type { Mode, Prefs, Progress, SessionRecord } from "./progress";
+import {
+  localStorageProgressStore,
+  type ProgressStore,
+} from "./progress-store";
 
-export type Mode = "study" | "smart" | "exam" | "wrong" | "star";
+// 도메인 타입은 progress 모듈이 소유 — 소비부 호환 위해 재노출
+export type { Mode, Prefs, Progress, QHist, SessionRecord } from "./progress";
 
 export const MODE_LABEL: Record<Mode, string> = {
   study: "학습",
@@ -19,20 +34,12 @@ export const MODE_LABEL: Record<Mode, string> = {
   star: "즐겨찾기",
 };
 
-export interface QHist {
-  seen: number;
-  correct: number;
-  wrong: number;
-  last: "O" | "X";
-  lastSel: string[];
-  ts: number;
-}
-
 export interface AnswerRec {
   sel: string[];
   ok?: boolean;
 }
 
+// 진행 중 Session(transient). Progress와 달리 기기-국소이며 seam을 거치지 않는다.
 export interface SessionState {
   queue: number[];
   idx: number;
@@ -48,42 +55,8 @@ export interface SessionState {
   _wrong?: number[];
 }
 
-export interface SessionRecord {
-  date: string;
-  mode: Mode;
-  n: number;
-  ok: number;
-  sec: number;
-}
-
-export interface Prefs {
-  shuffle: boolean;
-  goal: number;
-}
-
-export interface Store {
-  hist: Record<number, QHist>;
-  wrong: number[];
-  stars: number[];
-  memos: Record<number, string>;
-  days: Record<string, number>;
-  sessions: SessionRecord[];
-  active: SessionState | null;
-  prefs: Prefs;
-}
-
-export function emptyStore(): Store {
-  return {
-    hist: {},
-    wrong: [],
-    stars: [],
-    memos: {},
-    days: {},
-    sessions: [],
-    active: null,
-    prefs: { shuffle: false, goal: 30 },
-  };
-}
+// 읽기 뷰: Progress + 진행 중 active Session. (백업/복원 입력 타입이기도 함)
+export type Store = Progress & { active: SessionState | null };
 
 export function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -102,14 +75,13 @@ export function streak(days: Record<string, number>): number {
   return s;
 }
 
-const PREFIX = "quizdeck:store:";
+const ACTIVE_PREFIX = "quizdeck:active:"; // 진행 중 Session(기기-국소)
+const LEGACY_PREFIX = "quizdeck:store:"; // Phase 2 통짜 blob (active 복구용)
 
 // ── Context ───────────────────────────────────────────────────
 interface StoreCtx {
   store: Store;
   loaded: boolean;
-  /** 부분 갱신 — 함수형/객체형 모두 허용 */
-  update: (mut: (s: Store) => Store) => void;
   recordResult: (qn: number, sel: string[], ok: boolean) => void;
   toggleStar: (qn: number) => void;
   setMemo: (qn: number, text: string) => void;
@@ -130,147 +102,135 @@ export function useStore(): StoreCtx {
 
 export { Ctx as StoreContext };
 
-/** localStorage 백업 store를 관리하는 훅. StoreProvider에서 사용 */
-export function useStoreState(examKey: string): StoreCtx {
-  const key = PREFIX + examKey;
-  const [store, setStore] = useState<Store>(emptyStore);
+/**
+ * Progress는 주입된 ProgressStore(기본 localStorage)로, 진행 중 Session은
+ * 직접 localStorage로 영속한다. 테스트는 in-memory ProgressStore를 주입한다.
+ */
+export function useStoreState(
+  examKey: string,
+  injected?: ProgressStore,
+): StoreCtx {
+  const progressStore = useMemo(
+    () => injected ?? localStorageProgressStore(),
+    [injected],
+  );
+
+  const [progress, setProgress] = useState<Progress>(emptyProgress);
+  const [active, setActiveState] = useState<SessionState | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const storeRef = useRef(store);
-  storeRef.current = store;
+  const progressRef = useRef(progress);
+  progressRef.current = progress;
 
-  // 마운트 시 1회 로드
+  // 마운트 시 1회 로드 (클라이언트 전용)
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<Store>;
-        setStore({ ...emptyStore(), ...parsed, prefs: { ...emptyStore().prefs, ...parsed.prefs } });
-      }
-    } catch {
-      /* ignore */
-    }
-    setLoaded(true);
-  }, [key]);
-
-  const persist = useCallback(
-    (s: Store) => {
+    let cancelled = false;
+    (async () => {
+      const p = await progressStore.load(examKey);
+      if (!cancelled && p) setProgress(p);
       try {
-        localStorage.setItem(key, JSON.stringify(s));
+        const a = window.localStorage.getItem(ACTIVE_PREFIX + examKey);
+        if (a) {
+          if (!cancelled) setActiveState(JSON.parse(a) as SessionState);
+        } else {
+          // 레거시 통짜 blob에서 active 복구
+          const legacy = window.localStorage.getItem(LEGACY_PREFIX + examKey);
+          if (legacy) {
+            const o = JSON.parse(legacy) as { active?: SessionState | null };
+            if (o.active && !cancelled) setActiveState(o.active);
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+      if (!cancelled) setLoaded(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [examKey, progressStore]);
+
+  // Progress 변경 → 순수 reducer 적용 + seam 저장
+  const mutate = useCallback(
+    (fn: (p: Progress) => Progress) => {
+      setProgress((prev) => {
+        const next = fn(prev);
+        progressStore.save(examKey, next).catch(() => {});
+        return next;
+      });
+    },
+    [progressStore, examKey],
+  );
+
+  const persistActive = useCallback(
+    (s: SessionState | null) => {
+      try {
+        if (s) window.localStorage.setItem(ACTIVE_PREFIX + examKey, JSON.stringify(s));
+        else window.localStorage.removeItem(ACTIVE_PREFIX + examKey);
       } catch {
         /* ignore */
       }
     },
-    [key],
-  );
-
-  const update = useCallback(
-    (mut: (s: Store) => Store) => {
-      setStore((prev) => {
-        const next = mut(prev);
-        persist(next);
-        return next;
-      });
-    },
-    [persist],
+    [examKey],
   );
 
   const recordResult = useCallback(
-    (qn: number, sel: string[], ok: boolean) => {
-      update((s) => {
-        const h = s.hist[qn] ?? { seen: 0, correct: 0, wrong: 0, last: "X" as const, lastSel: [], ts: 0 };
-        const nh: QHist = {
-          seen: h.seen + 1,
-          correct: h.correct + (ok ? 1 : 0),
-          wrong: h.wrong + (ok ? 0 : 1),
-          last: ok ? "O" : "X",
-          lastSel: sel,
-          ts: Date.now(),
-        };
-        const wrong = [...s.wrong];
-        const i = wrong.indexOf(qn);
-        if (ok) {
-          if (i >= 0) wrong.splice(i, 1);
-        } else if (i < 0) wrong.push(qn);
-        const k = today();
-        return {
-          ...s,
-          hist: { ...s.hist, [qn]: nh },
-          wrong,
-          days: { ...s.days, [k]: (s.days[k] ?? 0) + 1 },
-        };
-      });
-    },
-    [update],
+    (qn: number, sel: string[], ok: boolean) =>
+      mutate((p) => applyRecordResult(p, qn, sel, ok, Date.now())),
+    [mutate],
   );
-
   const toggleStar = useCallback(
-    (qn: number) => {
-      update((s) => {
-        const stars = [...s.stars];
-        const i = stars.indexOf(qn);
-        if (i < 0) stars.push(qn);
-        else stars.splice(i, 1);
-        return { ...s, stars };
-      });
-    },
-    [update],
+    (qn: number) => mutate((p) => applyToggleStar(p, qn)),
+    [mutate],
   );
-
   const setMemo = useCallback(
-    (qn: number, text: string) => {
-      update((s) => {
-        const memos = { ...s.memos };
-        const v = text.trim();
-        if (v) memos[qn] = v;
-        else delete memos[qn];
-        return { ...s, memos };
-      });
-    },
-    [update],
+    (qn: number, text: string) => mutate((p) => applySetMemo(p, qn, text)),
+    [mutate],
+  );
+  const pushSession = useCallback(
+    (r: SessionRecord) => mutate((p) => applyPushSession(p, r)),
+    [mutate],
+  );
+  const setPrefs = useCallback(
+    (patch: Partial<Prefs>) => mutate((p) => applySetPrefs(p, patch)),
+    [mutate],
   );
 
   const setActive = useCallback(
-    (sess: SessionState | null) => {
-      update((s) => ({ ...s, active: sess }));
+    (s: SessionState | null) => {
+      setActiveState(s);
+      persistActive(s);
     },
-    [update],
-  );
-
-  const pushSession = useCallback(
-    (r: SessionRecord) => {
-      update((s) => {
-        const sessions = [...s.sessions, r];
-        if (sessions.length > 200) sessions.splice(0, sessions.length - 200);
-        return { ...s, sessions };
-      });
-    },
-    [update],
-  );
-
-  const setPrefs = useCallback(
-    (p: Partial<Prefs>) => {
-      update((s) => ({ ...s, prefs: { ...s.prefs, ...p } }));
-    },
-    [update],
+    [persistActive],
   );
 
   const resetAll = useCallback(() => {
-    update((s) => ({ ...emptyStore(), prefs: s.prefs }));
-  }, [update]);
+    mutate((p) => ({ ...emptyProgress(), prefs: p.prefs }));
+    setActiveState(null);
+    persistActive(null);
+  }, [mutate, persistActive]);
 
   const replaceStore = useCallback(
     (s: Store) => {
-      const merged: Store = { ...emptyStore(), ...s, prefs: { ...emptyStore().prefs, ...s.prefs } };
-      setStore(merged);
-      persist(merged);
+      const { active: imported, ...rest } = s;
+      const base = emptyProgress();
+      const next: Progress = {
+        ...base,
+        ...rest,
+        prefs: { ...base.prefs, ...rest.prefs },
+      };
+      setProgress(next);
+      progressStore.save(examKey, next).catch(() => {});
+      setActiveState(imported ?? null);
+      persistActive(imported ?? null);
     },
-    [persist],
+    [progressStore, examKey, persistActive],
   );
+
+  const store = useMemo<Store>(() => ({ ...progress, active }), [progress, active]);
 
   return {
     store,
     loaded,
-    update,
     recordResult,
     toggleStar,
     setMemo,
