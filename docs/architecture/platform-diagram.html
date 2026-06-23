@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Synology as VPC — 플랫폼 다이어그램</title>
+    <!-- 시각 자료. 텍스트 정본은 ./platform-roadmap.md, 근거는 ../adr/0002-synology-vpc-platform.md -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      .vpc { border: 2px dashed #6366f1; }
+      .cluster { border: 2px solid #2563eb; }
+      .data { border: 2px solid #f59e0b; }
+      .tunnel { border-left: 2px dashed #f59e0b; }
+      code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-16">
+
+      <header class="space-y-3">
+        <h1 class="text-3xl font-serif font-semibold tracking-tight">Synology as <span class="text-indigo-700">VPC</span> — 플랫폼 다이어그램</h1>
+        <p class="text-slate-600 max-w-3xl text-sm">개인 Synology를 장기 private cloud로. quizdeck는 첫 워크로드. 학습 + 실용을 GitOps로 잇고, 플랫폼은 워크로드 위에서 진화시킨다. <span class="text-slate-400">텍스트 정본: <code>platform-roadmap.md</code></span></p>
+        <div class="flex flex-wrap gap-4 text-xs text-slate-500 border-t border-slate-200 pt-3">
+          <span>🟪 <b>VPC 경계</b> (Synology)</span>
+          <span>🟦 <b>k3s</b> (app tier)</span>
+          <span>🟧 <b>data tier</b> (클러스터 밖 · RDS 아날로그)</span>
+          <span class="text-slate-400">옅은 = 진화 단계(나중)</span>
+        </div>
+      </header>
+
+      <!-- ════════ §1 토폴로지 (수직 흐름) ════════ -->
+      <section class="space-y-5">
+        <h2 class="text-2xl font-serif font-semibold">1 · 토폴로지</h2>
+
+        <div class="flex flex-col items-center gap-2">
+          <!-- 사용자 -->
+          <div class="flex flex-col items-center gap-1">
+            <div class="w-14 h-14 rounded-xl bg-white border border-slate-200 grid place-items-center text-2xl shadow-sm">🌐</div>
+            <span class="text-xs font-medium">인터넷 사용자</span>
+          </div>
+          <span class="text-slate-300">↓</span>
+          <!-- Cloudflare 엣지 (Synology 밖) -->
+          <div class="flex flex-col items-center gap-1">
+            <div class="w-14 h-14 rounded-xl bg-white border border-amber-200 grid place-items-center shadow-sm">
+              <img src="https://cdn.simpleicons.org/cloudflare" onerror="this.style.visibility='hidden'" class="w-8 h-8" alt="" />
+            </div>
+            <span class="text-xs font-medium">Cloudflare 엣지</span>
+            <span class="text-[10px] text-amber-600">TLS · DDoS · 홈 IP 은닉</span>
+          </div>
+          <span class="text-[11px] text-amber-600">⋮ 아웃바운드 터널 (인바운드 0)</span>
+
+          <!-- VPC 박스 -->
+          <div class="vpc rounded-2xl p-5 bg-indigo-50/30 w-full max-w-2xl">
+            <div class="flex items-center gap-2 mb-4">
+              <img src="https://cdn.simpleicons.org/synology" onerror="this.style.visibility='hidden'" class="w-5 h-5" alt="" />
+              <span class="text-xs uppercase tracking-wider font-semibold text-indigo-700">Synology · VPC 경계 (인터넷 직접 노출 없음)</span>
+            </div>
+
+            <div class="flex flex-col items-center gap-2">
+              <!-- cloudflared -->
+              <div class="flex flex-col items-center gap-1">
+                <div class="w-14 h-14 rounded-xl bg-white border border-slate-200 grid place-items-center shadow-sm">
+                  <img src="https://cdn.simpleicons.org/cloudflare" onerror="this.style.visibility='hidden'" class="w-7 h-7 opacity-80" alt="" />
+                </div>
+                <span class="text-xs font-medium">cloudflared</span>
+                <span class="text-[10px] text-slate-500">터널 에이전트 (밖으로 다이얼)</span>
+              </div>
+              <span class="text-slate-300">↓</span>
+
+              <!-- k3s 클러스터 -->
+              <div class="cluster rounded-xl p-4 bg-blue-50/40 w-full">
+                <div class="flex items-center gap-2 mb-3">
+                  <img src="https://cdn.simpleicons.org/kubernetes" onerror="this.style.visibility='hidden'" class="w-5 h-5" alt="" />
+                  <span class="text-xs uppercase tracking-wider font-semibold text-blue-700">k3s 클러스터 · app tier</span>
+                </div>
+                <div class="flex items-center justify-center gap-3 flex-wrap">
+                  <div class="flex flex-col items-center gap-1">
+                    <div class="w-14 h-14 rounded-xl bg-white border border-blue-200 grid place-items-center shadow-sm">
+                      <img src="https://cdn.simpleicons.org/traefikproxy" onerror="this.style.visibility='hidden'" class="w-8 h-8" alt="" />
+                    </div>
+                    <span class="text-xs font-medium">Traefik</span>
+                    <span class="text-[10px] text-slate-500">ingress (k3s 기본)</span>
+                  </div>
+                  <span class="text-slate-300 text-xl">→</span>
+                  <div class="flex flex-col items-center gap-1">
+                    <div class="w-14 h-14 rounded-xl bg-white border border-blue-200 grid place-items-center shadow-sm">
+                      <img src="https://cdn.simpleicons.org/nextdotjs" onerror="this.style.visibility='hidden'" class="w-8 h-8" alt="" />
+                    </div>
+                    <span class="text-xs font-medium">quizdeck</span>
+                    <span class="text-[10px] text-slate-500">Next · pod</span>
+                  </div>
+                </div>
+                <!-- 진화 층 -->
+                <div class="mt-4 pt-3 border-t border-blue-200/60">
+                  <div class="text-[10px] uppercase tracking-wider text-slate-400 mb-2">▽ 위로 쌓는 진화 층 (나중)</div>
+                  <div class="flex items-center justify-center gap-5 flex-wrap opacity-50">
+                    <span class="flex items-center gap-1.5"><img src="https://cdn.simpleicons.org/prometheus" onerror="this.style.visibility='hidden'" class="w-5 h-5"><img src="https://cdn.simpleicons.org/grafana" onerror="this.style.visibility='hidden'" class="w-5 h-5"><span class="text-[11px]">관측성</span></span>
+                    <span class="flex items-center gap-1.5"><img src="https://cdn.simpleicons.org/linkerd" onerror="this.style.visibility='hidden'" class="w-5 h-5"><span class="text-[11px]">Linkerd</span></span>
+                    <span class="flex items-center gap-1.5"><span class="text-base leading-none">🕸️</span><span class="text-[11px]">Meshery</span></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- data tier (클러스터 밖) -->
+              <div class="text-[11px] text-slate-400">↓ 클러스터 밖</div>
+              <div class="data rounded-xl p-3 bg-amber-50/60 flex items-center gap-3 w-full max-w-md">
+                <div class="w-12 h-12 rounded-lg bg-white border border-amber-200 grid place-items-center shadow-sm shrink-0">
+                  <img src="https://cdn.simpleicons.org/postgresql" onerror="this.style.visibility='hidden'" class="w-7 h-7" alt="" />
+                </div>
+                <div>
+                  <div class="text-xs font-semibold text-amber-800">postgres · 클러스터 밖 (RDS 아날로그)</div>
+                  <div class="text-[11px] text-amber-700">내구성 ↑ · EKS 밖 RDS와 같은 tier 분리 · 인터넷 비노출</div>
+                </div>
+              </div>
+
+              <!-- GitOps -->
+              <div class="mt-3 pt-3 border-t border-indigo-200/50 w-full flex items-center justify-center gap-3 text-xs">
+                <span class="flex items-center gap-1.5"><img src="https://cdn.simpleicons.org/git" onerror="this.style.visibility='hidden'" class="w-4 h-4">Git 레포</span>
+                <span class="text-slate-300">→</span>
+                <span class="flex items-center gap-1.5"><img src="https://cdn.simpleicons.org/argo" onerror="this.style.visibility='hidden'" class="w-4 h-4">Argo CD</span>
+                <span class="text-slate-400">┄ sync ┄▷ 클러스터</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-sm text-slate-600 max-w-3xl mx-auto text-center">불변식: 외부로 통하는 건 <b>인터넷 → Cloudflare → cloudflared → Traefik → Next</b> 한 줄뿐, <b>postgres는 어디서도 인터넷에 직접 노출되지 않는다.</b></p>
+      </section>
+
+      <!-- ════════ §2 진화 로드맵 ════════ -->
+      <section class="space-y-5">
+        <h2 class="text-2xl font-serif font-semibold">2 · 진화 로드맵 — 워크로드 먼저, 층은 정당화하며</h2>
+        <div class="space-y-2">
+          <div class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
+            <div class="flex gap-1 shrink-0 w-20"><img src="https://cdn.simpleicons.org/kubernetes" onerror="this.style.visibility='hidden'" class="w-7 h-7"></div>
+            <div class="flex-1"><b>L1 · k3s</b> <span class="text-slate-500 text-sm">클라우드네이티브 substrate (Traefik 기본 번들)</span></div>
+            <span class="text-xs font-semibold bg-emerald-100 text-emerald-800 px-2 py-1 rounded">기반</span>
+          </div>
+          <div class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
+            <div class="flex gap-1 shrink-0 w-20"><img src="https://cdn.simpleicons.org/cloudflare" onerror="this.style.visibility='hidden'" class="w-7 h-7"></div>
+            <div class="flex-1"><b>L2 · Cloudflare Tunnel</b> <span class="text-slate-500 text-sm">경계/IGW · 인바운드 0 · 홈 IP 은닉</span></div>
+            <span class="text-xs font-semibold bg-emerald-100 text-emerald-800 px-2 py-1 rounded">지금</span>
+          </div>
+          <div class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
+            <div class="flex gap-1 shrink-0 w-20"><img src="https://cdn.simpleicons.org/nextdotjs" onerror="this.style.visibility='hidden'" class="w-7 h-7"><img src="https://cdn.simpleicons.org/argo" onerror="this.style.visibility='hidden'" class="w-7 h-7"></div>
+            <div class="flex-1"><b>L3 · quizdeck + GitOps</b> <span class="text-slate-500 text-sm">첫 워크로드: Next 매니페스트 + 외부 postgres, Argo CD <span class="text-indigo-600">← 강제 함수</span></span></div>
+            <span class="text-xs font-semibold bg-emerald-100 text-emerald-800 px-2 py-1 rounded">지금</span>
+          </div>
+          <div class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
+            <div class="flex gap-1 shrink-0 w-20"><img src="https://cdn.simpleicons.org/prometheus" onerror="this.style.visibility='hidden'" class="w-7 h-7"><img src="https://cdn.simpleicons.org/grafana" onerror="this.style.visibility='hidden'" class="w-7 h-7"></div>
+            <div class="flex-1"><b>L4 · 관측성</b> <span class="text-slate-500 text-sm">Prometheus + Grafana + Loki — mesh보다 먼저</span></div>
+            <span class="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-1 rounded">다음</span>
+          </div>
+          <div class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
+            <div class="flex gap-1 shrink-0 w-20"><img src="https://cdn.simpleicons.org/linkerd" onerror="this.style.visibility='hidden'" class="w-7 h-7"></div>
+            <div class="flex-1"><b>L5 · service mesh</b> <span class="text-slate-500 text-sm">Linkerd — mTLS·골든메트릭. 서비스가 늘거나 학습 모듈로</span></div>
+            <span class="text-xs font-semibold bg-slate-200 text-slate-600 px-2 py-1 rounded">나중</span>
+          </div>
+          <div class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
+            <div class="flex gap-1 shrink-0 w-20 text-2xl">🕸️</div>
+            <div class="flex-1"><b>L6 · 관리 플레인</b> <span class="text-slate-500 text-sm">Meshery — Designs·Kanvas로 L1~L5 설계·운영·벤치마킹</span></div>
+            <span class="text-xs font-semibold bg-slate-200 text-slate-600 px-2 py-1 rounded">나중</span>
+          </div>
+        </div>
+        <div class="text-sm bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-md px-4 py-3">
+          규율: <b>각 층은 독립적으로 가치 있고, 가치 &lt; 비용 지점에서 멈춘다.</b> Meshery는 버리는 게 아니라 맨 위 자리 — 관리할 클러스터가 생겼을 때 빛난다.
+        </div>
+      </section>
+
+      <!-- ════════ §3 클라우드 매핑 ════════ -->
+      <section class="space-y-4">
+        <h2 class="text-2xl font-serif font-semibold">3 · Synology ↔ AWS 매핑 (이식성)</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border border-slate-200 bg-white rounded-lg overflow-hidden">
+            <thead class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider">
+              <tr><th class="text-left p-3">역할</th><th class="text-left p-3">Synology (지금)</th><th class="text-left p-3">AWS (장래)</th></tr>
+            </thead>
+            <tbody class="[&_td]:p-3 [&_tr]:border-t [&_tr]:border-slate-100">
+              <tr><td class="font-medium">인터넷 게이트웨이</td><td>Cloudflare Tunnel</td><td>CloudFront / public ALB</td></tr>
+              <tr><td class="font-medium">ingress</td><td>Traefik (k3s 기본)</td><td>ALB / ingress controller</td></tr>
+              <tr><td class="font-medium">오케스트레이션</td><td>k3s</td><td>EKS</td></tr>
+              <tr><td class="font-medium">app tier</td><td>Next pod</td><td>Fargate / EKS pod</td></tr>
+              <tr><td class="font-medium">data tier</td><td>외부 postgres 컨테이너+볼륨</td><td>RDS (private subnet)</td></tr>
+              <tr><td class="font-medium">격리</td><td>namespace</td><td>VPC / account 분리</td></tr>
+              <tr><td class="font-medium">네트워크 정책</td><td>NetworkPolicy</td><td>security group</td></tr>
+              <tr><td class="font-medium">배포</td><td>Argo CD (GitOps)</td><td>Argo CD on EKS / CodePipeline</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-xs text-slate-500">tier 구조가 동일 → 바뀌는 건 각 칸의 구현뿐. Synology 셋업이 AWS VPC의 <b>리허설</b>이 된다.</p>
+      </section>
+
+      <footer class="text-xs text-slate-400 border-t border-slate-200 pt-6">
+        quizdeck · 인프라 설계 · 아이콘은 Simple Icons CDN(렌더에 인터넷 필요) · 근거: <code>../adr/0002-synology-vpc-platform.md</code>
+      </footer>
+    </main>
+  </body>
+</html>
