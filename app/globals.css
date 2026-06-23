@@ -39,6 +39,21 @@ body {
     "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
 
+/* PDF 인쇄 영역 — 화면 숨김, 인쇄 시 본문 대체 */
+#printarea {
+  display: none;
+}
+@media print {
+  body > :not(#printarea) {
+    display: none !important;
+  }
+  #printarea {
+    display: block !important;
+    color: #000;
+    background: #fff;
+  }
+}
+
 /* 마크다운 렌더 결과 보조 스타일 */
 .md strong {
   color: var(--fg);

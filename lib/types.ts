@@ -13,6 +13,32 @@ export interface Question {
   deeplink?: string;
 }
 
+export interface Concept {
+  cat: string;
+  svc: string;
+  abbr?: string;
+  deff: string;
+  detail?: string;
+  key: string;
+  when: string;
+  trap: string;
+  vs: string;
+  cost?: string;
+  /** 관련 문항 번호(일부, 최대 표시분) */
+  rel?: number[];
+  /** 관련 문항 총 개수 */
+  reln?: number;
+}
+
+export interface Diagram {
+  id: string;
+  title: string;
+  cat: string;
+  caption: string;
+  /** 인라인 SVG 마크업 */
+  svg: string;
+}
+
 export interface ExamMeta {
   provider: string;
   providerName: string;
@@ -26,6 +52,12 @@ export interface ExamMeta {
 export interface ExamData {
   meta: ExamMeta;
   questions: Question[];
+  concepts: Concept[];
+  diagrams: Diagram[];
+  /** 문항 번호 → 관련 서비스명 배열 */
+  q2svc: Record<string, string[]>;
+  /** 서비스명 → 아이콘(base64 SVG data URI) */
+  icons: Record<string, string>;
 }
 
 /** 카탈로그(홈) 표시에 필요한 최소 정보 */

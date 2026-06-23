@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { listExams, loadExam } from "@/lib/content";
-import QuizApp from "@/components/QuizApp";
+import ExamApp from "@/components/ExamApp";
 
 // 정적 익스포트: 빌드 시 모든 시험 경로를 생성
 export function generateStaticParams() {
@@ -28,7 +28,7 @@ export default async function ExamPage({
           ← 시험 목록
         </Link>
       </nav>
-      <QuizApp meta={data.meta} questions={data.questions} />
+      <ExamApp data={data} />
     </main>
   );
 }

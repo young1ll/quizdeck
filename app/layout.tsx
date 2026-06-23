@@ -25,7 +25,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body className="min-h-dvh">{children}</body>
+      <body className="min-h-dvh">
+        {children}
+        {/* PDF 내보내기(window.print) 전용 영역 — 화면에선 숨김 */}
+        <div id="printarea" aria-hidden />
+      </body>
     </html>
   );
 }

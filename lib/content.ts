@@ -1,6 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { ExamData, ExamMeta, ExamSummary, Question } from "./types";
+import type {
+  Concept,
+  Diagram,
+  ExamData,
+  ExamMeta,
+  ExamSummary,
+  Question,
+} from "./types";
 
 // 빌드 시점에 repo 루트의 content/ 를 읽는다. (정적 익스포트라 런타임 fs 접근 없음)
 const CONTENT_ROOT = path.join(process.cwd(), "content");
@@ -37,10 +44,14 @@ export function listExams(): ExamSummary[] {
   return out.sort((a, b) => a.code.localeCompare(b.code));
 }
 
-/** 특정 시험의 meta + questions 로드 */
+/** 특정 시험의 전체 데이터 로드 (빌드 시점에 해당 시험 폴더 전체를 읽음) */
 export function loadExam(provider: string, slug: string): ExamData {
   const dir = path.join(CONTENT_ROOT, provider, slug);
   const meta = readJSON<ExamMeta>(path.join(dir, "meta.json"));
   const questions = readJSON<Question[]>(path.join(dir, "questions.json"));
-  return { meta, questions };
+  const concepts = readJSON<Concept[]>(path.join(dir, "concepts.json"));
+  const diagrams = readJSON<Diagram[]>(path.join(dir, "diagrams.json"));
+  const q2svc = readJSON<Record<string, string[]>>(path.join(dir, "q2svc.json"));
+  const icons = readJSON<Record<string, string>>(path.join(dir, "icons.json"));
+  return { meta, questions, concepts, diagrams, q2svc, icons };
 }
