@@ -59,15 +59,28 @@ flowchart TB
 
 tier 구조가 동일하므로 바뀌는 건 각 칸의 구현뿐. Synology 셋업이 AWS VPC의 **리허설**이 된다.
 
-## 미해결 / 직접 작업(협업) 항목
+## 환경 현황 — Synology `zero` (점검 2026-06-23)
 
-사용자와 함께 Synology에 직접 접속해 진행할 것:
+| 항목 | 값 |
+|---|---|
+| 모델/OS | DSM **7.3.2** · x86_64 · 커널 **4.4.302**(구버전) |
+| CPU/RAM | 4 스레드(가상화 vmx/svm 지원) · **9.6GB**(여유 ~8GB) |
+| Docker | Container Manager 24.0.2 · 데몬 active |
+| VMM | **미설치** (`/dev/kvm` 없음 — 설치 시 활성 가능) |
+| Tailscale | **설치됨**(1.58.2) — 단 **로그아웃**(NeedsLogin) |
+| 디스크 | /volume1 3.5T · 1.4T 여유 |
+| 접속(현재) | `ssh zdmin@young1ll.synology.me`(포트 22, DDNS=49.161.146.228) → `sudo -i`. tmux 세션 `syno` |
 
-- [ ] **k3s 설치 방식 확정** — DSM 맨몸은 커널/cgroup 마찰 → **k3s-in-VMM(가상머신) vs k3d**(k3s-in-docker) 결정.
-- [ ] **기존 docker 컨테이너 정리**(삭제 OK) — 현황 파악 후 공간 확보.
-- [ ] **postgres 외부 구성** — 컨테이너 + 영속 볼륨(데이터 내구성), 클러스터에서 접근만.
-- [ ] **quizdeck 컨테이너화** — `output:'export'` 폐기 → Dockerfile + k8s 매니페스트(Deployment/Service/Ingress) + Argo CD 앱.
+**커널 4.4 함의:** k3s를 DSM 맨몸엔 부적합. 두 경로 — **k3d**(현재 Docker로 즉시 가능, 단 4.4 커널 위에서 검증 필요) vs **k3s-in-VMM**(VMM 설치+Linux VM 필요, 가장 견고). VMM 미설치라 k3d가 즉답.
+
+## 직접 작업(협업) 진행
+
+- [x] **기존 docker 컨테이너 정리** — 컨테이너 10·이미지 다수 전부 제거, **36.39GB 회수**. `/volume1/docker`는 `@eaDir`만 남김. (2026-06-23)
+- [ ] **원격 접속을 Tailscale로 이전** — Synology에 Tailscale `tailscale up` 로그인(브라우저 인증) + Mac에도 설치/로그인 → 타넷 100.x로 SSH → **포트 22 인터넷 노출 닫기**.
+- [ ] **k3s 설치 방식 확정** — k3d(즉시) vs k3s-in-VMM(VMM 설치). 4.4 커널에서 k3d 동작 검증 후 결정.
+- [ ] **postgres 외부 구성** — 컨테이너 + 영속 볼륨, 클러스터에서 접근만.
+- [ ] **quizdeck 컨테이너화** — `output:'export'` 폐기 → Dockerfile + k8s 매니페스트 + Argo CD 앱.
 - [ ] **Cloudflare Tunnel 구성** — `cloudflared` + 호스트네임 → Traefik 라우팅.
 - [ ] L4~L6은 L3가 실제로 돌고 난 뒤 착수.
 
-작업 시작 시 필요: 접속 수단(`! ssh user@synology`), DSM/Container Manager 버전, 기존 컨테이너 목록.
+작업 재개 시: tmux `syno` 세션(또는 `ssh zdmin@young1ll.synology.me` → `sudo -i`)에서 이어감.
