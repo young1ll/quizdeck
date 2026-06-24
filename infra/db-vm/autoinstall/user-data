@@ -1,0 +1,63 @@
+#cloud-config
+# Ubuntu Server 24.04 LTS autoinstall seed — db-home (postgres data tier VM)
+#
+# Data-tier VM for the "Synology as VPC" platform (ADR-0002 / ADR-0003): a
+# postgres-only guest, isolated to the OVS LAN, reachable ONLY from the k3s VM.
+# This seed installs the OS + base packages and enables SSH. It does NOT
+# configure postgres — that is done post-boot by scripts/provision-postgres.sh
+# so the work stays debuggable and re-runnable.
+#
+# Reuse pattern from k3s-home (platform-roadmap.md): a vfat seed disk labeled
+# CIDATA (attached as vdb) + `autoinstall` on the GRUB kernel line.
+#
+# Replace before building the seed (see autoinstall/README.md):
+#   __SSH_AUTHORIZED_KEY__  your SSH public key (key-only login)
+#   __PASSWORD_HASH__       console fallback hash: `mkpasswd --method=SHA-512`
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  timezone: Asia/Seoul
+
+  # Single virtio NIC on the OVS "Default VM Network" → DHCP lease on the
+  # 192.168.68.0/24 LAN. Reserve a static lease in the router for this VM so
+  # pg_hba/firewall rules (keyed on its LAN IP) stay stable — see README.
+  network:
+    version: 2
+    ethernets:
+      anyeth:
+        match:
+          name: "en*"
+        dhcp4: true
+
+  identity:
+    hostname: db-home
+    username: dbadmin
+    # Console-login fallback only; SSH is key-only (allow-pw: false below).
+    password: "__PASSWORD_HASH__"
+
+  ssh:
+    install-server: true
+    allow-pw: false
+    authorized-keys:
+      - "__SSH_AUTHORIZED_KEY__"
+
+  # LVM so the root LV can be grown later (lvextend + resize2fs) — see the
+  # "디스크 여유" notes in README. Disk sizing: 20GB is plenty for this tier.
+  storage:
+    layout:
+      name: lvm
+
+  packages:
+    - postgresql
+    - postgresql-contrib
+    - ufw
+  package_update: true
+
+  late-commands:
+    - curtin in-target --target=/target -- systemctl enable ssh
+
+  # Power off after install so the operator can DETACH the CIDATA seed disk
+  # before the next boot (otherwise cloud-init/autoinstall would re-run).
+  shutdown: poweroff

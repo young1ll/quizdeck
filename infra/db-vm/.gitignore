@@ -1,0 +1,6 @@
+# Generated secrets / local seed artifacts — NEVER commit.
+# (SSH-key-substituted seed, password hashes, cloud-localds output, creds.)
+*.local
+*.secret
+*.img
+.out/
