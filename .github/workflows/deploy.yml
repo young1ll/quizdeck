@@ -6,7 +6,7 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - "k8s/base/kustomization.yaml" # CI의 태그 bump 커밋이 다시 트리거하지 않도록
+      - "k8s/**" # 매니페스트 변경은 Argo가 처리 — 이미지 재빌드 불필요(CI 태그 bump 포함)
       - "docs/**"
       - "**/*.md"
   workflow_dispatch:
