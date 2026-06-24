@@ -18,16 +18,17 @@ spec:
         - name: quizdeck
           image: ghcr.io/young1ll/quizdeck # 태그는 kustomization.yaml(CI가 bump)에서 지정
           ports:
-            - containerPort: 80
+            - containerPort: 3000 # node standalone 서버(이미지가 PORT=3000)
           readinessProbe:
+            # /api/health/ — Route Handler 토대 증명. trailingSlash:true 라 슬래시 포함이 곧장 200.
             httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 3
+              path: /api/health/
+              port: 3000
+            initialDelaySeconds: 5
             periodSeconds: 10
           resources:
             requests:
-              cpu: 10m
-              memory: 32Mi
+              cpu: 50m
+              memory: 96Mi
             limits:
-              memory: 128Mi
+              memory: 256Mi
