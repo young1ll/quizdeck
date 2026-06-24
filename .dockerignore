@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+.git
+.github
+docs
+*.md
+.DS_Store
+.nojekyll
+Dockerfile
+.dockerignore
+k8s

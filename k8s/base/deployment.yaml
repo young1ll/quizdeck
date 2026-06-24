@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quizdeck
+  labels:
+    app: quizdeck
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quizdeck
+  template:
+    metadata:
+      labels:
+        app: quizdeck
+    spec:
+      containers:
+        - name: quizdeck
+          image: ghcr.io/young1ll/quizdeck # 태그는 kustomization.yaml(CI가 bump)에서 지정
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi

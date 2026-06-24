@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: quizdeck
+spec:
+  selector:
+    app: quizdeck
+  ports:
+    - port: 80
+      targetPort: 80

@@ -1,0 +1,13 @@
+{
+  "provider": "aws",
+  "providerName": "Amazon Web Services",
+  "code": "SAP-C02",
+  "name": "AWS Certified Solutions Architect - Professional",
+  "slug": "sap-c02",
+  "language": "ko",
+  "counts": {
+    "questions": 647,
+    "concepts": 174,
+    "diagrams": 22
+  }
+}

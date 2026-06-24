@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0f1419;
+  --panel: #161d26;
+  --panel-2: #1c2530;
+  --fg: #e6edf3;
+  --muted: #8b98a5;
+  --border: #29333f;
+  --accent: #3b82f6;
+  --accent-fg: #ffffff;
+  --good: #10b981;
+  --bad: #ef4444;
+  --warn: #f59e0b;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-good: var(--good);
+  --color-bad: var(--bad);
+  --color-warn: var(--warn);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+
+/* PDF 인쇄 영역 — 화면 숨김, 인쇄 시 본문 대체 */
+#printarea {
+  display: none;
+}
+@media print {
+  body > :not(#printarea) {
+    display: none !important;
+  }
+  #printarea {
+    display: block !important;
+    color: #000;
+    background: #fff;
+  }
+}
+
+/* 마크다운 렌더 결과 보조 스타일 */
+.md strong {
+  color: var(--fg);
+  font-weight: 700;
+}
+.md code {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.05em 0.35em;
+  font-size: 0.9em;
+}
