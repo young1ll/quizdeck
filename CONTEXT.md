@@ -8,8 +8,12 @@
 하나의 자격 시험(예: SAP-C02). 문항·개념·다이어그램을 묶는 범위(scope)이며, 학습 기록이 귀속되는 단위다.
 _Avoid_: test, quiz(quiz는 푸는 행위), course
 
+**Learner**:
+인증된 신원. 자신의 [[#Progress|Progress]]를 소유하고 기기를 가로질러 동기화한다. 익명 방문자는 Learner가 아니며, 그 기록은 기기-국소 localStorage에만 머문다(동기화 대상 아님). 한 Learner는 여러 Exam의 Progress를 가진다.
+_Avoid_: User(인증 자격/행 식별자일 뿐), Account(자격증명 묶음), member
+
 **Progress**:
-한 학습자의 한 Exam에 대한 **durable 학습 기록** — 문항 이력, 오답 목록, 즐겨찾기, 메모, 일일 활동, 완료한 시도 기록, 환경설정. 시도와 기기를 가로질러 살아남는 단위.
+한 **Learner**의 한 Exam에 대한 **durable 학습 기록** — 문항 이력, 오답 목록, 즐겨찾기, 메모, 일일 활동, 완료한 시도 기록, 환경설정. 시도와 기기를 가로질러 살아남는 단위. 영속 키는 (Learner, Exam).
 _Avoid_: Store, state, data, save
 
 **Session**:
