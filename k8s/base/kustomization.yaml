@@ -8,4 +8,4 @@ resources:
   - ingress.yaml
 images:
   - name: ghcr.io/young1ll/quizdeck
-    newTag: latest # CI(deploy.yml)가 `sha-<short>` 로 덮어쓴다 → Argo가 동기화
+    newTag: sha-19d465c
