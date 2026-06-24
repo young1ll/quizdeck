@@ -6,5 +6,6 @@ spec:
   selector:
     app: quizdeck
   ports:
+    # 서비스 포트는 80 유지(Ingress 무변경) → 컨테이너의 node 서버(3000)로 전달
     - port: 80
-      targetPort: 80
+      targetPort: 3000
