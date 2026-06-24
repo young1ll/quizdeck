@@ -1,7 +1,7 @@
 # 플랫폼 로드맵 — Synology as VPC
 
 > 살아있는 설계 문서. 결정 근거는 [ADR-0002](../adr/0002-synology-vpc-platform.md), 데이터 영속 seam은 [ADR-0001](../adr/0001-progressstore-seam.md).
-> 아이콘 시각 다이어그램: [platform-diagram.html](./platform-diagram.html) (브라우저로 열기).
+> 다이어그램: **[architecture-aws-style.html](./architecture-aws-style.html)** (AWS 공식 스타일 — VPC/서브넷 경계·AWS 아날로그 매핑) · [platform-diagram.html](./platform-diagram.html) (초기 아이콘 버전) · 현황 [../status.html](../status.html).
 
 개인 Synology를 **장기 private cloud(VPC)** 로 키운다. quizdeck는 첫 워크로드. 학습 + 실용을 GitOps로 잇고, 플랫폼은 **워크로드 위에서 진화**시킨다.
 
