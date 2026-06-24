@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Self-hosted exam quiz app for certification prep",
+  "packageManager": "pnpm@10.13.1",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

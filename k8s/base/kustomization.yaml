@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: quizdeck
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+images:
+  - name: ghcr.io/young1ll/quizdeck
+    newTag: latest # CI(deploy.yml)가 `sha-<short>` 로 덮어쓴다 → Argo가 동기화

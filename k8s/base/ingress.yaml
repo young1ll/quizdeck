@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: quizdeck
+spec:
+  ingressClassName: traefik
+  # host 미지정 = catch-all. 내부(타넷) 검증용. Cloudflare Tunnel 도입 시
+  # 공개 호스트명으로 rules[].host 를 고정한다.
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: quizdeck
+                port:
+                  number: 80
