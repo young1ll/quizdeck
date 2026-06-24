@@ -30,3 +30,4 @@ interface ProgressStore {
 
 - snapshot last-write-wins → per-field merge 불가(의식적 수용).
 - postgres adapter는 아직 없음 — 후보 3(static-export vs 서버) 결정에 묶임. 이 ADR은 seam과 분리까지만 확정한다.
+- (#5) LWW(V2)가 양측 타임스탬프를 비교하도록 seam을 봉투 `StoredProgress { snapshot, updatedAt }`로 확장 — `load`는 봉투를, `save(key, snapshot, updatedAt)`는 메타를 수반한다. 도메인 `Progress`는 동기화 메타를 떠안지 않는다([[0003-auth-and-progress-sync.md|ADR-0003]]·DB `snapshot jsonb`/`updated_at` 분리와 정합). 위 `결정`의 snippet은 봉투 이전의 원래 계약을 보존한다.
