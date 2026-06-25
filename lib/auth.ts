@@ -1,0 +1,46 @@
+import { betterAuth } from "better-auth";
+import { jwt } from "better-auth/plugins";
+import { pool } from "./db";
+import { resolveAuthConfig } from "./auth-config";
+
+// better-auth (in-app, postgres adapter) — 별도 IdP 프로세스 없음. (ADR-0003 / 이슈 #6)
+//
+// 이 슬라이스 범위: 이메일+비밀번호 가입·로그인·로그아웃 + 같은 오리진 쿠키 세션
+// + JWKS 노출. 소셜 로그인(V4)·패스키(V5)·Progress 동기화(V2)는 후속.
+
+const cfg = resolveAuthConfig(process.env);
+
+if (cfg.missing.length > 0) {
+  // 빌드 시점(컨테이너 빌드엔 env 없음)엔 정상 — 런타임 요청에서 명확히 실패한다.
+  // 런타임(k8s)에선 Secret 주입으로 채워진다.
+  console.warn(
+    `[auth] 누락된 환경변수: ${cfg.missing.join(", ")} — 주입 전까지 인증이 동작하지 않는다.`,
+  );
+}
+
+export const auth = betterAuth({
+  // 공유 node-postgres Pool(lib/db.ts) — better-auth 가 postgres(kysely) 어댑터로 인식.
+  database: pool,
+  secret: cfg.secret,
+  // 미지정 시 better-auth 가 요청 오리진으로 추론. 프로덕션은 https://myquizdeck.com.
+  baseURL: cfg.baseURL,
+  // 이메일+비밀번호. SMTP 미구성 → 이메일 검증 OFF(가입 즉시 로그인). (이슈 #6 열린질문 확정)
+  //
+  // better-auth 표준 보호 (이슈 #6 AC: 활성/확인):
+  //  - 비밀번호 해시: 기본 scrypt — 통합 테스트로 평문 비저장 확인.
+  //  - CSRF/origin 체크: 아래 advanced.disableOriginCheck:false 로 모든 환경에서 활성화
+  //    (better-auth 는 test 에서 기본 skip). 쿠키 동반(=실제 CSRF 벡터) 교차 오리진
+  //    요청을 403 으로 거부 — 통합 테스트로 확인. 같은 오리진 앱이라 정상 요청엔 무해.
+  //  - rate-limit: better-auth 가 프로덕션(NODE_ENV=production, Dockerfile 이 설정)에서
+  //    기본 활성. dev/test 는 기본(off) 유지 — 다중요청 테스트를 교란하지 않도록.
+  advanced: {
+    disableOriginCheck: false,
+  },
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: false,
+  },
+  // JWT/JWKS 플러그인 — 미래 NestJS pod 가 better-auth 를 IdP-lite 로 검증할
+  // JWKS 를 노출한다(GET /api/auth/jwks). 지금 소비자는 없다 — 노출까지만. (ADR-0003)
+  plugins: [jwt()],
+});
