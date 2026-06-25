@@ -88,7 +88,10 @@ PRINT_PASSWORD=""
 if role_exists; then
   echo "→ role '${APP_ROLE}' exists"
   if [[ -n "$APP_PASSWORD" ]]; then
-    sudo -u postgres psql -v pw="$APP_PASSWORD" -qc "ALTER ROLE \"${APP_ROLE}\" WITH LOGIN PASSWORD :'pw';"
+    # psql -c does NOT interpolate :vars; feed via stdin so :"role"/:'pw' expand.
+    sudo -u postgres psql -q -v role="$APP_ROLE" -v pw="$APP_PASSWORD" <<'SQL'
+ALTER ROLE :"role" WITH LOGIN PASSWORD :'pw';
+SQL
     echo "  rotated password (APP_PASSWORD was provided)"
     PRINT_PASSWORD="$APP_PASSWORD"
   else
@@ -96,9 +99,15 @@ if role_exists; then
   fi
 else
   if [[ -z "$APP_PASSWORD" ]]; then
-    APP_PASSWORD="$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)"
+    # Subshell disables pipefail so `head` closing the pipe (SIGPIPE→141 in `tr`)
+    # doesn't abort the script under `set -eo pipefail`. LC_ALL=C avoids locale
+    # byte-sequence errors while `tr` reads binary /dev/urandom.
+    APP_PASSWORD="$( set +o pipefail; LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32 )"
   fi
-  sudo -u postgres psql -v pw="$APP_PASSWORD" -qc "CREATE ROLE \"${APP_ROLE}\" WITH LOGIN PASSWORD :'pw';"
+  # psql -c does NOT interpolate :vars; feed via stdin so :"role"/:'pw' expand.
+  sudo -u postgres psql -q -v role="$APP_ROLE" -v pw="$APP_PASSWORD" <<'SQL'
+CREATE ROLE :"role" WITH LOGIN PASSWORD :'pw';
+SQL
   echo "→ created role '${APP_ROLE}'"
   PRINT_PASSWORD="$APP_PASSWORD"
 fi
