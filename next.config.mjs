@@ -11,6 +11,11 @@ const nextConfig = {
   basePath: basePath || undefined,
   // 기존 URL 형태(/aws/sap-c02/) 를 그대로 유지해 회귀를 막는다.
   trailingSlash: true,
+  // 단, 자동 슬래시 리다이렉트는 끈다. trailingSlash:true 면 Next 가
+  // `/api/auth/jwks` → 308 → `/api/auth/jwks/` 로 리다이렉트하는데, better-auth
+  // 핸들러는 슬래시 없는 경로만 매칭해 404 가 된다(인증 전부 깨짐). skip 하면
+  // 페이지·readiness probe(/api/health/)는 그대로 매칭되고 /api/auth/* 만 살아난다.
+  skipTrailingSlashRedirect: true,
 };
 
 export default nextConfig;
