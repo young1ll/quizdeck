@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>quizdeck 플랫폼 현황 — Synology as VPC</title>
+<title>quizdeck 플랫폼 조망 — Synology as VPC</title>
 <style>
   :root{
     --bg:#f1f5f9; --card:#ffffff; --bd:#e2e8f0; --bd2:#cbd5e1;
@@ -58,7 +58,7 @@
 
   /* flow diagram */
   .flow{display:flex;align-items:stretch;flex-wrap:wrap;gap:0;background:var(--slate-bg);border:1px solid var(--bd);border-radius:14px;padding:18px}
-  .node{flex:1 1 120px;min-width:120px;background:#fff;border:1px solid var(--bd2);border-radius:11px;padding:11px 10px;text-align:center;display:flex;flex-direction:column;gap:3px;justify-content:center;position:relative}
+  .node{flex:1 1 116px;min-width:116px;background:#fff;border:1px solid var(--bd2);border-radius:11px;padding:11px 10px;text-align:center;display:flex;flex-direction:column;gap:3px;justify-content:center;position:relative}
   .node .emoji{font-size:19px}
   .node .n{font-weight:700;font-size:13px}
   .node .d{font-size:11px;color:var(--faint);line-height:1.3}
@@ -71,6 +71,7 @@
   .node.edge{background:var(--rose-bg);border-color:var(--rose-bd)}
   .node.k8s{background:var(--indigo-bg);border-color:var(--indigo-bd)}
   .node.app{background:var(--amber-bg);border-color:var(--amber-bd)}
+  .node.data{background:var(--emerald-bg);border-color:var(--emerald-bd)}
   .node.user{background:#fff}
 
   .tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;vertical-align:middle}
@@ -80,37 +81,40 @@
   .tag.hold{background:#f1f5f9;color:#64748b;border:1px solid var(--bd2)}
 
   table{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff;border:1px solid var(--bd);border-radius:12px;overflow:hidden}
-  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--bd)}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--bd);vertical-align:top}
   th{background:var(--slate-bg);font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
   tr:last-child td{border-bottom:none}
   td .mono{color:#334155}
 
-  /* timeline */
-  .tl{position:relative;margin:0;padding:0 0 0 22px;list-style:none}
-  .tl:before{content:"";position:absolute;left:6px;top:4px;bottom:4px;width:2px;background:var(--bd2)}
-  .tl li{position:relative;margin-bottom:13px}
-  .tl li:before{content:"";position:absolute;left:-22px;top:5px;width:11px;height:11px;border-radius:50%;background:var(--emerald);border:2px solid #fff;box-shadow:0 0 0 1px var(--emerald-bd)}
-  .tl li .t{font-weight:700;font-size:14px}
-  .tl li .x{font-size:13px;color:var(--muted)}
+  /* machine cards */
+  .machines{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+  @media(max-width:720px){.machines{grid-template-columns:1fr}}
+  .machine{border:1px solid var(--bd);border-radius:13px;padding:15px;background:#fff;display:flex;flex-direction:column;gap:7px}
+  .machine .role{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .machine .nm{font-weight:800;font-size:16px;display:flex;align-items:center;gap:7px;letter-spacing:-.01em}
+  .machine .specs{font-size:12px;color:var(--faint)}
+  .machine .rows{display:flex;flex-direction:column;gap:3px;margin-top:2px}
+  .machine .r{font-size:12.5px;display:flex;gap:7px}
+  .machine .r .k{color:var(--faint);min-width:52px;flex:0 0 auto}
+  .machine .r .v{color:var(--ink);min-width:0}
+  .machine.host{background:linear-gradient(180deg,#f8fafc,#fff)}
+  .machine.app{background:linear-gradient(180deg,var(--indigo-bg),#fff 70%);border-color:var(--indigo-bd)}
+  .machine.data{background:linear-gradient(180deg,var(--emerald-bg),#fff 70%);border-color:var(--emerald-bd)}
+
+  .note{border:1px solid var(--bd);background:var(--slate-bg);border-radius:11px;padding:12px 15px;font-size:13px;color:var(--muted);margin-top:12px}
+  .note b{color:var(--ink)}
 
   /* layers */
   .layers{display:flex;flex-direction:column;gap:7px}
   .layer{display:flex;align-items:center;gap:13px;border:1px solid var(--bd);border-radius:11px;padding:11px 15px;background:#fff}
-  .layer .lv{font-weight:800;font-size:13px;width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--slate-bg);border:1px solid var(--bd2);flex:0 0 auto}
+  .layer .lv{font-weight:800;font-size:13px;width:38px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--slate-bg);border:1px solid var(--bd2);flex:0 0 auto}
   .layer .body{flex:1;min-width:0}
   .layer .body .h{font-weight:700;font-size:14px}
   .layer .body .s{font-size:12.5px;color:var(--muted)}
   .layer.done{background:linear-gradient(90deg,var(--emerald-bg),#fff 60%);border-color:var(--emerald-bd)}
   .layer.done .lv{background:var(--emerald-bg);border-color:var(--emerald-bd);color:#047857}
-
-  .next-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
-  @media(max-width:720px){.next-cards{grid-template-columns:1fr}}
-  .nc{border:1px solid var(--bd);border-radius:13px;padding:16px;background:#fff;display:flex;flex-direction:column;gap:7px}
-  .nc .rank{font-size:22px}
-  .nc .h{font-weight:700;font-size:15px}
-  .nc .why{font-size:13px;color:var(--muted)}
-  .nc .route{font-size:12px;background:var(--indigo-bg);border:1px solid var(--indigo-bd);color:#4338ca;padding:7px 9px;border-radius:8px;margin-top:auto}
-  .nc .route .mono{color:#4338ca;font-weight:600}
+  .layer.wip{background:linear-gradient(90deg,var(--amber-bg),#fff 60%);border-color:var(--amber-bd)}
+  .layer.wip .lv{background:var(--amber-bg);border-color:var(--amber-bd);color:#b45309}
 
   ul.tight{margin:6px 0;padding-left:18px}
   ul.tight li{margin-bottom:4px}
@@ -118,7 +122,7 @@
   .kv{display:flex;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px dashed var(--bd)}
   .kv:last-child{border-bottom:none}
   .kv .k{color:var(--muted);min-width:120px;flex:0 0 auto}
-  .kv .v{color:var(--ink)}
+  .kv .v{color:var(--ink);min-width:0}
 </style>
 </head>
 <body>
@@ -126,28 +130,74 @@
 
   <header class="hero">
     <div class="live"><span class="dot"></span> LIVE · 공개 가동 중</div>
-    <h1>quizdeck 플랫폼 현황</h1>
-    <div class="sub">자격시험 학습 웹앱 + 개인 Synology를 “VPC처럼” 키우는 cloud-native 플랫폼 · 2026-06-24 기준</div>
-    <div class="url">🌐 공개: <a href="https://myquizdeck.com">https://myquizdeck.com</a> &nbsp;·&nbsp; 내부(타넷): <span class="mono">http://k3s-home/</span></div>
+    <h1>quizdeck 플랫폼 — 전체 인프라 조망</h1>
+    <div class="sub">자격시험 학습 웹앱 + 개인 Synology를 “VPC처럼” 키우는 cloud-native 플랫폼 · 2026-06-25 기준</div>
+    <div class="url">🌐 공개: <a href="https://myquizdeck.com">https://myquizdeck.com</a> &nbsp;·&nbsp; 내부(타넷): <span class="mono">ssh young1ll@k3s-home</span></div>
     <div class="meta">
       <span class="chip">k3s v1.35.5</span>
       <span class="chip">Traefik ingress</span>
       <span class="chip">Argo CD GitOps</span>
       <span class="chip">Cloudflare Tunnel</span>
-      <span class="chip">Next.js 15 정적 export</span>
+      <span class="chip">Next.js 15 standalone</span>
+      <span class="chip">postgres 16 (db-home)</span>
+      <span class="chip">better-auth + JWKS</span>
       <span class="chip">인바운드 포트 0</span>
     </div>
   </header>
 
   <p class="lead">
-    옛 단일 <code>index.html</code>(3.9MB) 퀴즈 사이트를 <b>Next.js 15 멀티시험 학습앱</b>으로 재작성하고,
-    개인 Synology NAS 위에 <b>k3s 기반 GitOps 플랫폼</b>을 세워 <b>공개 배포</b>까지 완료했습니다.
-    이제 <code>git push</code> 한 번이면 테스트·빌드·배포가 자동으로 흐릅니다.
+    옛 단일 <code>index.html</code> 퀴즈 사이트를 <b>Next.js 15 standalone 서버</b>로 재작성하고,
+    개인 Synology NAS 위에 <b>k3s 기반 GitOps 플랫폼</b>(app tier)과 <b>격리된 postgres 데이터 tier</b>(별도 VM)를 세워
+    <b>로그인·세션·JWKS</b>까지 갖춘 다중사용자 학습앱으로 키웠습니다.
+    외부로 통하는 길은 <b>단 한 줄</b>(인바운드 포트 0), 배포는 <code>git push</code> 한 번이면 자동입니다.
   </p>
 
-  <!-- ===================== 요청 경로 ===================== -->
-  <h2><span class="ic">🛰️</span> 아키텍처 — 요청 경로 (런타임)</h2>
-  <p class="lead">외부로 통하는 길은 <b>단 한 줄</b>. 집 라우터에 포트를 열지 않고(아웃바운드 터널만), 홈 IP는 Cloudflare 뒤에 숨습니다.</p>
+  <!-- ===================== 리소스 토폴로지 ===================== -->
+  <h2><span class="ic">🗄️</span> 리소스 토폴로지 — 한 호스트, 두 tier</h2>
+  <p class="lead">하나의 Synology 호스트(<code>zero</code>)가 <b>VMM</b>으로 두 VM을 띄웁니다 — <b>app tier(k3s)</b>와 <b>data tier(postgres)</b>를 분리. 둘은 OVS LAN에서 <b>게스트↔게스트</b>로만 통하고, postgres는 어디서도 인터넷에 노출되지 않습니다.</p>
+  <div class="machines">
+    <div class="machine host">
+      <div class="role">🖥️ 호스트 · 하이퍼바이저</div>
+      <div class="nm">zero</div>
+      <div class="specs">Synology DSM 7.3.2 · x86_64 · 9.6GB · /volume1 3.5T</div>
+      <div class="rows">
+        <div class="r"><span class="k">역할</span><span class="v">VMM(VM 호스팅) · DSM · 백업</span></div>
+        <div class="r"><span class="k">LAN</span><span class="v mono">192.168.68.54</span></div>
+        <div class="r"><span class="k">타넷</span><span class="v mono">100.78.231.75</span></div>
+        <div class="r"><span class="k">SSH</span><span class="v mono">zdmin@:8999</span></div>
+      </div>
+    </div>
+    <div class="machine app">
+      <div class="role">☁️ app tier · k8s</div>
+      <div class="nm">k3s-home</div>
+      <div class="specs">Ubuntu 24.04.4 · 커널 6.8 · 2 vCPU · 4GB · 30GB</div>
+      <div class="rows">
+        <div class="r"><span class="k">실행</span><span class="v">k3s v1.35.5 · Traefik · Argo CD · quizdeck · cloudflared</span></div>
+        <div class="r"><span class="k">LAN</span><span class="v mono">192.168.68.55</span></div>
+        <div class="r"><span class="k">타넷</span><span class="v mono">100.81.230.113</span></div>
+        <div class="r"><span class="k">SSH</span><span class="v mono">young1ll@k3s-home</span></div>
+      </div>
+    </div>
+    <div class="machine data">
+      <div class="role">🐘 data tier · RDS 아날로그</div>
+      <div class="nm">db-home</div>
+      <div class="specs">Ubuntu 24.04.4 · 2 vCPU · 2GB · 20GB · Legacy BIOS</div>
+      <div class="rows">
+        <div class="r"><span class="k">실행</span><span class="v">postgresql 16 · role/DB <code>quizdeck</code></span></div>
+        <div class="r"><span class="k">LAN</span><span class="v mono">192.168.68.52</span></div>
+        <div class="r"><span class="k">접근</span><span class="v">5432 ← <b>k3s-home(.55)만</b></span></div>
+        <div class="r"><span class="k">SSH</span><span class="v">k3s-home 키로만(LAN)</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="note">
+    🔌 <b>OVS “Default VM Network”</b> 192.168.68.0/24 — 두 VM이 같은 가상 스위치에 붙어 게스트↔게스트로 통신.
+    호스트→VM은 도달, <b>VM→호스트는 차단</b>(OVS host-guest 격리). 관리 접속은 <b>Tailscale 타넷</b>(Mac·zero·k3s-home).
+  </div>
+
+  <!-- ===================== 런타임 경로 ===================== -->
+  <h2><span class="ic">🛰️</span> 런타임 경로 — 요청이 흐르는 길</h2>
+  <p class="lead">외부로 통하는 길은 <b>단 한 줄</b>. 집 라우터에 포트를 열지 않고(아웃바운드 터널만), 홈 IP는 Cloudflare 뒤에 숨습니다. 인증·세션은 같은 오리진에서 postgres가 받칩니다.</p>
   <div class="flow">
     <div class="node user"><span class="emoji">👤</span><span class="n">사용자</span><span class="d">브라우저</span></div>
     <div class="arrow">→</div>
@@ -159,18 +209,67 @@
     <div class="arrow">→</div>
     <div class="node k8s"><span class="emoji">🚦</span><span class="n">Traefik</span><span class="d">ingress 라우팅</span></div>
     <div class="arrow">→</div>
-    <div class="node app"><span class="emoji">📦</span><span class="n">quizdeck</span><span class="d">nginx · 정적</span></div>
+    <div class="node app"><span class="emoji">📦</span><span class="n">quizdeck</span><span class="d">Next standalone · :3000</span></div>
+    <div class="arrow">→</div>
+    <div class="node data"><span class="emoji">🐘</span><span class="n">postgres</span><span class="d">db-home · 세션·인증</span></div>
+  </div>
+
+  <!-- ===================== 데이터 tier ===================== -->
+  <h2><span class="ic" style="background:var(--emerald-bg);border-color:var(--emerald-bd)">🐘</span> 데이터 tier — 격리된 postgres (db-home)</h2>
+  <p class="lead">postgres를 k3s 클러스터 <b>밖의 별도 VM</b>에 둬 RDS의 private-subnet 격리를 실습합니다. DB 수명을 k3s 재설치와 분리하고, 다층 방어(방화벽 + pg_hba)로 <b>오직 k3s-home만</b> 접근하게 합니다.</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>격리 (다층 방어)</h3>
+      <ul class="tight">
+        <li><b>ufw</b> default-deny · 5432는 <span class="mono">192.168.68.55/32</span>(k3s-home)에서만. SSH(22)는 LAN+타넷만.</li>
+        <li><b>pg_hba</b> — <code>quizdeck</code> role은 k3s-home에서만(scram-sha-256). listen=<span class="mono">localhost,.52</span>.</li>
+        <li><b>인터넷 차단</b> — 라우터 포트포워딩 0 + ufw로 호스트·인터넷·그 외 타넷 모두 거부.</li>
+        <li>검증: k3s-home→5432 <b>OPEN</b>, Mac·호스트→5432 <b>차단</b> 확인.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>스키마 · 시크릿</h3>
+      <ul class="tight">
+        <li><b>better-auth 테이블</b>: <code>user·session·account·verification·jwks</code> (라이브러리 마이그레이션).</li>
+        <li>접속정보는 <b>k8s Secret <code>db-credentials</code></b>(ns quizdeck, git 밖) — 앱이 <code>secretKeyRef</code>로 주입.</li>
+        <li>프로비저닝: VMM + cidata autoinstall seed(k3s-home과 동일 패턴) → 멱등 스크립트(<code>provision-postgres.sh</code> 등).</li>
+        <li>진도(progress) 테이블은 V2(LWW 동기화) 때.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===================== 인증 ===================== -->
+  <h2><span class="ic">🔑</span> 인증 — better-auth (in-app)</h2>
+  <p class="lead">무거운 IdP 대신 <b>better-auth</b>를 standalone 서버의 Route Handler(<code>app/api/auth/*</code>)에 in-app으로 둡니다. 같은 오리진 쿠키 세션 + <b>JWKS 노출</b>로 미래 NestJS pod가 JWT를 검증할 경로를 열어 둡니다. <span class="tag now">구현 완료 · 배포 직전 (PR #14)</span></p>
+  <div class="grid2">
+    <div class="card">
+      <h3>이번 슬라이스 (V1)</h3>
+      <ul class="tight">
+        <li><b>이메일+비밀번호</b> 가입·로그인·로그아웃. 익명 사용은 그대로(로그인은 선택).</li>
+        <li><b>세션</b> = 같은 오리진 쿠키(Secure·HttpOnly·SameSite) — 새로고침·탭 재오픈에도 유지.</li>
+        <li><b>JWKS</b> <span class="mono">GET /api/auth/jwks</span> 노출(지금 소비자 없음, IdP-lite 경로).</li>
+        <li>표준 보호: 비밀번호 해시(scrypt)·CSRF(origin 체크)·rate-limit. 시크릿 <code>quizdeck-auth</code>(git 밖).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>후속</h3>
+      <ul class="tight">
+        <li><b>V2</b> — 진도 동기화: local-first composite ProgressStore(localStorage + RemoteApi, LWW). ADR-0001 seam 활용.</li>
+        <li><b>V4/V5</b> — 소셜 로그인(GitHub·Google·Naver) · 패스키(WebAuthn). 같은 토대 위에 얹음.</li>
+        <li>SMTP 미구성 → 이메일 검증 OFF(가입 즉시 로그인).</li>
+      </ul>
+    </div>
   </div>
 
   <!-- ===================== GitOps 루프 ===================== -->
-  <h2><span class="ic" style="background:var(--indigo-bg);border-color:var(--indigo-bd)">♾️</span> 아키텍처 — 배포 루프 (GitOps)</h2>
-  <p class="lead">소스를 고치고 <b><code>git push</code></b> 하면 끝. 사람이 손대는 배포 단계가 없습니다(“배우기 = 하기”).</p>
+  <h2><span class="ic" style="background:var(--indigo-bg);border-color:var(--indigo-bd)">♾️</span> 배포 루프 (GitOps)</h2>
+  <p class="lead">소스를 고치고 <b><code>git push</code></b> 하면 끝. 사람이 손대는 배포 단계가 없습니다(“배우기 = 하기”). quizdeck·cloudflared 둘 다 Argo Application(Synced/Healthy).</p>
   <div class="flow">
     <div class="node"><span class="emoji">🧑‍💻</span><span class="n">git push</span><span class="d">main</span></div>
     <div class="arrow">→</div>
     <div class="node k8s"><span class="emoji">⚙️</span><span class="n">GitHub Actions</span><span class="d">pnpm test ▸ 이미지 빌드</span></div>
     <div class="arrow">→</div>
-    <div class="node k8s"><span class="emoji">🐳</span><span class="n">ghcr.io</span><span class="d">이미지 push + 태그 bump</span></div>
+    <div class="node k8s"><span class="emoji">🐳</span><span class="n">ghcr.io</span><span class="d">push + 태그 bump</span></div>
     <div class="arrow">→</div>
     <div class="node k8s"><span class="emoji">🔁</span><span class="n">Argo CD</span><span class="d">자동 동기화</span></div>
     <div class="arrow">→</div>
@@ -182,72 +281,18 @@
        🗺️ AWS 공식 스타일 상세 아키텍처 다이어그램 열기 →</a>
   </p>
 
-  <!-- ===================== 진행 상황 ===================== -->
-  <h2><span class="ic">🧭</span> 진행 상황</h2>
-  <div class="grid2">
-    <div class="card">
-      <h3>① 앱 트랙 — quizdeck</h3>
-      <ul class="tl">
-        <li><div class="t">데이터 추출 (Phase 0)</div><div class="x">단일 HTML의 5개 JSON 블록을 <code>content/aws/sap-c02/*.json</code>로 무손실 분리. 콘텐츠 디렉토리 규약 확립.</div></li>
-        <li><div class="t">Next.js 전환 (Phase 1–2)</div><div class="x">Next 15 App Router 정적 export + React 19 + Tailwind v4 + TS. 퀴즈엔진·개념·다이어그램·검색·맵·PDF <b>전체 패리티</b> 이식.</div></li>
-        <li><div class="t">ProgressStore seam (TDD)</div><div class="x">진도 영속화를 snapshot·async 인터페이스 뒤로 deepen. Progress(durable)/Session(transient) 분리. vitest 14 GREEN. CONTEXT.md + ADR-0001.</div></li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>② 인프라 트랙 — Synology VPC</h3>
-      <ul class="tl">
-        <li><div class="t">정리 + 보안</div><div class="x">옛 Docker 컨테이너 전부 제거(36GB 회수). 원격 접속을 <b>Tailscale</b>로 이전, 인터넷 SSH 노출 폐쇄.</div></li>
-        <li><div class="t">L1 — k3s substrate</div><div class="x">커널 4.4 한계로 k3d 탈락 → VMM의 modern-커널 VM <code>k3s-home</code>(커널 6.8)에 k3s. Traefik ingress 동봉.</div></li>
-        <li><div class="t">L3 — GitOps 배포</div><div class="x">Dockerfile + kustomize + GitHub Actions + <b>Argo CD</b>. PR#1 머지 → 자동 빌드·배포 → Synced/Healthy.</div></li>
-        <li><div class="t">L2 — Cloudflare Tunnel</div><div class="x"><code>myquizdeck.com</code> 구매 → cloudflared(k3s)로 공개. 인바운드 0·홈IP 은닉·HTTPS.</div></li>
-        <li><div class="t">다듬기</div><div class="x">cloudflared까지 git/Argo 편입(완전 선언적), 옛 index.html 제거 + GH Pages 비활성.</div></li>
-      </ul>
-    </div>
-  </div>
-
   <!-- ===================== 층 로드맵 ===================== -->
   <h2><span class="ic">📶</span> 진화 로드맵 — 층(Layer)</h2>
   <p class="lead">각 상위 층은 독립적으로 가치 있고, <b>가치 &lt; 비용</b> 지점에서 멈춥니다. 플랫폼은 워크로드 위에서 진화합니다.</p>
   <div class="layers">
     <div class="layer done"><div class="lv">L1</div><div class="body"><div class="h">k3s (+ Traefik) <span class="tag ok">완료</span></div><div class="s">클라우드네이티브 substrate. VM <code>k3s-home</code>, 커널 6.8 / cgroup v2.</div></div></div>
-    <div class="layer done"><div class="lv">L3</div><div class="body"><div class="h">quizdeck + Argo CD <span class="tag ok">완료</span></div><div class="s">첫 워크로드 + GitOps(강제 함수). git push → 자동 배포.</div></div></div>
+    <div class="layer done"><div class="lv">L3</div><div class="body"><div class="h">quizdeck + Argo CD <span class="tag ok">완료</span></div><div class="s">첫 워크로드 + GitOps(강제 함수). Next standalone 서버로 전환(정적 export 폐기).</div></div></div>
     <div class="layer done"><div class="lv">L2</div><div class="body"><div class="h">Cloudflare Tunnel <span class="tag ok">완료</span></div><div class="s">경계 / IGW. 인바운드 0, 홈 IP 은닉, 공개 도메인.</div></div></div>
-    <div class="layer"><div class="lv">L3½</div><div class="body"><div class="h">로그인 + 진도 동기화 (postgres) <span class="tag next">다음</span></div><div class="s">Identity seam + ProgressStore RemoteApi + 외부 DB(별도 DB VM). 기기간 동기화.</div></div></div>
+    <div class="layer done"><div class="lv">L3½a</div><div class="body"><div class="h">데이터 tier — postgres VM(db-home) <span class="tag ok">완료</span></div><div class="s">RDS 아날로그. 격리된 postgres 16, k3s 게스트↔게스트 LAN만. 프로비저닝·마이그레이션·Secret 라이브.</div></div></div>
+    <div class="layer wip"><div class="lv">L3½b</div><div class="body"><div class="h">인증 — better-auth(이메일+비번·세션·JWKS) <span class="tag now">배포 직전</span></div><div class="s">구현·테스트·DB·Secret 완료(PR #14). main 머지 → GitOps 배포 → 인증 ON.</div></div></div>
+    <div class="layer"><div class="lv">L3½c</div><div class="body"><div class="h">진도 동기화 — local-first LWW <span class="tag next">다음</span></div><div class="s">composite ProgressStore(localStorage + RemoteApi). 기기간 동기화(V2).</div></div></div>
     <div class="layer"><div class="lv">L4</div><div class="body"><div class="h">관측성 — Prometheus / Grafana / Loki <span class="tag hold">예정</span></div><div class="s">메시보다 먼저. 메트릭·로그·대시보드.</div></div></div>
-    <div class="layer"><div class="lv">L5</div><div class="body"><div class="h">Linkerd — service mesh <span class="tag hold">예정</span></div><div class="s">mTLS · 골든 메트릭.</div></div></div>
-    <div class="layer"><div class="lv">L6</div><div class="body"><div class="h">Meshery — 관리 플레인 <span class="tag hold">예정</span></div><div class="s">Designs/Kanvas로 설계·운영·벤치마킹.</div></div></div>
-  </div>
-
-  <!-- ===================== 다음 방향 ===================== -->
-  <h2><span class="ic">🎯</span> 진행 방향 — 다음 작업</h2>
-  <p class="lead">설계가 필요한 작업은 <b>새 세션</b>에서 시작합니다(맥락은 <code>CONTEXT.md</code>·ADR·로드맵·메모리가 보존).</p>
-  <div class="next-cards">
-    <div class="nc">
-      <div class="rank">🥇</div>
-      <div class="h">로그인 + 진도 동기화</div>
-      <div class="why">공개 도메인이 되며 “localStorage = 브라우저별 진도”의 한계가 드러남. 미뤄둔 data tier(postgres)까지 완성.</div>
-      <div class="route">새 세션 › <span class="mono">/grill-with-docs</span> › <span class="mono">/to-prd</span> → <span class="mono">/to-issues</span> → <span class="mono">/implement</span></div>
-    </div>
-    <div class="nc">
-      <div class="rank">🥈</div>
-      <div class="h">2번째 시험 추가</div>
-      <div class="why">CNCF/Cisco 등으로 멀티시험 아키텍처 실증(제품 헤드라인). 가벼운 콘텐츠 작업.</div>
-      <div class="route">새 세션 › <span class="mono">/grill-with-docs</span> › <span class="mono">/implement</span></div>
-    </div>
-    <div class="nc">
-      <div class="rank">🥉</div>
-      <div class="h">코드베이스 건강</div>
-      <div class="why">deepening 후보 발굴(예: icons.json 737KB 외부화). 여유 있을 때.</div>
-      <div class="route"><span class="mono">/improve-codebase-architecture</span></div>
-    </div>
-  </div>
-  <div class="card" style="margin-top:13px">
-    <b>남은 사소한 것(설계 불필요)</b>
-    <ul class="tight">
-      <li><code>www</code> → apex 리다이렉트 — Cloudflare 대시보드 Redirect Rule 한 줄.</li>
-      <li>Ingress host 고정 — 2번째 앱/시험 도입 시(지금은 catch-all이 공개+타넷 내부 모두 커버).</li>
-      <li>postgres — 보류. 서버측 동기화/인증을 실제로 만들 때 별도 DB VM으로(게스트↔게스트 OVS 가능).</li>
-    </ul>
+    <div class="layer"><div class="lv">L5·L6</div><div class="body"><div class="h">Linkerd(mesh) · Meshery(관리 플레인) <span class="tag hold">예정</span></div><div class="s">mTLS·골든메트릭 → Designs/Kanvas 설계·운영.</div></div></div>
   </div>
 
   <!-- ===================== AWS 매핑 ===================== -->
@@ -258,32 +303,38 @@
     <tbody>
       <tr><td>인터넷 게이트웨이</td><td>Cloudflare Tunnel</td><td>CloudFront / public ALB</td></tr>
       <tr><td>ingress</td><td>Traefik (k3s 기본)</td><td>ALB / ingress controller</td></tr>
-      <tr><td>오케스트레이션</td><td>k3s (VMM VM)</td><td>EKS</td></tr>
-      <tr><td>app tier</td><td>quizdeck pod (nginx)</td><td>Fargate / EKS pod</td></tr>
-      <tr><td>data tier</td><td>외부 postgres <span class="tag hold">예정</span></td><td>RDS (private subnet)</td></tr>
+      <tr><td>오케스트레이션</td><td>k3s (VMM VM <code>k3s-home</code>)</td><td>EKS</td></tr>
+      <tr><td>app tier</td><td>quizdeck pod (Next standalone)</td><td>Fargate / EKS pod</td></tr>
+      <tr><td>data tier</td><td>외부 postgres VM <code>db-home</code> <span class="tag ok">완료</span></td><td>RDS (private subnet)</td></tr>
+      <tr><td>인증 / 신원</td><td>better-auth(in-app) + JWKS</td><td>Cognito / 자체 IdP + OIDC</td></tr>
+      <tr><td>시크릿</td><td>k8s Secret(git 밖)</td><td>Secrets Manager / SSM Param</td></tr>
       <tr><td>배포</td><td>Argo CD (GitOps)</td><td>Argo CD on EKS / CodePipeline</td></tr>
       <tr><td>원격 관리</td><td>Tailscale tailnet</td><td>SSM / VPN</td></tr>
     </tbody>
   </table>
 
   <!-- ===================== 운영 정보 ===================== -->
-  <h2><span class="ic">🛠️</span> 운영 정보</h2>
+  <h2><span class="ic">🛠️</span> 운영 정보 — 엔드포인트 · 시크릿 · 회복력</h2>
   <div class="grid2">
     <div class="card">
       <h3>접속 / 엔드포인트</h3>
       <div class="kv"><span class="k">공개 URL</span><span class="v"><a href="https://myquizdeck.com">myquizdeck.com</a></span></div>
-      <div class="kv"><span class="k">내부(타넷)</span><span class="v mono">http://k3s-home/ · 100.81.230.113</span></div>
-      <div class="kv"><span class="k">VM 접속</span><span class="v mono">ssh young1ll@100.81.230.113</span></div>
+      <div class="kv"><span class="k">app VM</span><span class="v mono">ssh young1ll@k3s-home · .55 · 100.81.230.113</span></div>
+      <div class="kv"><span class="k">data VM</span><span class="v mono">db-home · 192.168.68.52 (k3s-home 경유)</span></div>
+      <div class="kv"><span class="k">호스트</span><span class="v mono">ssh -p8999 zdmin@zero · .54 · 100.78.231.75</span></div>
       <div class="kv"><span class="k">레포</span><span class="v"><a href="https://github.com/young1ll/quizdeck">github.com/young1ll/quizdeck</a></span></div>
       <div class="kv"><span class="k">이미지</span><span class="v mono">ghcr.io/young1ll/quizdeck</span></div>
     </div>
     <div class="card">
-      <h3>운영 방식 · 회복력</h3>
+      <h3>시크릿 (전부 git 밖 · Secret)</h3>
+      <div class="kv"><span class="k">cloudflared-token</span><span class="v">ns cloudflare · 터널 토큰</span></div>
+      <div class="kv"><span class="k">db-credentials</span><span class="v">ns quizdeck · <span class="mono">DATABASE_URL</span></span></div>
+      <div class="kv"><span class="k">quizdeck-auth</span><span class="v">ns quizdeck · <span class="mono">BETTER_AUTH_SECRET</span></span></div>
+      <h3 style="margin-top:14px">운영 방식 · 회복력</h3>
       <ul class="tight">
         <li><b>배포</b>: <code>git push</code> → CI → Argo 자동 동기화. 수동 단계 없음.</li>
-        <li><b>회복력</b>: k3s는 systemd 서비스(재부팅 자동 기동), Argo <code>selfHeal</code>로 드리프트 교정.</li>
-        <li><b>보안</b>: 라우터 포트포워딩 0, 홈 IP 은닉, HTTPS 엣지 인증서, 관리는 Tailscale 전용. 터널 토큰은 k8s Secret(레포 밖).</li>
-        <li><b>GitOps</b>: quizdeck · cloudflared 둘 다 Argo Application(Synced/Healthy).</li>
+        <li><b>회복력</b>: k3s는 systemd(재부팅 자동), Argo <code>selfHeal</code>로 드리프트 교정.</li>
+        <li><b>보안</b>: 인바운드 0 · 홈 IP 은닉 · HTTPS 엣지 · 관리는 Tailscale 전용 · postgres 인터넷 미노출.</li>
       </ul>
     </div>
   </div>
@@ -297,12 +348,14 @@
       <li><a href="./architecture/platform-diagram.html">platform-diagram.html</a> — 아이콘 시각 다이어그램(초기 버전).</li>
       <li><a href="./adr/0001-progressstore-seam.md">ADR-0001</a> — ProgressStore seam(데이터 영속 경계).</li>
       <li><a href="./adr/0002-synology-vpc-platform.md">ADR-0002</a> — Synology as VPC 플랫폼 결정.</li>
-      <li><a href="../CONTEXT.md">CONTEXT.md</a> — 도메인 글로서리(Exam · Progress · Session · Mastery · Wrong-list).</li>
+      <li><a href="./adr/0003-auth-and-progress-sync.md">ADR-0003</a> — 인증(better-auth) + 진도 동기화(local-first) 결정.</li>
+      <li><a href="./design/auth-progress-sync-brief.md">auth-progress-sync-brief.md</a> — 로그인+동기화 설계 브리프.</li>
+      <li><a href="../CONTEXT.md">CONTEXT.md</a> — 도메인 글로서리(Exam · Learner · Progress · Session · Mastery · Wrong-list).</li>
     </ul>
   </div>
 
   <div class="foot">
-    quizdeck 플랫폼 현황 · 2026-06-24 · 인터넷 → Cloudflare → 터널 → cloudflared → Traefik → quizdeck
+    quizdeck 플랫폼 조망 · 2026-06-25 · 인터넷 → Cloudflare → 터널 → cloudflared → Traefik → quizdeck(Next) → postgres(db-home)
   </div>
 
 </div>
