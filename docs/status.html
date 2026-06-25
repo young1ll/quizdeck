@@ -123,6 +123,25 @@
   .kv:last-child{border-bottom:none}
   .kv .k{color:var(--muted);min-width:120px;flex:0 0 auto}
   .kv .v{color:var(--ink);min-width:0}
+
+  /* topology diagram (VPC-style nested boundaries) */
+  .topo{background:var(--slate-bg);border:1px solid var(--bd);border-radius:14px;padding:20px}
+  .tbox{position:relative;border-radius:12px;padding:25px 15px 14px;background:#fff}
+  .tbox > .lbl{position:absolute;top:0;left:14px;transform:translateY(-50%);background:#fff;border:1px solid var(--bd2);border-radius:7px;padding:2px 9px;font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;max-width:calc(100% - 28px);overflow:hidden;text-overflow:ellipsis}
+  .tbox.net{border:1px solid var(--bd2)}
+  .tbox.edge{border:2px solid var(--amber-bd);background:var(--amber-bg)}
+  .tbox.host{border:2px solid var(--bd2);background:rgba(148,163,184,.07)}
+  .tbox.lan{border:1.5px dashed #60a5fa;background:rgba(96,165,250,.06);margin-top:10px}
+  .tbox.app{border:2px solid var(--indigo-bd);background:var(--indigo-bg)}
+  .tbox.data{border:2px solid var(--emerald-bd);background:var(--emerald-bg);margin-top:0}
+  .svcs{display:flex;flex-wrap:wrap;gap:7px}
+  .svc{background:#fff;border:1px solid var(--bd2);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
+  .svc .ip{font-size:10.5px;color:var(--faint);font-weight:500}
+  .down{display:flex;justify-content:center;align-items:center;gap:7px;color:var(--muted);font-size:12px;padding:8px 0}
+  .down .ar{font-size:15px;color:var(--faint)}
+  .down b{color:#b45309}
+  .tnet{margin-top:14px;border:1px dashed var(--bd2);border-radius:10px;padding:10px 14px;font-size:12.5px;color:var(--muted);
+        background:repeating-linear-gradient(45deg,#fff,#fff 9px,#f8fafc 9px,#f8fafc 18px)}
 </style>
 </head>
 <body>
@@ -151,6 +170,54 @@
     <b>로그인·세션·JWKS</b>까지 갖춘 다중사용자 학습앱으로 키웠습니다.
     외부로 통하는 길은 <b>단 한 줄</b>(인바운드 포트 0), 배포는 <code>git push</code> 한 번이면 자동입니다.
   </p>
+
+  <!-- ===================== 전체 조망 다이어그램 ===================== -->
+  <h2><span class="ic">🗺️</span> 전체 조망 — 토폴로지 다이어그램</h2>
+  <p class="lead">하나의 Synology 호스트가 <b>VPC 경계</b>가 되고, 그 안 OVS LAN에 <b>app tier(k3s)</b>와 <b>data tier(postgres)</b> VM이 분리됩니다. 외부 진입은 Cloudflare 엣지를 통한 <b>아웃바운드 터널 한 줄</b>뿐이고, postgres는 k3s-home에서만 닿습니다.</p>
+  <div class="topo">
+
+    <div class="tbox net"><span class="lbl">🌐 인터넷</span>
+      <div class="svcs"><span class="svc">👤 사용자 · 브라우저</span></div>
+    </div>
+    <div class="down"><span class="ar">↓</span> HTTPS</div>
+
+    <div class="tbox edge"><span class="lbl">🟧 Cloudflare 엣지 · IGW</span>
+      <div class="svcs">
+        <span class="svc">🔒 HTTPS 종단</span>
+        <span class="svc">🙈 홈 IP 은닉</span>
+        <span class="svc">⛔ 인바운드 0 · 아웃바운드 터널만</span>
+        <span class="svc">🌐 myquizdeck.com</span>
+      </div>
+    </div>
+    <div class="down"><span class="ar">↓</span> 아웃바운드 터널 (집 라우터 포트 0)</div>
+
+    <div class="tbox host"><span class="lbl">🖥️ Synology 호스트 “zero” · 192.168.68.54 · VMM ＝ VPC 경계</span>
+      <div class="tbox lan"><span class="lbl">🔌 OVS “Default VM Network” · 192.168.68.0/24 · 게스트↔게스트</span>
+
+        <div class="tbox app"><span class="lbl">☁️ k3s-home VM · 192.168.68.55 · app tier (k3s v1.35.5)</span>
+          <div class="svcs">
+            <span class="svc">☁️ cloudflared <span class="ip">×2</span></span>
+            <span class="svc">🚦 Traefik <span class="ip">ingress</span></span>
+            <span class="svc">📦 quizdeck <span class="ip">Next standalone · :3000</span></span>
+            <span class="svc">🔁 Argo CD <span class="ip">GitOps</span></span>
+          </div>
+        </div>
+
+        <div class="down"><span class="ar">↓</span> postgres 5432 · <b>오직 .55만 허용</b> (ufw + pg_hba)</div>
+
+        <div class="tbox data"><span class="lbl">🐘 db-home VM · 192.168.68.52 · data tier ＝ RDS 아날로그</span>
+          <div class="svcs">
+            <span class="svc">🐘 postgresql 16 <span class="ip">listen localhost,.52</span></span>
+            <span class="svc">🗄️ quizdeck DB <span class="ip">user·session·account·verification·jwks</span></span>
+            <span class="svc">🔒 ufw default-deny <span class="ip">인터넷·호스트 차단</span></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="tnet">🔐 <b>Tailscale 타넷</b>(관리 평면, 워크로드 경로와 분리) — Mac · zero · k3s-home 간 SSH/kubectl. db-home은 k3s-home 경유로만 접속.</div>
+  </div>
 
   <!-- ===================== 리소스 토폴로지 ===================== -->
   <h2><span class="ic">🗄️</span> 리소스 토폴로지 — 한 호스트, 두 tier</h2>
