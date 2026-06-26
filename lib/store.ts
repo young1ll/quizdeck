@@ -125,8 +125,8 @@ export function useStoreState(
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const p = await progressStore.load(examKey);
-      if (!cancelled && p) setProgress(p);
+      const stored = await progressStore.load(examKey);
+      if (!cancelled && stored) setProgress(stored.snapshot);
       try {
         const a = window.localStorage.getItem(ACTIVE_PREFIX + examKey);
         if (a) {
@@ -154,7 +154,7 @@ export function useStoreState(
     (fn: (p: Progress) => Progress) => {
       setProgress((prev) => {
         const next = fn(prev);
-        progressStore.save(examKey, next).catch(() => {});
+        progressStore.save(examKey, next, Date.now()).catch(() => {});
         return next;
       });
     },
@@ -219,7 +219,7 @@ export function useStoreState(
         prefs: { ...base.prefs, ...rest.prefs },
       };
       setProgress(next);
-      progressStore.save(examKey, next).catch(() => {});
+      progressStore.save(examKey, next, Date.now()).catch(() => {});
       setActiveState(imported ?? null);
       persistActive(imported ?? null);
     },
