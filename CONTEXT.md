@@ -9,8 +9,12 @@
 _Avoid_: test, quiz(quiz는 푸는 행위), course
 
 **Learner**:
-인증된 신원. 자신의 [[#Progress|Progress]]를 소유하고 기기를 가로질러 동기화한다. 익명 방문자는 Learner가 아니며, 그 기록은 기기-국소 localStorage에만 머문다(동기화 대상 아님). 한 Learner는 여러 Exam의 Progress를 가진다.
-_Avoid_: User(인증 자격/행 식별자일 뿐), Account(자격증명 묶음), member
+**이메일 검증을 마친** 인증 신원. 자신의 [[#Progress|Progress]]를 소유하고 기기를 가로질러 동기화한다. [[#익명 방문자|익명 방문자]]와 달리 **연습**([[#Session|Session]] 시작·Progress 기록)은 Learner만 할 수 있다. 가입했으나 이메일 미인증인 사용자는 **아직 Learner가 아니다**(인증 전엔 세션 없음). 한 Learner는 여러 Exam의 Progress를 가진다.
+_Avoid_: User(인증 자격/행 식별자일 뿐), Account(자격증명 묶음), member, 미인증 가입자
+
+**익명 방문자 (Anonymous visitor)**:
+인증된 Learner가 아닌 모든 방문자(가입 후 **이메일 미인증** 사용자 포함). [[#Exam|Exam]] 카탈로그와 Exam의 **열람 콘텐츠**(개념·다이어그램·서비스맵·검색)는 볼 수 있으나 **연습할 수 없다** — Session 시작과 Progress 기록은 [[#Learner|Learner]] 전용이다. 따라서 익명 방문자는 Progress를 갖지 않는다(연습 모드 진입 시 로그인 요구).
+_Avoid_: guest(1급 신원·게스트 계정을 암시), User
 
 **Progress**:
 한 **Learner**의 한 Exam에 대한 **durable 학습 기록** — 문항 이력, 오답 목록, 즐겨찾기, 메모, 일일 활동, 완료한 시도 기록, 환경설정. 시도와 기기를 가로질러 살아남는 단위. 영속 키는 (Learner, Exam).
