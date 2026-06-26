@@ -82,20 +82,25 @@ function AuthForms() {
     setPassword("");
   };
 
+  // 제출 전 이메일 정규화 — better-auth lookup 은 소문자화하나 trim 은 안 한다(특히 비밀번호
+  // 재설정 경로). 모바일 자동완성이 붙이는 앞뒤 공백이 "User not found" 를 유발하므로 차단.
+  const cleanEmail = () => email.trim().toLowerCase();
+
   const submit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const addr = cleanEmail();
     setError(null);
     setBusy(true);
     const res =
       tab === "signup"
-        ? await signUp.email({ email, password, name: name.trim() || email })
-        : await signIn.email({ email, password });
+        ? await signUp.email({ email: addr, password, name: name.trim() || addr })
+        : await signIn.email({ email: addr, password });
     setBusy(false);
 
     if (res.error) {
       // 미검증 로그인 — 에러 대신 "메일 확인" 안내 + 재발송 경로.
       if (res.error.code === "EMAIL_NOT_VERIFIED") {
-        setNotice({ kind: "unverified", email });
+        setNotice({ kind: "unverified", email: addr });
         return;
       }
       setError(res.error.message ?? "요청을 처리하지 못했습니다.");
@@ -103,16 +108,17 @@ function AuthForms() {
     }
     setPassword("");
     // 가입 성공 — 검증 필수라 세션이 없다. "메일 확인" 안내로 전환.
-    if (tab === "signup") setNotice({ kind: "verifySent", email });
+    if (tab === "signup") setNotice({ kind: "verifySent", email: addr });
     // 로그인 성공 — useSession 이 갱신되어 프로필 화면으로 전환된다.
   };
 
   const requestReset = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const addr = cleanEmail();
     setError(null);
     setBusy(true);
     const res = await requestPasswordReset({
-      email,
+      email: addr,
       redirectTo: `${window.location.origin}${BASE_PATH}/reset-password`,
     });
     setBusy(false);
@@ -120,13 +126,13 @@ function AuthForms() {
       setError(res.error.message ?? "요청을 처리하지 못했습니다.");
       return;
     }
-    setNotice({ kind: "resetSent", email });
+    setNotice({ kind: "resetSent", email: addr });
   };
 
   const resend = async () => {
     setError(null);
     setBusy(true);
-    const res = await sendVerificationEmail({ email, callbackURL: `${BASE_PATH}/` });
+    const res = await sendVerificationEmail({ email: cleanEmail(), callbackURL: `${BASE_PATH}/` });
     setBusy(false);
     if (res.error) {
       setError(res.error.message ?? "재발송에 실패했습니다.");
