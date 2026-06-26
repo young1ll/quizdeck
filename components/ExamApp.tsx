@@ -7,6 +7,11 @@ import { StoreContext, useStore, useStoreState, type Mode } from "@/lib/store";
 import { NavContext, type View } from "@/lib/nav-context";
 import { topicsOf } from "@/lib/session";
 import { useQuizController } from "@/lib/use-quiz";
+import { useSession } from "@/lib/auth-client";
+import { localStorageProgressStore } from "@/lib/progress-store";
+import { compositeProgressStore } from "@/lib/progress-store-composite";
+import { remoteApiProgressStore } from "@/lib/progress-store-remote";
+import SyncIndicator from "./SyncIndicator";
 import Home from "./views/Home";
 import Setup from "./views/Setup";
 import Quiz from "./views/Quiz";
@@ -43,7 +48,19 @@ function StoreProvider({
   examKey: string;
   children: React.ReactNode;
 }) {
-  const ctx = useStoreState(examKey);
+  const { data: session } = useSession();
+  const learnerId = session?.user?.id ?? null;
+  // 로그인 Learner → local-first composite(localStorage + /api/progress 동기화).
+  // 익명(또는 세션 해석 전) → localStorage 단독(useStoreState 기본). (ADR-0001 seam 무변경 drop-in)
+  // 첫 로그인 시 local↔server 는 평범한 LWW 로 reconcile 된다 — 전용 anonymous→login 병합은 V3.
+  const store = useMemo(
+    () =>
+      learnerId
+        ? compositeProgressStore(localStorageProgressStore(), remoteApiProgressStore())
+        : undefined,
+    [learnerId],
+  );
+  const ctx = useStoreState(examKey, store);
   return <StoreContext.Provider value={ctx}>{children}</StoreContext.Provider>;
 }
 
@@ -95,6 +112,7 @@ function ExamInner() {
 
   return (
     <NavContext.Provider value={nav}>
+      <SyncIndicator />
       {showBackBar && (
         <div className="mb-4 flex items-center gap-3">
           <button

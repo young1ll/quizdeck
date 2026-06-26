@@ -22,6 +22,10 @@ import {
   localStorageProgressStore,
   type ProgressStore,
 } from "./progress-store";
+import {
+  isSyncStatusSource,
+  type SyncStatus,
+} from "./progress-store-composite";
 
 // 도메인 타입은 progress 모듈이 소유 — 소비부 호환 위해 재노출
 export type { Mode, Prefs, Progress, QHist, SessionRecord } from "./progress";
@@ -82,6 +86,8 @@ const LEGACY_PREFIX = "quizdeck:store:"; // Phase 2 통짜 blob (active 복구�
 interface StoreCtx {
   store: Store;
   loaded: boolean;
+  /** 동기화 상태(composite 주입 시). 익명(localStorage 단독)이면 null — 표시 안 함. */
+  syncStatus: SyncStatus | null;
   recordResult: (qn: number, sel: string[], ok: boolean) => void;
   toggleStar: (qn: number) => void;
   setMemo: (qn: number, text: string) => void;
@@ -120,6 +126,19 @@ export function useStoreState(
   const [loaded, setLoaded] = useState(false);
   const progressRef = useRef(progress);
   progressRef.current = progress;
+
+  // 동기화 상태 — 주입된 store 가 SyncStatusSource(=composite)일 때만. 기본 seam 은 무관.
+  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(() =>
+    isSyncStatusSource(progressStore) ? progressStore.getSyncStatus() : null,
+  );
+  useEffect(() => {
+    if (!isSyncStatusSource(progressStore)) {
+      setSyncStatus(null);
+      return;
+    }
+    setSyncStatus(progressStore.getSyncStatus());
+    return progressStore.subscribeSyncStatus(setSyncStatus);
+  }, [progressStore]);
 
   // 마운트 시 1회 로드 (클라이언트 전용)
   useEffect(() => {
@@ -231,6 +250,7 @@ export function useStoreState(
   return {
     store,
     loaded,
+    syncStatus,
     recordResult,
     toggleStar,
     setMemo,
