@@ -2,11 +2,13 @@ import { describe, it, expect, afterAll } from "vitest";
 import { auth } from "./auth";
 import { pool } from "./db";
 
-// better-auth 이메일+비밀번호 전체 흐름을 실제 postgres 에서 실증한다 (이슈 #6 AC).
+// better-auth 이메일+비밀번호 전체 흐름을 실제 postgres 에서 실증한다 (이슈 #6 + ADR-0004).
 // DATABASE_URL 이 없으면 skip — 무DB CI 는 그대로 그린. 로컬/통합은 docker postgres 로 실행:
 //   DATABASE_URL=postgres://quizdeck:quizdeck@localhost:55432/quizdeck \
 //   BETTER_AUTH_SECRET=... BETTER_AUTH_URL=http://localhost:3000 pnpm test
 //
+// 이메일 검증 필수(ADR-0004): 가입해도 검증 전엔 세션 없음·로그인 차단. 검증 메일 발송은
+// RESEND_API_KEY 미설정·비프로덕션이라 email.ts 가 콘솔로 건너뛴다(테스트는 발송 무관).
 // auth.handler 를 직접 두드려 Route Handler 가 마운트하는 것과 동일한 HTTP 표면을 검증한다.
 
 const BASE = "http://localhost:3000";
@@ -43,25 +45,23 @@ describe.skipIf(!hasDb)("better-auth 이메일+비밀번호 통합 (실제 postg
     await pool.end();
   });
 
-  it("가입하면 user·account 행이 생기고 비밀번호는 해시로 저장된다", async () => {
+  it("가입하면 user·account 행이 생기고 비밀번호는 해시로 저장된다 — 검증 전엔 세션 없음", async () => {
     const res = await api("/sign-up/email", {
       method: "POST",
       body: JSON.stringify({ name, email, password }),
     });
     expect(res.status).toBe(200);
 
-    const setCookies = res.headers.getSetCookie();
-    const sc = setCookies.find((c) => c.includes("session_token"));
-    expect(sc, "가입 응답에 세션 쿠키가 있어야 한다").toBeTruthy();
-    // 같은 오리진 쿠키 보호 속성: HttpOnly·SameSite (Secure 는 https/prod 에서만 부여)
-    expect(sc!.toLowerCase()).toContain("httponly");
-    expect(sc!.toLowerCase()).toContain("samesite");
+    // 이메일 인증 필수 → autoSignIn 차단: 가입 응답에 세션 쿠키가 없어야 한다 (ADR-0004)
+    const sc = res.headers.getSetCookie().find((c) => c.includes("session_token"));
+    expect(sc, "검증 전엔 세션 쿠키가 발급되지 않아야 한다").toBeFalsy();
 
-    const u = await pool.query<{ id: string }>(
-      'select id from "user" where email = $1',
+    const u = await pool.query<{ id: string; emailVerified: boolean }>(
+      'select id, "emailVerified" from "user" where email = $1',
       [email],
     );
     expect(u.rowCount).toBe(1);
+    expect(u.rows[0].emailVerified).toBe(false); // 아직 미검증
 
     const a = await pool.query<{ password: string | null }>(
       'select password from "account" where "userId" = $1 and "providerId" = $2',
@@ -73,7 +73,21 @@ describe.skipIf(!hasDb)("better-auth 이메일+비밀번호 통합 (실제 postg
     expect(a.rows[0].password).not.toContain(password);
   });
 
-  it("로그인하면 세션 쿠키가 발급되고 get-session 이 그 Learner 를 식별한다", async () => {
+  it("검증 전 로그인은 거부된다 (이메일 인증 필요)", async () => {
+    const res = await api("/sign-in/email", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    expect(res.status).toBeGreaterThanOrEqual(400);
+
+    const sc = res.headers.getSetCookie().find((c) => c.includes("session_token"));
+    expect(sc, "미검증 로그인엔 세션 쿠키가 없어야 한다").toBeFalsy();
+  });
+
+  it("이메일 검증 후 로그인하면 세션이 발급되고 get-session 이 그 Learner 를 식별한다", async () => {
+    // 검증 링크 클릭을 DB 플래그로 시뮬레이트한다 — verify-email 엔드포인트가 만드는 상태와 동일.
+    await pool.query('update "user" set "emailVerified" = true where email = $1', [email]);
+
     const res = await api("/sign-in/email", {
       method: "POST",
       body: JSON.stringify({ email, password }),

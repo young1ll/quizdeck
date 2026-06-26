@@ -54,12 +54,21 @@ describe.skipIf(!hasDb)("/api/progress (세션 + 실 postgres 필요)", () => {
       body: JSON.stringify({ name: "러너", email, password }),
     });
     expect(res.status).toBe(200);
-    cookie = res.headers
+    const u = await pool.query<{ id: string }>('select id from "user" where email = $1', [email]);
+    learnerId = u.rows[0].id;
+
+    // 이메일 인증 필수(ADR-0004) → 가입만으론 세션이 없다. 검증 플래그를 세우고 로그인해
+    // 세션 쿠키를 얻는다(검증 링크 클릭과 동일 상태).
+    await pool.query('update "user" set "emailVerified" = true where email = $1', [email]);
+    const signin = await authApi("/sign-in/email", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    expect(signin.status).toBe(200);
+    cookie = signin.headers
       .getSetCookie()
       .map((c) => c.split(";")[0])
       .join("; ");
-    const u = await pool.query<{ id: string }>('select id from "user" where email = $1', [email]);
-    learnerId = u.rows[0].id;
   });
 
   afterAll(async () => {

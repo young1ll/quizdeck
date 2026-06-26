@@ -42,6 +42,15 @@ spec:
                 secretKeyRef:
                   name: db-credentials
                   key: DATABASE_URL
+            # 트랜잭션 이메일 발신주소 — 시크릿 아님(평문 env). (ADR-0004 / 이슈 #21)
+            - name: EMAIL_FROM
+              value: "QuizDeck <noreply@myquizdeck.com>"
+            # Resend API 키 — git 밖 Secret. 같은 quizdeck-auth Secret 에 보관(생성: k8s/base/README.md)
+            - name: RESEND_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: quizdeck-auth
+                  key: RESEND_API_KEY
           readinessProbe:
             # /api/health/ — Route Handler 토대 증명. trailingSlash:true 라 슬래시 포함이 곧장 200.
             httpGet:
