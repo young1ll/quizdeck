@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { jwt } from "better-auth/plugins";
+import { dash } from "@better-auth/infra";
 import { pool } from "./db";
 import { resolveAuthConfig } from "./auth-config";
 
@@ -42,5 +43,11 @@ export const auth = betterAuth({
   },
   // JWT/JWKS 플러그인 — 미래 NestJS pod 가 better-auth 를 IdP-lite 로 검증할
   // JWKS 를 노출한다(GET /api/auth/jwks). 지금 소비자는 없다 — 노출까지만. (ADR-0003)
-  plugins: [jwt()],
+  //
+  // dash — Better Auth Infrastructure(https://dash.better-auth.com) 호스티드
+  // 대시보드 연결. /dash/* 엔드포인트를 노출해 대시보드가 사용자·세션·이벤트를
+  // 조회한다. apiKey 는 기본값 process.env.BETTER_AUTH_API_KEY(k8s Secret 주입)를
+  // 읽는다. 키 부재(빌드 시점)엔 "" 로 폴백 — init throw 없음, 런타임 요청에서만 검증.
+  // activityTracking 은 기본 OFF — 켜면 user 테이블에 lastActiveAt 스키마가 필요.
+  plugins: [jwt(), dash()],
 });

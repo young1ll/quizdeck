@@ -29,6 +29,13 @@ spec:
                 secretKeyRef:
                   name: quizdeck-auth
                   key: BETTER_AUTH_SECRET
+            # Better Auth Infra 대시보드(dash.better-auth.com) API 키 — git 밖 Secret.
+            # 같은 quizdeck-auth Secret 에 보관. 생성·로테이트: k8s/base/README.md
+            - name: BETTER_AUTH_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: quizdeck-auth
+                  key: BETTER_AUTH_API_KEY
             # DB VM postgres 접속 — #4 가 만든 Secret(infra/db-vm/k8s/README.md)
             - name: DATABASE_URL
               valueFrom:
