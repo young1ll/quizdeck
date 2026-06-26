@@ -12,4 +12,13 @@ export const authClient = createAuthClient({
   plugins: [dashClient()],
 });
 
-export const { signIn, signUp, signOut, useSession } = authClient;
+export const {
+  signIn,
+  signUp,
+  signOut,
+  useSession,
+  // 이메일 인증·비밀번호 재설정 (ADR-0004 / 이슈 #21)
+  sendVerificationEmail,
+  requestPasswordReset,
+  resetPassword,
+} = authClient;

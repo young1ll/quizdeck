@@ -3,6 +3,7 @@ import { jwt } from "better-auth/plugins";
 import { dash } from "@better-auth/infra";
 import { pool } from "./db";
 import { resolveAuthConfig } from "./auth-config";
+import { sendEmail, verificationEmail, resetPasswordEmail } from "./email";
 
 // better-auth (in-app, postgres adapter) — 별도 IdP 프로세스 없음. (ADR-0003 / 이슈 #6)
 //
@@ -25,7 +26,7 @@ export const auth = betterAuth({
   secret: cfg.secret,
   // 미지정 시 better-auth 가 요청 오리진으로 추론. 프로덕션은 https://myquizdeck.com.
   baseURL: cfg.baseURL,
-  // 이메일+비밀번호. SMTP 미구성 → 이메일 검증 OFF(가입 즉시 로그인). (이슈 #6 열린질문 확정)
+  // 이메일+비밀번호. 이메일 인증 필수 + Resend 발송. (ADR-0004 — 이슈 #6의 "검증 OFF"를 뒤집음)
   //
   // better-auth 표준 보호 (이슈 #6 AC: 활성/확인):
   //  - 비밀번호 해시: 기본 scrypt — 통합 테스트로 평문 비저장 확인.
@@ -39,7 +40,21 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
+    // 검증 전엔 sign-in 차단 → Learner = 이메일 검증된 신원. (ADR-0004)
+    requireEmailVerification: true,
+    // 비밀번호 재설정 — better-auth 가 만든 url(서버 콜백 → /reset-password?token=)을 메일로.
+    sendResetPassword: async ({ user, url }) => {
+      await sendEmail({ to: user.email, ...resetPasswordEmail(url) });
+    },
+  },
+  // 이메일 검증 — 가입 즉시 검증 메일 발송, 링크 클릭(verify-email 엔드포인트)으로 검증 +
+  // 자동 로그인. SMTP 미구성(로컬/테스트)에선 email.ts 가 콘솔로 링크를 노출(발송 건너뜀).
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendEmail({ to: user.email, ...verificationEmail(url) });
+    },
   },
   // JWT/JWKS 플러그인 — 미래 NestJS pod 가 better-auth 를 IdP-lite 로 검증할
   // JWKS 를 노출한다(GET /api/auth/jwks). 지금 소비자는 없다 — 노출까지만. (ADR-0003)
