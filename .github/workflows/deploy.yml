@@ -24,6 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 태그 bump 단계의 rebase/merge-base 에 전체 이력 필요
 
       - uses: pnpm/action-setup@v4 # 버전은 package.json 의 packageManager 에서 읽음
       - uses: actions/setup-node@v4
@@ -53,11 +55,31 @@ jobs:
           cache-to: type=gha,mode=max
 
       # GitOps: 매니페스트 이미지 태그 bump → Argo가 배포. GITHUB_TOKEN push라 재트리거 없음.
+      #
+      # 동시 머지(여러 PR 가 비슷한 시각에 main 에 올라옴) 안전성:
+      #  1) 더 새로운 커밋이 이미 main 에 있으면(=내 빌드 커밋이 origin/main 의 조상) 이 빌드는
+      #     추월된 것 → 배포 스킵. 더 최신 run 이 상위 이미지를 배포하므로 다운그레이드·중복 롤아웃 방지.
+      #  2) push 가 동시성으로 거부(non-fast-forward)되면 최신 main 에 리베이스 후 재시도.
+      #     newTag 같은 줄을 더 최신 배포가 이미 바꿔 충돌나면 = 그 배포가 우선이므로 깨끗이 스킵.
       - name: Bump image tag
         run: |
-          sed -i "s|newTag:.*|newTag: ${{ steps.meta.outputs.tag }}|" k8s/base/kustomization.yaml
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ] \
+             && git merge-base --is-ancestor HEAD origin/main; then
+            echo "더 새로운 커밋이 main 에 반영됨 — 이 빌드는 추월되어 배포를 스킵한다."
+            exit 0
+          fi
+          sed -i "s|newTag:.*|newTag: ${{ steps.meta.outputs.tag }}|" k8s/base/kustomization.yaml
           git add k8s/base/kustomization.yaml
-          git commit -m "ci: deploy ${{ steps.meta.outputs.tag }} [skip ci]" || { echo "no change"; exit 0; }
-          git push
+          git diff --cached --quiet && { echo "변경 없음 — 스킵"; exit 0; }
+          git commit -m "ci: deploy ${{ steps.meta.outputs.tag }} [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then echo "푸시 완료"; exit 0; fi
+            echo "push 거부(시도 $attempt) — 최신 main 에 리베이스 후 재시도"
+            git fetch origin main
+            git rebase origin/main || { echo "리베이스 충돌 — 더 최신 배포가 우선, 스킵"; git rebase --abort; exit 0; }
+          done
+          echo "재시도 후에도 push 실패" >&2
+          exit 1
