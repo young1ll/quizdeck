@@ -13,6 +13,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@better-auth/infra": "^0.3.2",
     "better-auth": "^1.6.20",
     "next": "^15.1.6",
     "pg": "^8.22.0",
