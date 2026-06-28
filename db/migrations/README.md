@@ -54,11 +54,18 @@ psql "$DATABASE_URL" -f db/migrations/0003_content.sql
 
 ### 콘텐츠 seed (0003 적용 후, 배포 전)
 
-`0003` 적용 후 `content/` JSON 을 DB 로 적재한다(idempotent — 재실행 안전):
+`0003` 적용 후 `content/` JSON 을 DB 로 적재한다(idempotent — 재실행 안전). 두 방법:
 
 ```sh
+# (a) node 가 있는 호스트(repo 체크아웃 필요)
 DATABASE_URL="$DATABASE_URL" node db/seed-content.mjs
+
+# (b) node 없이 — 생성된 seed SQL 을 psql 로(k3s-home 등, 마이그레이션과 같은 워크플로)
+psql "$DATABASE_URL" -f db/seed-content.sql
 ```
+
+`db/seed-content.sql` 은 `seed-content.mjs` 의 pg_dump 산출(선두 `truncate` 로 재적용 안전).
+콘텐츠가 바뀌면 재생성한다(`#27` 어드민 편집 후엔 DB 가 소스 — 이 파일은 초기 시드용).
 
 Exam 페이지가 런타임에 DB 에서 Question·Concept 을 읽으므로(ISR), **마이그레이션+seed 를
 새 앱 배포보다 먼저** 하는 게 안전하다(seed 전엔 문항이 0 으로 보임). diagrams·q2svc·icons·
