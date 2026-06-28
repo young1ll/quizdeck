@@ -24,10 +24,12 @@ const MODE_ICON: Record<Mode, string> = {
 };
 
 export default function Home({
+  isLearner,
   onStartMode,
   onResume,
   onDiscard,
 }: {
+  isLearner: boolean;
   onStartMode: (mode: Mode) => void;
   onResume: () => void;
   onDiscard: () => void;
@@ -63,6 +65,9 @@ export default function Home({
       }),
     [ts],
   );
+
+  // 익명 방문자 — Progress 의존 대시보드 대신 축약 + 로그인 CTA. 열람 nav 유지(히스토리 제외). (ADR-0004)
+  if (!isLearner) return <AnonymousHome onStartMode={onStartMode} />;
   const weak = sortedTopics
     .filter(([, m]) => m.seen >= 3 && m.ok / m.seen < 0.7)
     .map(([t]) => t.replace(/^\S+\s/, ""))
@@ -182,18 +187,7 @@ export default function Home({
       </div>
 
       {/* 모드 */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {MODES.map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => onStartMode(m)}
-            className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 text-sm font-medium hover:border-[var(--accent)]"
-          >
-            {MODE_ICON[m]} {MODE_LABEL[m]}
-          </button>
-        ))}
-      </div>
+      <ModeGrid onStartMode={onStartMode} />
 
       {/* 참고 뷰 네비 */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -273,6 +267,58 @@ export default function Home({
           className="hidden"
         />
       </div>
+    </div>
+  );
+}
+
+// 익명 방문자용 축약 홈 (이슈 #22 / ADR-0004): 모드 버튼(누르면 로그인 게이트) + 열람 nav +
+// 로그인 CTA. Progress 의존 블록(숙련도·통계·도구·히스토리)은 익명에 의미 없어 숨긴다.
+function AnonymousHome({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
+  const { meta, questions } = useExam();
+  const { go } = useNav();
+  return (
+    <div className="space-y-6">
+      <header>
+        <div className="font-mono text-xs text-[var(--accent)]">{meta.code}</div>
+        <h1 className="mt-1 text-2xl font-bold leading-snug">{meta.name}</h1>
+        <p className="mt-1 text-sm text-[var(--muted)]">문항 {questions.length}개</p>
+      </header>
+
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5">
+        <p className="text-sm font-medium">로그인하고 학습을 시작하세요</p>
+        <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
+          진도·오답노트·즐겨찾기·메모가 기기 간 자동 동기화됩니다. 아래 학습 모드를 누르면 로그인 창이 열립니다.
+        </p>
+      </div>
+
+      {/* 학습 모드 — 누르면 로그인 게이트 */}
+      <ModeGrid onStartMode={onStartMode} />
+
+      {/* 열람(익명 허용) — 히스토리는 Progress 의존이라 제외 */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <NavBtn label="📖 개념" onClick={() => go("concept")} />
+        <NavBtn label="🗺️ 서비스맵" onClick={() => go("map")} />
+        <NavBtn label="📐 다이어그램" onClick={() => go("diagram")} />
+        <NavBtn label="🔎 검색" onClick={() => go("search")} />
+      </div>
+    </div>
+  );
+}
+
+// 학습 모드 버튼 그리드 — Learner 홈과 익명 홈이 공유. 누르면 onStartMode(게이트 경유).
+function ModeGrid({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      {MODES.map((m) => (
+        <button
+          key={m}
+          type="button"
+          onClick={() => onStartMode(m)}
+          className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 text-sm font-medium hover:border-[var(--accent)]"
+        >
+          {MODE_ICON[m]} {MODE_LABEL[m]}
+        </button>
+      ))}
     </div>
   );
 }
