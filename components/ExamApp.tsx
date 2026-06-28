@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ExamData } from "@/lib/types";
 import { ExamContext, useExam } from "@/lib/exam-context";
 import { StoreContext, useStore, useStoreState, type Mode } from "@/lib/store";
@@ -12,6 +12,7 @@ import { localStorageProgressStore } from "@/lib/progress-store";
 import { compositeProgressStore } from "@/lib/progress-store-composite";
 import { remoteApiProgressStore } from "@/lib/progress-store-remote";
 import SyncIndicator from "./SyncIndicator";
+import LoginModal from "./LoginModal";
 import Home from "./views/Home";
 import Setup from "./views/Setup";
 import Quiz from "./views/Quiz";
@@ -75,9 +76,14 @@ const VIEW_TITLE: Partial<Record<View, string>> = {
 function ExamInner() {
   const { byQn, questions } = useExam();
   const { loaded } = useStore();
+  const { data: session } = useSession();
+  // Learner = 이메일 검증된 신원(미인증은 세션이 없음). 연습은 Learner 전용. (ADR-0004)
+  const isLearner = !!session?.user?.emailVerified;
   const [view, setView] = useState<View>("home");
   const [setupMode, setSetupMode] = useState<Mode>("study");
   const [conceptSeed, setConceptSeed] = useState("");
+  const [gateOpen, setGateOpen] = useState(false);
+  const pendingPractice = useRef<(() => void) | null>(null);
 
   const go = useCallback((v: View) => setView(v), []);
 
@@ -89,11 +95,41 @@ function ExamInner() {
     useCallback(() => setView("quiz"), []),
   );
 
+  // 연습 게이트 — verified Learner 면 즉시 실행, 익명이면 로그인 모달을 띄우고 보류한다.
+  // 콘텐츠는 공개라 이 게이트는 클라이언트 UX(전환 유도)다. (ADR-0004 결정 1·2)
+  const requireLearner = useCallback(
+    (action: () => void) => {
+      if (isLearner) {
+        action();
+        return;
+      }
+      pendingPractice.current = action;
+      setGateOpen(true);
+    },
+    [isLearner],
+  );
+
+  // 모달에서 (기존) verified 로그인 성공 → 막혔던 연습을 이어 진입하고 모달을 닫는다.
+  // 신규 가입은 세션이 안 생기므로(메일 인증 대기) 보류분이 그대로 남고 사용자가 모달을 닫는다.
+  useEffect(() => {
+    if (isLearner && gateOpen) {
+      const action = pendingPractice.current;
+      pendingPractice.current = null;
+      setGateOpen(false);
+      action?.();
+    }
+  }, [isLearner, gateOpen]);
+
+  const closeGate = useCallback(() => {
+    pendingPractice.current = null;
+    setGateOpen(false);
+  }, []);
+
   const nav = useMemo(
     () => ({
       view,
       go,
-      studyOne: (qn: number) => quiz.studyOne(qn),
+      studyOne: (qn: number) => requireLearner(() => quiz.studyOne(qn)),
       openConceptFor: (svc: string) => {
         setConceptSeed(svc);
         setView("concept");
@@ -101,7 +137,7 @@ function ExamInner() {
       conceptSeed,
       clearConceptSeed: () => setConceptSeed(""),
     }),
-    [view, go, quiz, conceptSeed],
+    [view, go, quiz, conceptSeed, requireLearner],
   );
 
   if (!loaded) {
@@ -128,10 +164,13 @@ function ExamInner() {
 
       {view === "home" && (
         <Home
-          onStartMode={(m) => {
-            setSetupMode(m);
-            setView("setup");
-          }}
+          isLearner={isLearner}
+          onStartMode={(m) =>
+            requireLearner(() => {
+              setSetupMode(m);
+              setView("setup");
+            })
+          }
           onResume={quiz.resume}
           onDiscard={quiz.discard}
         />
@@ -153,6 +192,8 @@ function ExamInner() {
       {view === "map" && <ServiceMap />}
       {view === "search" && <Search />}
       {view === "history" && <History />}
+
+      {gateOpen && <LoginModal onClose={closeGate} />}
     </NavContext.Provider>
   );
 }
