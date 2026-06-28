@@ -14,7 +14,7 @@ Status: accepted
 4. **편집 = 웹 어드민 UI 런타임 편집.**
 5. **렌더링 = ISR + 어드민 편집 시 온디맨드 재검증**(`revalidatePath`). 콘텐츠가 공개라 캐시가 이상적 — SSG급 성능 + 편집 즉시반영.
 6. **어드민 인가 = better-auth admin 플러그인(role).** `admin` role 이 `/admin`·콘텐츠 변경 API 를 게이트한다(미인증/비admin 거절).
-7. **Question 스키마 = 문항당 1행.** 언어무관 컬럼(`exam_key`, `qn`, `topic`, `answer text[]`, `page`, `deeplink`) + `content jsonb {en:{q,options,explanation,tip}, ko:{…}}`. qn 이 정체성(Progress 조인 키 보존). Concept 도 같은 모양(언어무관 키 + content jsonb).
+7. **Question 스키마 = 문항당 1행.** `(exam_key, qn)` PK + `answer text[]` 컬럼 + `content jsonb {en:{…}, ko:{…}}`. qn 이 정체성(Progress 조인 키 보존). `answer`(정답 글자)는 언어 무관이고 어드민 검증(정답 ⊂ options, #27)에 쓰여 컬럼으로 둔다. **나머지(q·options·explanation·tip·topic·page·deeplink)는 content jsonb 의 언어 슬롯에** 둔다 — 구현(#26)에서 정밀화: `topic` 은 사실 언어 의존 텍스트("📦 스토리지")라 슬롯에, `page`(number|string)는 JSON 타입 정확 보존을 위해 슬롯에 둔다(컬럼화하면 number→text 손실). Concept 은 자연키 `svc`(서비스명; `key` 는 언어 의존 본문이라 PK 부적합) + 저자순서 보존용 `ord` 컬럼 + content jsonb.
 8. **주석 앵커 = 인용+문맥**(quote + prefix/suffix, W3C TextQuoteSelector 류). 렌더된 텍스트에서 인용을 매칭해 위치를 복원하고, 어드민이 그 부분을 바꿔 못 찾으면 **graceful orphan**(메모는 보존·위치만 떼어냄). 텍스트가 언어마다 달라 **언어별**.
 9. **범위 = Question + Concept 을 DB 로.** Diagram(SVG)·q2svc·icons 는 파일·SSG 잔존(content 로더가 DB+파일 **하이브리드**). 주석은 우선 Question(문제·해설·선택지) 대상.
 
