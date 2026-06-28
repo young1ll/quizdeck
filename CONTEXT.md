@@ -31,3 +31,7 @@ _Avoid_: score(점수는 한 Session의 결과), accuracy
 **Wrong-list (오답노트)**:
 현재 오답으로 추적되는 문항 집합. 틀리면 자동 편입되고, 이후 맞히면 빠진다. Progress의 일부이자 하나의 학습 모드.
 _Avoid_: mistakes, failures
+
+**Annotation (주석)**:
+한 [[#Learner|Learner]]가 콘텐츠(문제·해설·선택지) 텍스트의 한 **구간**에 다는 개인 표시 — 밑줄·형광펜·인라인 메모. [[#Progress|Progress]]처럼 Learner 소유이고 기기 간 동기화되며, 콘텐츠를 복제하지 않고 **참조(anchor)**로 가리킨다. 텍스트가 언어마다 다르므로 **언어별로 따로** 달린다(EN 형광펜은 KO 화면에 안 보임). Progress의 per-question 메모보다 세밀하다(문항 단위가 아니라 텍스트 구간 단위).
+_Avoid_: highlight(형광펜은 Annotation의 한 종류일 뿐), note, 메모(인라인 메모도 Annotation의 한 종류)
