@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { loadExam } from "@/lib/content";
+import { loadExamLocalized } from "@/lib/content";
 import ExamApp from "@/components/ExamApp";
 
 // 콘텐츠(Question·Concept)가 DB 라(ADR-0005 A) 빌드타임 SSG 폐기 → ISR.
@@ -22,7 +22,7 @@ export default async function ExamPage({
   params: Promise<{ provider: string; exam: string }>;
 }) {
   const { provider, exam } = await params;
-  const data = await loadExam(provider, exam);
+  const data = await loadExamLocalized(provider, exam);
   if (!data) notFound();
 
   return (

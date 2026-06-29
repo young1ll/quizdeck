@@ -1,39 +1,46 @@
 import type { Pool } from "pg";
 import type { Concept, Question } from "./types";
+import {
+  projectConcept,
+  projectQuestion,
+  type LocalizedConcept,
+  type LocalizedQuestion,
+} from "./content-localize";
 
-// Question·Concept 의 DB 적재/조회 (이슈 #26 / ADR-0005 A). 서버 전용(pg).
+// Question·Concept 의 DB 적재/조회 (이슈 #26 / ADR-0005 A·C). 서버 전용(pg).
 // 언어 무관 식별/필드는 컬럼, 언어 의존 텍스트는 content jsonb 의 언어 슬롯. seed(db/seed-content.mjs)·
 // 하이브리드 로더(lib/content.ts)·어드민(#27)이 이 함수들을 공유한다.
 
-// 언어 슬롯 선택 — 요청 언어가 없으면 가용한 첫 언어로 폴백한다(변형 없음 → 빈 화면 방지, ADR-0005).
-function pickLang<T>(content: Record<string, T>, lang: string): T | undefined {
-  return content[lang] ?? Object.values(content)[0];
+// localized: 양 언어 슬롯을 그대로 — 클라이언트 토글(#28)이 투영한다.
+export async function loadQuestionsLocalized(
+  pool: Pool,
+  examKey: string,
+): Promise<LocalizedQuestion[]> {
+  const r = await pool.query<LocalizedQuestion>(
+    `select "qn", "answer", "content" from "question" where "exam_key" = $1 order by "qn"`,
+    [examKey],
+  );
+  return r.rows;
 }
 
-interface QuestionRow {
-  qn: number;
-  answer: string[];
-  content: Record<string, Omit<Question, "qn" | "answer">>;
+export async function loadConceptsLocalized(
+  pool: Pool,
+  examKey: string,
+): Promise<LocalizedConcept[]> {
+  const r = await pool.query<LocalizedConcept>(
+    `select "svc", "content" from "concept" where "exam_key" = $1 order by "ord"`,
+    [examKey],
+  );
+  return r.rows;
 }
 
+// 단일 언어 투영 — 서버에서 한 언어만 필요할 때(테스트 등). 토글은 localized 를 클라이언트가 투영.
 export async function loadQuestionsFromDb(
   pool: Pool,
   examKey: string,
   lang: string,
 ): Promise<Question[]> {
-  const r = await pool.query<QuestionRow>(
-    `select "qn", "answer", "content" from "question" where "exam_key" = $1 order by "qn"`,
-    [examKey],
-  );
-  return r.rows.map((row) => {
-    const slot = pickLang(row.content, lang) ?? ({} as Omit<Question, "qn" | "answer">);
-    return { qn: row.qn, answer: row.answer, ...slot };
-  });
-}
-
-interface ConceptRow {
-  svc: string;
-  content: Record<string, Omit<Concept, "svc">>;
+  return (await loadQuestionsLocalized(pool, examKey)).map((lq) => projectQuestion(lq, lang));
 }
 
 export async function loadConceptsFromDb(
@@ -41,14 +48,7 @@ export async function loadConceptsFromDb(
   examKey: string,
   lang: string,
 ): Promise<Concept[]> {
-  const r = await pool.query<ConceptRow>(
-    `select "svc", "content" from "concept" where "exam_key" = $1 order by "ord"`,
-    [examKey],
-  );
-  return r.rows.map((row) => {
-    const slot = pickLang(row.content, lang) ?? ({} as Omit<Concept, "svc">);
-    return { svc: row.svc, ...slot };
-  });
+  return (await loadConceptsLocalized(pool, examKey)).map((lc) => projectConcept(lc, lang));
 }
 
 // 한 항목당 한 행 upsert. 같은 행의 다른 언어 슬롯은 보존한다(`content || excluded.content` —

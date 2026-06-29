@@ -49,16 +49,7 @@ export interface ExamMeta {
   counts: { questions: number; concepts: number; diagrams: number };
 }
 
-export interface ExamData {
-  meta: ExamMeta;
-  questions: Question[];
-  concepts: Concept[];
-  diagrams: Diagram[];
-  /** 문항 번호 → 관련 서비스명 배열 */
-  q2svc: Record<string, string[]>;
-  /** 서비스명 → 아이콘(base64 SVG data URI) */
-  icons: Record<string, string>;
-}
+// (콘텐츠 i18n 후 ExamData 는 LocalizedExamData(lib/content-localize.ts) 로 대체됨 — #28)
 
 /** 카탈로그(홈) 표시에 필요한 최소 정보 */
 export interface ExamSummary {

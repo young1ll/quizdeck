@@ -2,7 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getAdminSession } from "@/lib/admin";
-import { loadExam } from "@/lib/content";
+import { loadExamLocalized } from "@/lib/content";
 import ContentEditor from "@/components/admin/ContentEditor";
 
 // 한 시험의 Question·Concept 편집기 (이슈 #27 / ADR-0005 B). admin 게이트 + DB 콘텐츠 로드 →
@@ -17,7 +17,7 @@ export default async function AdminExamPage({
 }) {
   if (!(await getAdminSession(await headers()))) notFound();
   const { provider, exam } = await params;
-  const data = await loadExam(provider, exam);
+  const data = await loadExamLocalized(provider, exam);
   if (!data) notFound();
 
   return (
@@ -29,7 +29,7 @@ export default async function AdminExamPage({
       </nav>
       <ContentEditor
         examKey={`${provider}/${exam}`}
-        lang={data.meta.language}
+        defaultLang={data.meta.language}
         questions={data.questions}
         concepts={data.concepts}
       />
