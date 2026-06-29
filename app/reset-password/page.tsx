@@ -75,8 +75,8 @@ export default function ResetPasswordPage() {
 
             {error && <Msg kind="bad">{error}</Msg>}
 
-            <Button type="submit" variant="primary" fullWidth disabled={busy || !token}>
-              {busy ? "처리 중…" : token ? "비밀번호 변경" : "링크 확인 중…"}
+            <Button type="submit" variant="primary" fullWidth loading={busy} disabled={!token}>
+              {token ? "비밀번호 변경" : "링크 확인 중…"}
             </Button>
           </form>
         )}

@@ -85,8 +85,8 @@ function ProfileSection({ initialName, email }: { initialName: string; email: st
         />
         {error && <Msg kind="bad">{error}</Msg>}
         {done && <Msg kind="good">저장되었습니다.</Msg>}
-        <Button type="submit" variant="primary" fullWidth disabled={busy || name.trim() === initialName}>
-          {busy ? "저장 중…" : "저장"}
+        <Button type="submit" variant="primary" fullWidth loading={busy} disabled={name.trim() === initialName}>
+          저장
         </Button>
       </form>
     </Section>
@@ -144,8 +144,8 @@ function EmailSection() {
             placeholder="new@example.com"
           />
           {error && <Msg kind="bad">{error}</Msg>}
-          <Button type="submit" variant="primary" fullWidth disabled={busy || !newEmail.trim()}>
-            {busy ? "보내는 중…" : "인증 메일 보내기"}
+          <Button type="submit" variant="primary" fullWidth loading={busy} disabled={!newEmail.trim()}>
+            인증 메일 보내기
           </Button>
         </form>
       )}
@@ -204,8 +204,8 @@ function PasswordSection() {
         />
         {error && <Msg kind="bad">{error}</Msg>}
         {done && <Msg kind="good">비밀번호를 변경했습니다. 다른 기기는 로그아웃됩니다.</Msg>}
-        <Button type="submit" variant="primary" fullWidth disabled={busy || !current || next.length < 8}>
-          {busy ? "변경 중…" : "비밀번호 변경"}
+        <Button type="submit" variant="primary" fullWidth loading={busy} disabled={!current || next.length < 8}>
+          비밀번호 변경
         </Button>
       </form>
     </Section>
@@ -282,8 +282,8 @@ function DangerSection({ email }: { email: string }) {
             >
               취소
             </Button>
-            <Button type="submit" variant="danger" className="flex-1" disabled={!canDelete}>
-              {busy ? "탈퇴 중…" : "영구 탈퇴"}
+            <Button type="submit" variant="danger" className="flex-1" loading={busy} disabled={!canDelete}>
+              영구 탈퇴
             </Button>
           </div>
           <p className="text-xs text-[var(--muted)]">{email} 계정이 삭제됩니다.</p>
