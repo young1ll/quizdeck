@@ -33,5 +33,5 @@ Status: accepted
 - **배포 변경**: Dockerfile이 `nginx 정적` → `node standalone 서버`(포트 3000, readiness 변경). k8s Deployment/Service/Ingress 갱신. 기존 GitOps(Actions→ghcr→Argo)는 유지되나 이미지가 바뀐다.
 - **시크릿**: `BETTER_AUTH_SECRET`, OAuth(GitHub/Google/Naver) client id·secret, DB 접속정보 → **k8s Secret(git 밖)**. OAuth 콜백 URL = `https://myquizdeck.com/api/auth/callback/*`.
 - **DB VM 신규 프로비저닝**(autoinstall seed 재사용), postgres + 앱 role, pg_hba/방화벽으로 k3s VM에서만 접근.
-- **anonymous → login 병합**: 첫 로그인 시 localStorage Progress를 서버로 병합(서버 비었으면 push, 아니면 LWW).
+- **anonymous → login 병합**: 첫 로그인 시 localStorage Progress를 서버로 병합(서버 비었으면 push, 아니면 LWW). 전용 병합 슬라이스(V3 / #8)는 [[0004-login-gating-and-email-verification.md|ADR-0004]] 결정 6이 이 naive 무프롬프트 LWW를 의식적으로 채택하고, 소프트 게이트(연습=Learner 전용)로 신규 익명 Progress 자체를 없애 **superseded** — #8 종료(2026-06-29).
 - snapshot LWW의 per-field merge 불가 한계는 [[0001-progressstore-seam.md|ADR-0001]] 그대로 승계(의식적 수용).
