@@ -2,9 +2,15 @@
 
 import { useState, type SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
-import { changePassword, deleteUser, signOut, updateUser } from "@/lib/auth-client";
+import {
+  changeEmail,
+  changePassword,
+  deleteUser,
+  signOut,
+  updateUser,
+} from "@/lib/auth-client";
 
-// 마이페이지 계정 관리 (이슈 #36 / ADR-0006). 프로필(이름)·보안(비번 변경)·위험 구역(탈퇴).
+// 마이페이지 계정 관리 (이슈 #36/#38 / ADR-0006). 프로필(이름)·이메일 변경·보안(비번)·위험 구역(탈퇴).
 // AuthForms 와 같은 폼 규약(Field·accent 버튼·--bad/--good·better-auth res.error)을 따른다.
 // 레이아웃(main·헤더)과 활동 섹션(Dashboard, #37)은 app/me/page.tsx 가 소유 — 여기선 계정 섹션만.
 
@@ -14,6 +20,7 @@ export default function MyPage({ name, email }: { name: string; email: string })
   return (
     <>
       <ProfileSection initialName={name} email={email} />
+      <EmailSection />
       <PasswordSection />
       <DangerSection email={email} />
     </>
@@ -117,6 +124,66 @@ function ProfileSection({ initialName, email }: { initialName: string; email: st
           {busy ? "저장 중…" : "저장"}
         </button>
       </form>
+    </Section>
+  );
+}
+
+// ── 이메일 변경 ───────────────────────────────────────────────
+function EmailSection() {
+  const [newEmail, setNewEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState<string | null>(null); // pending — 인증 메일 보낸 새 주소
+
+  const submit = async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    // 이메일 정규화 — 모바일 자동완성 앞뒤 공백/대문자 차단(AuthForms 와 같은 이유).
+    const addr = newEmail.trim().toLowerCase();
+    setBusy(true);
+    const res = await changeEmail({ newEmail: addr, callbackURL: "/" });
+    setBusy(false);
+    if (res.error) {
+      setError(res.error.message ?? "요청을 처리하지 못했습니다.");
+      return;
+    }
+    setSent(addr);
+    setNewEmail("");
+  };
+
+  return (
+    <Section title="이메일 변경">
+      {sent ? (
+        <div className="space-y-2">
+          <p className="text-sm text-[var(--muted)]" role="status">
+            ✉️ <b className="text-[var(--fg)]">{sent}</b> 로 인증 메일을 보냈습니다. 메일의 링크를
+            눌러 변경을 완료하세요. <b className="text-[var(--fg)]">완료 전까지 기존 이메일이 유지</b>
+            됩니다.
+          </p>
+          <button
+            type="button"
+            onClick={() => setSent(null)}
+            className="text-xs text-[var(--muted)] hover:text-[var(--fg)]"
+          >
+            ← 다른 주소로 다시
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="space-y-3">
+          <Field
+            label="새 이메일"
+            type="email"
+            autoComplete="email"
+            value={newEmail}
+            onChange={setNewEmail}
+            placeholder="new@example.com"
+          />
+          {error && <Msg kind="bad">{error}</Msg>}
+          <button type="submit" disabled={busy || !newEmail.trim()} className={primaryBtn}>
+            {busy ? "보내는 중…" : "인증 메일 보내기"}
+          </button>
+        </form>
+      )}
     </Section>
   );
 }
