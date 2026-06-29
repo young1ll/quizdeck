@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { signOut, useSession } from "@/lib/auth-client";
 import AuthForms from "./AuthForms";
 
@@ -29,9 +30,12 @@ function Profile({ name, email }: { name?: string | null; email: string }) {
   const [busy, setBusy] = useState(false);
   return (
     <div className="flex items-center gap-3 text-sm">
-      <span className="text-[var(--muted)]">
-        <span className="font-medium text-[var(--fg)]">{name?.trim() || email}</span> 님
-      </span>
+      <Link href="/me" className="text-[var(--muted)] hover:text-[var(--fg)]" title="마이페이지">
+        <span className="font-medium text-[var(--fg)] hover:text-[var(--accent)]">
+          {name?.trim() || email}
+        </span>{" "}
+        님
+      </Link>
       <button
         type="button"
         disabled={busy}

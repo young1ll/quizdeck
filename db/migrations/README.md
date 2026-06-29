@@ -39,6 +39,14 @@ better-auth 스키마(`0001`)와 앱 도메인 스키마(`0002~`)를 담는다. 
   `/api/annotations` 가 모든 read/write 를 세션 learner_id 로 스코프한다.
   > ⚠️ **`/api/annotations` 가 `annotation` 테이블을 읽으므로 0005 를 앱 배포보다 먼저 적용**한다.
 
+`0006_account_fk.sql` — 회원 탈퇴 cascade 보강(이슈 #36 / ADR-0006):
+
+- `annotation.learner_id` 에 `user(id) on delete cascade` FK 추가(0005 엔 FK 없었음). 탈퇴
+  (`deleteUser`) 시 Progress(0002, 이미 cascade)·session·account 와 함께 주석도 선언적으로 정리.
+  > ⚠️ **`deleteUser` 플로우가 이 cascade 에 의존하므로 0006 을 앱 배포보다 먼저 적용**한다.
+  > 기존 `annotation` 행의 learner_id 가 모두 유효해야 FK 추가가 성공한다(세션 learner_id 로만
+  > 생성되어 충족 — 아직 탈퇴 기능이 없어 고아 행이 없다).
+
 ## 어떻게 생성했나
 
 `lib/auth.ts` 설정을 introspect 해 better-auth CLI 가 SQL 을 뽑는다. 빈(또는 기존) DB 에
@@ -62,6 +70,7 @@ psql "$DATABASE_URL" -f db/migrations/0002_progress.sql
 psql "$DATABASE_URL" -f db/migrations/0003_content.sql
 psql "$DATABASE_URL" -f db/migrations/0004_admin.sql   # 앱(admin 플러그인) 배포보다 먼저!
 psql "$DATABASE_URL" -f db/migrations/0005_annotation.sql  # 앱(주석 API) 배포보다 먼저!
+psql "$DATABASE_URL" -f db/migrations/0006_account_fk.sql  # 앱(탈퇴 플로우) 배포보다 먼저!
 ```
 
 `0002` 의 `progress.learner_id` 가 `user(id)` 를 참조하므로 `0001` 다음에 적용한다.

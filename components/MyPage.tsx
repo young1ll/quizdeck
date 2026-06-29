@@ -1,0 +1,289 @@
+"use client";
+
+import { useState, type SubmitEvent } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { changePassword, deleteUser, signOut, updateUser } from "@/lib/auth-client";
+
+// 마이페이지 계정 관리 (이슈 #36 / ADR-0006). 프로필(이름)·보안(비번 변경)·위험 구역(탈퇴).
+// AuthForms 와 같은 폼 규약(Field·accent 버튼·--bad/--good·better-auth res.error)을 따른다.
+// 허브의 '활동' 섹션(학습 대시보드)은 후속 슬라이스(#37).
+
+const DELETE_PHRASE = "삭제합니다";
+
+export default function MyPage({ name, email }: { name: string; email: string }) {
+  return (
+    <main className="mx-auto max-w-lg px-5 py-10">
+      <div className="mb-6 flex items-center gap-3">
+        <Link href="/" className="text-sm text-[var(--muted)] hover:text-[var(--fg)]">
+          ← 홈
+        </Link>
+        <h1 className="text-2xl font-bold">마이페이지</h1>
+      </div>
+      <div className="space-y-5">
+        <ProfileSection initialName={name} email={email} />
+        <PasswordSection />
+        <DangerSection email={email} />
+      </div>
+    </main>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5">
+      <h2 className="mb-3 text-sm font-semibold">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function Field({
+  label,
+  type = "text",
+  value,
+  onChange,
+  autoComplete,
+  placeholder,
+  minLength,
+  required = true,
+}: {
+  label: string;
+  type?: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete?: string;
+  placeholder?: string;
+  minLength?: number;
+  required?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs text-[var(--muted)]">{label}</span>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        minLength={minLength}
+        required={required}
+        className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--fg)] outline-none focus:border-[var(--accent)]"
+      />
+    </label>
+  );
+}
+
+const primaryBtn =
+  "w-full rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-[var(--accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-50";
+
+// ── 프로필 — 이름 수정 ────────────────────────────────────────
+function ProfileSection({ initialName, email }: { initialName: string; email: string }) {
+  const [name, setName] = useState(initialName);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const save = async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setDone(false);
+    setBusy(true);
+    const res = await updateUser({ name: name.trim() });
+    setBusy(false);
+    if (res.error) {
+      setError(res.error.message ?? "저장하지 못했습니다.");
+      return;
+    }
+    setDone(true);
+    // updateUser 후 better-auth 클라가 세션 스토어를 갱신한다(가입/로그인이 useSession 을
+    // 갱신하는 것과 같은 경로) → 홈의 AccountMenu(useSession)가 다음 마운트에 새 이름을 반영.
+  };
+
+  return (
+    <Section title="프로필">
+      <form onSubmit={save} className="space-y-3">
+        <label className="block">
+          <span className="mb-1 block text-xs text-[var(--muted)]">이메일</span>
+          <div className="rounded-lg border border-[var(--border)] bg-[var(--panel-2)] px-3 py-2 text-sm text-[var(--muted)]">
+            {email}
+          </div>
+        </label>
+        <Field
+          label="이름"
+          autoComplete="name"
+          value={name}
+          onChange={(v) => {
+            setName(v);
+            setDone(false);
+          }}
+          placeholder="표시 이름"
+          required={false}
+        />
+        {error && <Msg kind="bad">{error}</Msg>}
+        {done && <Msg kind="good">저장되었습니다.</Msg>}
+        <button type="submit" disabled={busy || name.trim() === initialName} className={primaryBtn}>
+          {busy ? "저장 중…" : "저장"}
+        </button>
+      </form>
+    </Section>
+  );
+}
+
+// ── 보안 — 비밀번호 변경 ──────────────────────────────────────
+function PasswordSection() {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const submit = async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setDone(false);
+    setBusy(true);
+    // 다른 기기 세션 폐기 — 비번 변경의 보안 의의(ADR-0006 결정 4).
+    const res = await changePassword({
+      currentPassword: current,
+      newPassword: next,
+      revokeOtherSessions: true,
+    });
+    setBusy(false);
+    if (res.error) {
+      setError(res.error.message ?? "변경하지 못했습니다.");
+      return;
+    }
+    setDone(true);
+    setCurrent("");
+    setNext("");
+  };
+
+  return (
+    <Section title="보안 — 비밀번호 변경">
+      <form onSubmit={submit} className="space-y-3">
+        <Field
+          label="현재 비밀번호"
+          type="password"
+          autoComplete="current-password"
+          value={current}
+          onChange={setCurrent}
+          placeholder="••••••••"
+        />
+        <Field
+          label="새 비밀번호"
+          type="password"
+          autoComplete="new-password"
+          value={next}
+          onChange={setNext}
+          placeholder="••••••••"
+          minLength={8}
+        />
+        {error && <Msg kind="bad">{error}</Msg>}
+        {done && <Msg kind="good">비밀번호를 변경했습니다. 다른 기기는 로그아웃됩니다.</Msg>}
+        <button type="submit" disabled={busy || !current || next.length < 8} className={primaryBtn}>
+          {busy ? "변경 중…" : "비밀번호 변경"}
+        </button>
+      </form>
+    </Section>
+  );
+}
+
+// ── 위험 구역 — 회원 탈퇴 ─────────────────────────────────────
+function DangerSection({ email }: { email: string }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canDelete = !!password && confirm.trim() === DELETE_PHRASE && !busy;
+
+  const remove = async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!canDelete) return;
+    setError(null);
+    setBusy(true);
+    const res = await deleteUser({ password });
+    if (res.error) {
+      setBusy(false);
+      setError(res.error.message ?? "탈퇴하지 못했습니다.");
+      return;
+    }
+    // user 행 삭제 → DB FK cascade 로 Progress·Annotation 정리됨. 세션은 이미 무효라 signOut 이
+    // 실패해도(throw) 홈 이동은 진행한다.
+    await signOut().catch(() => {});
+    router.push("/");
+  };
+
+  return (
+    <Section title="위험 구역">
+      <p className="text-sm text-[var(--muted)]">
+        회원 탈퇴 시 계정과 함께 <b className="text-[var(--fg)]">모든 학습 기록·주석</b>이 영구
+        삭제됩니다. 되돌릴 수 없습니다.
+      </p>
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="mt-3 rounded-lg border border-[var(--bad)] px-3 py-2 text-sm font-medium text-[var(--bad)] transition-colors hover:bg-[color-mix(in_srgb,var(--bad)_12%,transparent)]"
+        >
+          회원 탈퇴
+        </button>
+      ) : (
+        <form onSubmit={remove} className="mt-3 space-y-3 border-t border-[var(--border)] pt-3">
+          <Field
+            label="비밀번호 확인"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={setPassword}
+            placeholder="••••••••"
+          />
+          <Field
+            label={`확인을 위해 "${DELETE_PHRASE}" 를 입력하세요`}
+            value={confirm}
+            onChange={setConfirm}
+            placeholder={DELETE_PHRASE}
+            required={false}
+          />
+          {error && <Msg kind="bad">{error}</Msg>}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setPassword("");
+                setConfirm("");
+                setError(null);
+              }}
+              className="flex-1 rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:text-[var(--fg)]"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              disabled={!canDelete}
+              className="flex-1 rounded-lg bg-[var(--bad)] px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            >
+              {busy ? "탈퇴 중…" : "영구 탈퇴"}
+            </button>
+          </div>
+          <p className="text-xs text-[var(--muted)]">{email} 계정이 삭제됩니다.</p>
+        </form>
+      )}
+    </Section>
+  );
+}
+
+function Msg({ kind, children }: { kind: "bad" | "good"; children: React.ReactNode }) {
+  return (
+    <p
+      className={`text-xs ${kind === "bad" ? "text-[var(--bad)]" : "text-[var(--good)]"}`}
+      role={kind === "bad" ? "alert" : "status"}
+    >
+      {children}
+    </p>
+  );
+}
