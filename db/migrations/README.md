@@ -24,6 +24,14 @@ better-auth 스키마(`0001`)와 앱 도메인 스키마(`0002~`)를 담는다. 
   언어 의존 텍스트는 `content` jsonb 의 언어 슬롯(`{ko:{…}}`)에, 언어 무관 식별/검증 필드는
   컬럼에 둔다. Exam 페이지가 ISR 로 읽고(`lib/content.ts`), 어드민(#27)이 편집한다.
 
+`0004_admin.sql` — better-auth admin 플러그인 스키마(이슈 #27 / ADR-0005 B):
+
+- `"user"` 에 `role`·`banned`·`banReason`·`banExpires`, `"session"` 에 `impersonatedBy` 추가.
+  `admin` role 만 `/admin`·콘텐츠 변경 API 를 통과한다(라이브러리 스키마, 0001 처럼).
+  첫 admin 은 수동 지정: `update "user" set "role"='admin' where email='…';`
+  > ⚠️ **`admin()` 플러그인이 `getSession` 시 `role`/`banned` 컬럼을 읽으므로, 0004 를 앱
+  > 배포보다 먼저 적용해야 한다.** 안 하면 모든 세션 조회가 "column 없음"으로 throw → 인증 전체 중단.
+
 ## 어떻게 생성했나
 
 `lib/auth.ts` 설정을 introspect 해 better-auth CLI 가 SQL 을 뽑는다. 빈(또는 기존) DB 에
@@ -45,6 +53,7 @@ DB 접속정보는 k8s Secret `db-credentials` 의 `DATABASE_URL` 이다(생성 
 psql "$DATABASE_URL" -f db/migrations/0001_better_auth.sql
 psql "$DATABASE_URL" -f db/migrations/0002_progress.sql
 psql "$DATABASE_URL" -f db/migrations/0003_content.sql
+psql "$DATABASE_URL" -f db/migrations/0004_admin.sql   # 앱(admin 플러그인) 배포보다 먼저!
 ```
 
 `0002` 의 `progress.learner_id` 가 `user(id)` 를 참조하므로 `0001` 다음에 적용한다.

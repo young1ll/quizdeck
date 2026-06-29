@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { jwt } from "better-auth/plugins";
+import { jwt, admin } from "better-auth/plugins";
 import { dash } from "@better-auth/infra";
 import { pool } from "./db";
 import { resolveAuthConfig } from "./auth-config";
@@ -64,5 +64,8 @@ export const auth = betterAuth({
   // 조회한다. apiKey 는 기본값 process.env.BETTER_AUTH_API_KEY(k8s Secret 주입)를
   // 읽는다. 키 부재(빌드 시점)엔 "" 로 폴백 — init throw 없음, 런타임 요청에서만 검증.
   // activityTracking 은 기본 OFF — 켜면 user 테이블에 lastActiveAt 스키마가 필요.
-  plugins: [jwt(), dash()],
+  // admin — 콘텐츠 편집 권한 경계(ADR-0005 B / 이슈 #27). user.role 을 더해 'admin' role 만
+  // /admin·콘텐츠 변경 API 를 통과시킨다(getSession 이 role 을 실어준다). ban/impersonate API 도
+  // 따라오나 지금 소비자는 콘텐츠 CRUD 의 role 체크뿐. 첫 admin 은 DB 에서 수동 지정(0004 참고).
+  plugins: [jwt(), dash(), admin()],
 });
