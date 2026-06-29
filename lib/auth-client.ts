@@ -21,4 +21,8 @@ export const {
   sendVerificationEmail,
   requestPasswordReset,
   resetPassword,
+  // 마이페이지 계정 관리 (ADR-0006 / 이슈 #36)
+  updateUser,
+  changePassword,
+  deleteUser,
 } = authClient;

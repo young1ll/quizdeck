@@ -38,6 +38,12 @@ export const auth = betterAuth({
   advanced: {
     disableOriginCheck: false,
   },
+  // 회원 탈퇴 활성화 (이슈 #36 / ADR-0006). client deleteUser({ password }) 가 현재 비번을
+  // 재확인하고 user 행을 지운다 → DB FK cascade(Progress 0002·Annotation 0006·session·account)로
+  // 그 Learner 데이터가 함께 정리된다. 이메일-링크 확인은 후속(비번 확인으로 충분, ADR-0006).
+  user: {
+    deleteUser: { enabled: true },
+  },
   emailAndPassword: {
     enabled: true,
     // 검증 전엔 sign-in 차단 → Learner = 이메일 검증된 신원. (ADR-0004)
