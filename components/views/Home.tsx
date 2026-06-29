@@ -5,6 +5,7 @@ import { useExam } from "@/lib/exam-context";
 import { useNav } from "@/lib/nav-context";
 import { MODE_LABEL, useStore, type Mode, type Store } from "@/lib/store";
 import { streak, today } from "@/lib/dates";
+import { StatTile } from "@/components/ui/StatTile";
 import { topicStat } from "@/lib/session";
 import { exportProgressPDF } from "@/lib/pdf";
 
@@ -155,12 +156,12 @@ export default function Home({
             </div>
           </div>
           <div className="grid flex-1 grid-cols-3 gap-3 text-center">
-            <Stat b={`${stats.seen}/${total}`} s="학습 문항" />
-            <Stat b={`${stats.acc}%`} s="정답률" />
-            <Stat b={store.wrong.length} s="오답" />
-            <Stat b={`🔥${st}`} s="연속일" />
-            <Stat b={store.stars.length} s="즐겨찾기" />
-            <Stat b={store.sessions.length} s="세션" />
+            <StatTile b={`${stats.seen}/${total}`} s="학습 문항" />
+            <StatTile b={`${stats.acc}%`} s="정답률" />
+            <StatTile b={store.wrong.length} s="오답" />
+            <StatTile b={`🔥${st}`} s="연속일" />
+            <StatTile b={store.stars.length} s="즐겨찾기" />
+            <StatTile b={store.sessions.length} s="세션" />
           </div>
         </div>
         {/* 일일 목표 */}
@@ -313,15 +314,6 @@ function ModeGrid({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
           {MODE_ICON[m]} {MODE_LABEL[m]}
         </button>
       ))}
-    </div>
-  );
-}
-
-function Stat({ b, s }: { b: string | number; s: string }) {
-  return (
-    <div className="rounded-lg bg-[var(--panel-2)] p-2">
-      <div className="text-base font-bold">{b}</div>
-      <div className="text-[10px] text-[var(--muted)]">{s}</div>
     </div>
   );
 }
