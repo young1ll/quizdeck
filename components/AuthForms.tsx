@@ -102,7 +102,7 @@ export default function AuthForms() {
     setResent(true);
   };
 
-  const shell = "w-full max-w-xs rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4";
+  const shell = "w-full max-w-xs rounded-card border border-[var(--border)] bg-[var(--panel)] p-4";
 
   // ── 안내 화면 ──────────────────────────────────────────────
   if (notice) {

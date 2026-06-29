@@ -227,7 +227,7 @@ export default function AnnotatableText({
             transform: "translateX(-50%)",
             zIndex: 50,
           }}
-          className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-1 text-xs shadow-lg"
+          className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-1 text-xs shadow-popover"
           onMouseDown={(ev) => {
             ev.preventDefault(); // 선택 유지
             ev.stopPropagation(); // 바깥-클릭 닫힘 방지
@@ -252,7 +252,7 @@ export default function AnnotatableText({
         createPortal(
         <div
           style={{ position: "fixed", left: editing.x, top: editing.y + 4, zIndex: 50 }}
-          className="w-56 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-2 shadow-lg"
+          className="w-56 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-2 shadow-popover"
           onMouseDown={(ev) => ev.stopPropagation()} // 바깥-클릭 닫힘 방지(입력 포커스는 허용)
         >
           <div className="mb-2 flex items-center gap-1 text-xs">

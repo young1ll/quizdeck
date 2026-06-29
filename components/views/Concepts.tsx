@@ -123,7 +123,7 @@ function ConceptCard({
   const showAbbr = !!c.abbr && c.abbr !== c.svc;
 
   return (
-    <article className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5">
+    <article className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
       {/* 헤더 */}
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">

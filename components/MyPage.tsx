@@ -33,7 +33,7 @@ export default function MyPage({ name, email }: { name: string; email: string })
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5">
+    <section className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
       <h2 className="mb-3 text-sm font-semibold">{title}</h2>
       {children}
     </section>

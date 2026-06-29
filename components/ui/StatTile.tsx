@@ -12,7 +12,7 @@ export function StatTile({
   className?: string;
 }) {
   return (
-    <div className={`rounded-lg bg-[var(--panel-2)] ${className}`.trim()}>
+    <div className={`rounded-control bg-[var(--panel-2)] ${className}`.trim()}>
       <div className="text-base font-bold">{b}</div>
       <div className="text-[10px] text-[var(--muted)]">{s}</div>
     </div>

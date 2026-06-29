@@ -143,7 +143,7 @@ export default function Home({
       )}
 
       {/* 숙련도 + 통계 */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5">
+      <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
         <div className="flex items-center gap-5">
           <div
             className="grid h-24 w-24 shrink-0 place-items-center rounded-full"
@@ -194,7 +194,7 @@ export default function Home({
       </div>
 
       {/* 주제별 정답률 */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5">
+      <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[var(--muted)]">주제별 정답률</h2>
           {weak.length > 0 && (
@@ -279,7 +279,7 @@ function AnonymousHome({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
         <p className="mt-1 text-sm text-[var(--muted)]">문항 {questions.length}개</p>
       </header>
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5">
+      <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
         <p className="text-sm font-medium">로그인하고 학습을 시작하세요</p>
         <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
           진도·오답노트·즐겨찾기·메모가 기기 간 자동 동기화됩니다. 아래 학습 모드를 누르면 로그인 창이 열립니다.

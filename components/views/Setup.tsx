@@ -73,11 +73,11 @@ export default function Setup({
       </header>
 
       {emptyHint ? (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center text-sm text-[var(--muted)]">
+        <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-6 text-center text-sm text-[var(--muted)]">
           {emptyHint}
         </div>
       ) : (
-        <div className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5">
+        <div className="space-y-4 rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
           {/* 주제 */}
           <label className="block">
             <span className="mb-1 block text-sm font-medium">주제</span>
