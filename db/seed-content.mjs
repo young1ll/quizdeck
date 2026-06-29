@@ -33,8 +33,7 @@ async function upsertConcept(pool, examKey, c, lang, ord) {
     `insert into "concept" ("exam_key", "svc", "ord", "content")
           values ($1, $2, $3, $4::jsonb)
      on conflict ("exam_key", "svc")
-          do update set "ord" = excluded."ord",
-                        "content" = "concept"."content" || excluded."content"`,
+          do update set "content" = "concept"."content" || excluded."content"`,
     [examKey, svc, ord, JSON.stringify({ [lang]: rest })],
   );
 }
