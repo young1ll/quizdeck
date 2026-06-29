@@ -1,6 +1,6 @@
 # 0008 — UI 상호작용·컴포넌트 확장: 전역 affordance 베이스 + 무의존 컴포넌트, 슬라이스로
 
-Status: accepted
+Status: accepted — 구현 완료 2026-06-29 (슬라이스 5개 #46·#47·#48·#49·#50 / PR #53–#57, 배포 sha-fcaab31)
 
 ## 맥락
 
@@ -45,4 +45,4 @@ Status: accepted
 - **Slice 2 — `<Button>` 컴포넌트**: `components/ui/Button.tsx`(variant/size/state, 무의존 class-map). `button.ts` 의 `primaryButton` 흡수, 호출부 기회주의 교체.
 - **Slice 3a~3d — 고급**: `<Button loading>` · 모션 토큰 · 모달 focus-trap a11y · 확장 디자인 토큰.
 - **규약**: "새 코드·건드리는 코드는 `<Button>`" + ADR-0007 '2번째 중복에서 추출' 참조. CONTEXT.md(순수 도메인 글로서리)엔 넣지 않는다.
-- **후속 이슈**: 슬라이스별 5개 — base 레이어 · `<Button>` · (loading + 모션) · 모달 a11y · 확장 토큰.
+- **후속 이슈**: 슬라이스별 5개 — base 레이어 · `<Button>` · (loading + 모션) · 모달 a11y · 확장 토큰. ✅ 전부 머지·배포 완료(#46–#50 / PR #53–#57, 2026-06-29).
