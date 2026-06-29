@@ -6,6 +6,7 @@ import { pool } from "@/lib/db";
 import { listExams } from "@/lib/content";
 import { loadAllProgress } from "@/lib/progress-db";
 import { buildDashboard } from "@/lib/dashboard";
+import { today } from "@/lib/dates";
 import Dashboard from "@/components/Dashboard";
 import MyPage from "@/components/MyPage";
 
@@ -29,8 +30,7 @@ export default async function Me() {
     totalByKey[key] = e.questionCount;
     meta[key] = { name: e.name, code: e.code, href: `/${e.provider}/${e.slug}` };
   }
-  const today = new Date().toISOString().slice(0, 10);
-  const dashboard = buildDashboard(rows, totalByKey, today);
+  const dashboard = buildDashboard(rows, totalByKey, today());
 
   return (
     <main className="mx-auto max-w-lg px-5 py-10">
