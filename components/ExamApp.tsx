@@ -1,10 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ExamData } from "@/lib/types";
 import { ExamContext, useExam } from "@/lib/exam-context";
 import { StoreContext, useStore, useStoreState, type Mode } from "@/lib/store";
 import { NavContext, type View } from "@/lib/nav-context";
+import { LangContext } from "@/lib/lang-context";
+import {
+  projectConcept,
+  projectQuestion,
+  type LocalizedExamData,
+} from "@/lib/content-localize";
 import { topicsOf } from "@/lib/session";
 import { useQuizController } from "@/lib/use-quiz";
 import { useSession } from "@/lib/auth-client";
@@ -12,6 +17,7 @@ import { localStorageProgressStore } from "@/lib/progress-store";
 import { compositeProgressStore } from "@/lib/progress-store-composite";
 import { remoteApiProgressStore } from "@/lib/progress-store-remote";
 import SyncIndicator from "./SyncIndicator";
+import LangToggle from "./LangToggle";
 import LoginModal from "./LoginModal";
 import Home from "./views/Home";
 import Setup from "./views/Setup";
@@ -23,22 +29,63 @@ import ServiceMap from "./views/ServiceMap";
 import Search from "./views/Search";
 import History from "./views/History";
 
-export default function ExamApp({ data }: { data: ExamData }) {
-  const examValue = useMemo(
-    () => ({
-      ...data,
-      byQn: new Map(data.questions.map((q) => [q.qn, q] as const)),
-      topics: topicsOf(data.questions),
-    }),
-    [data],
+const LANG_PREF_KEY = "quizdeck:lang"; // 기기-국소 선호 표시 언어(학습 진도 아님 → localStorage)
+
+export default function ExamApp({ data }: { data: LocalizedExamData }) {
+  // 표시 언어 — 기본은 meta.language(가용 시) 또는 첫 가용 언어. SSR-결정적.
+  const serverDefault = data.availableLangs.includes(data.meta.language)
+    ? data.meta.language
+    : data.availableLangs[0];
+  const [lang, setLangState] = useState(serverDefault);
+
+  // 저장된 선호 언어를 마운트 후 적용(hydration mismatch 회피). 이 시험에 가용할 때만.
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(LANG_PREF_KEY);
+      if (stored && data.availableLangs.includes(stored)) setLangState(stored);
+    } catch {
+      /* ignore */
+    }
+  }, [data.availableLangs]);
+
+  const setLang = useCallback((l: string) => {
+    setLangState(l);
+    try {
+      localStorage.setItem(LANG_PREF_KEY, l);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  // 현재 언어로 투영. qn·정답은 언어 무관이라 Progress(qn 키)는 토글에 영향받지 않는다.
+  const examValue = useMemo(() => {
+    const questions = data.questions.map((q) => projectQuestion(q, lang));
+    const concepts = data.concepts.map((c) => projectConcept(c, lang));
+    return {
+      meta: data.meta,
+      questions,
+      concepts,
+      diagrams: data.diagrams,
+      q2svc: data.q2svc,
+      icons: data.icons,
+      byQn: new Map(questions.map((q) => [q.qn, q] as const)),
+      topics: topicsOf(questions),
+    };
+  }, [data, lang]);
+
+  const langValue = useMemo(
+    () => ({ lang, setLang, available: data.availableLangs }),
+    [lang, setLang, data.availableLangs],
   );
 
   return (
-    <ExamContext.Provider value={examValue}>
-      <StoreProvider examKey={`${data.meta.provider}/${data.meta.slug}`}>
-        <ExamInner />
-      </StoreProvider>
-    </ExamContext.Provider>
+    <LangContext.Provider value={langValue}>
+      <ExamContext.Provider value={examValue}>
+        <StoreProvider examKey={`${data.meta.provider}/${data.meta.slug}`}>
+          <ExamInner />
+        </StoreProvider>
+      </ExamContext.Provider>
+    </LangContext.Provider>
   );
 }
 
@@ -148,6 +195,7 @@ function ExamInner() {
 
   return (
     <NavContext.Provider value={nav}>
+      <LangToggle />
       <SyncIndicator />
       {showBackBar && (
         <div className="mb-4 flex items-center gap-3">

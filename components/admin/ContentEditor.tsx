@@ -2,12 +2,20 @@
 
 import { useState } from "react";
 import type { Concept, Question } from "@/lib/types";
+import {
+  conceptForLang,
+  questionForLang,
+  LANG_LABEL,
+  type LocalizedConcept,
+  type LocalizedQuestion,
+} from "@/lib/content-localize";
 
-// 어드민 콘텐츠 편집기 (이슈 #27 / ADR-0005 B). /admin/[provider]/[exam] 의 클라이언트.
-// /api/admin/content 로 upsert/delete 하고, 서버가 revalidatePath 로 Exam 페이지를 즉시 갱신한다.
-// 단일 언어(exam.meta.language) 편집 — 언어 토글은 C(#28). svc/qn 이 식별자.
+// 어드민 콘텐츠 편집기 (이슈 #27·#28 / ADR-0005 B·C). 언어별 편집 — editLang 슬롯만 보고/저장하고,
+// 다른 언어 슬롯은 서버 upsert 가 보존한다(content || excluded). /api/admin/content 로 CRUD,
+// 서버가 revalidatePath 로 Exam 페이지를 즉시 갱신한다. svc/qn 이 식별자.
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const SUPPORTED_LANGS = ["ko", "en"]; // 편집 가능 언어(슬롯이 없으면 새로 채운다)
 
 function putContent(body: unknown) {
   return fetch(`${BASE_PATH}/api/admin/content`, {
@@ -28,22 +36,45 @@ function delContent(body: unknown) {
 
 export default function ContentEditor({
   examKey,
-  lang,
+  defaultLang,
   questions,
   concepts,
 }: {
   examKey: string;
-  lang: string;
-  questions: Question[];
-  concepts: Concept[];
+  defaultLang: string;
+  questions: LocalizedQuestion[];
+  concepts: LocalizedConcept[];
 }) {
   const [tab, setTab] = useState<"q" | "c">("q");
+  const [editLang, setEditLang] = useState(
+    SUPPORTED_LANGS.includes(defaultLang) ? defaultLang : SUPPORTED_LANGS[0],
+  );
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
       <h1 className="text-xl font-bold">
         어드민 · <span className="font-mono text-[var(--accent)]">{examKey}</span>
       </h1>
-      <p className="mt-1 text-xs text-[var(--muted)]">편집 언어: {lang} · 저장 시 시험 페이지에 즉시 반영</p>
+      <div className="mt-2 flex items-center gap-2 text-xs">
+        <span className="text-[var(--muted)]">편집 언어</span>
+        {SUPPORTED_LANGS.map((l) => (
+          <button
+            key={l}
+            type="button"
+            onClick={() => setEditLang(l)}
+            aria-pressed={l === editLang}
+            className={
+              "rounded-lg px-2.5 py-1 font-medium transition-colors " +
+              (l === editLang
+                ? "bg-[var(--accent)] text-[var(--accent-fg)]"
+                : "text-[var(--muted)] hover:text-[var(--fg)]")
+            }
+          >
+            {LANG_LABEL[l] ?? l}
+          </button>
+        ))}
+        <span className="ml-1 text-[var(--muted)]">· 저장 시 시험 페이지에 즉시 반영</span>
+      </div>
 
       <div className="mt-4 mb-4 flex gap-1 text-sm">
         <TabBtn active={tab === "q"} onClick={() => setTab("q")}>문항 {questions.length}</TabBtn>
@@ -51,16 +82,24 @@ export default function ContentEditor({
       </div>
 
       {tab === "q" ? (
-        <QuestionsPanel examKey={examKey} lang={lang} initial={questions} />
+        <QuestionsPanel examKey={examKey} editLang={editLang} initial={questions} />
       ) : (
-        <ConceptsPanel examKey={examKey} lang={lang} initial={concepts} />
+        <ConceptsPanel examKey={examKey} editLang={editLang} initial={concepts} />
       )}
     </main>
   );
 }
 
-function QuestionsPanel({ examKey, lang, initial }: { examKey: string; lang: string; initial: Question[] }) {
-  const [items, setItems] = useState<Question[]>(initial);
+function QuestionsPanel({
+  examKey,
+  editLang,
+  initial,
+}: {
+  examKey: string;
+  editLang: string;
+  initial: LocalizedQuestion[];
+}) {
+  const [items, setItems] = useState<LocalizedQuestion[]>(initial);
   const [draft, setDraft] = useState<Question | null>(null);
   const [isNew, setIsNew] = useState(false); // qn 은 PK — 기존 편집 시 잠가 orphan 방지
   const [busy, setBusy] = useState(false);
@@ -72,21 +111,30 @@ function QuestionsPanel({ examKey, lang, initial }: { examKey: string; lang: str
     if (!draft) return;
     setErr(null);
     setBusy(true);
-    const res = await putContent({ type: "question", examKey, lang, question: draft });
+    const res = await putContent({ type: "question", examKey, lang: editLang, question: draft });
     setBusy(false);
     if (!res.ok) {
       setErr(`저장 실패 (${res.status}) ${await res.text()}`);
       return;
     }
-    setItems((prev) => [...prev.filter((q) => q.qn !== draft.qn), draft].sort((a, b) => a.qn - b.qn));
+    const { qn, answer, ...text } = draft;
+    setItems((prev) => {
+      const existing = prev.find((i) => i.qn === qn);
+      const merged: LocalizedQuestion = {
+        qn,
+        answer,
+        content: { ...(existing?.content ?? {}), [editLang]: text },
+      };
+      return [...prev.filter((i) => i.qn !== qn), merged].sort((a, b) => a.qn - b.qn);
+    });
     setDraft(null);
   };
   const remove = async (qn: number) => {
-    if (!confirm(`문항 ${qn} 을 삭제할까요?`)) return;
+    if (!confirm(`문항 ${qn} 을 삭제할까요? (모든 언어)`)) return;
     setBusy(true);
     const res = await delContent({ type: "question", examKey, qn });
     setBusy(false);
-    if (res.ok) setItems((prev) => prev.filter((q) => q.qn !== qn));
+    if (res.ok) setItems((prev) => prev.filter((i) => i.qn !== qn));
   };
 
   const setField = (patch: Partial<Question>) => setDraft((d) => (d ? { ...d, ...patch } : d));
@@ -127,18 +175,13 @@ function QuestionsPanel({ examKey, lang, initial }: { examKey: string; lang: str
 
         <div className="rounded-lg border border-[var(--border)] p-3">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs text-[var(--muted)]">보기 · 정답 체크</span>
+            <span className="text-xs text-[var(--muted)]">보기 · 정답 체크 (정답은 언어 무관)</span>
             <button type="button" onClick={addOpt} className="text-xs text-[var(--accent)]">+ 보기</button>
           </div>
           <div className="space-y-1">
             {Object.entries(draft.options).map(([k, v]) => (
               <div key={k} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={draft.answer.includes(k)}
-                  onChange={() => toggleAns(k)}
-                  title="정답"
-                />
+                <input type="checkbox" checked={draft.answer.includes(k)} onChange={() => toggleAns(k)} title="정답" />
                 <span className="w-5 font-mono text-xs">{k}</span>
                 <input
                   value={v}
@@ -157,7 +200,7 @@ function QuestionsPanel({ examKey, lang, initial }: { examKey: string; lang: str
         {err && <p className="text-xs text-[var(--bad)]" role="alert">{err}</p>}
         <div className="flex gap-2">
           <button type="button" disabled={busy} onClick={save} className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-fg)] disabled:opacity-50">
-            {busy ? "저장 중…" : "저장"}
+            {busy ? "저장 중…" : `저장 (${editLang})`}
           </button>
           <button type="button" onClick={() => { setDraft(null); setErr(null); }} className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm">취소</button>
         </div>
@@ -178,27 +221,40 @@ function QuestionsPanel({ examKey, lang, initial }: { examKey: string; lang: str
         + 새 문항
       </button>
       <ul className="space-y-1">
-        {items.map((q) => (
-          <li key={q.qn} className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-2 text-sm">
-            <span className="w-10 shrink-0 font-mono text-xs text-[var(--muted)]">#{q.qn}</span>
-            <span className="flex-1 truncate">{q.q}</span>
-            <button type="button" onClick={() => { setIsNew(false); setDraft({ ...q, options: { ...q.options } }); }} className="text-xs text-[var(--accent)]">편집</button>
-            <button type="button" onClick={() => remove(q.qn)} className="text-xs text-[var(--bad)]">삭제</button>
-          </li>
-        ))}
+        {items.map((i) => {
+          const translated = Boolean(i.content[editLang]);
+          const q = questionForLang(i, editLang);
+          return (
+            <li key={i.qn} className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-2 text-sm">
+              <span className="w-10 shrink-0 font-mono text-xs text-[var(--muted)]">#{i.qn}</span>
+              <span className="flex-1 truncate">
+                {translated ? q.q : <span className="text-[var(--warn)]">(미번역)</span>}
+              </span>
+              <button type="button" onClick={() => { setIsNew(false); setDraft(questionForLang(i, editLang)); }} className="text-xs text-[var(--accent)]">편집</button>
+              <button type="button" onClick={() => remove(i.qn)} className="text-xs text-[var(--bad)]">삭제</button>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
 }
 
-function ConceptsPanel({ examKey, lang, initial }: { examKey: string; lang: string; initial: Concept[] }) {
-  const [items, setItems] = useState<Concept[]>(initial);
+function ConceptsPanel({
+  examKey,
+  editLang,
+  initial,
+}: {
+  examKey: string;
+  editLang: string;
+  initial: LocalizedConcept[];
+}) {
+  const [items, setItems] = useState<LocalizedConcept[]>(initial);
   const [draft, setDraft] = useState<Concept | null>(null);
-  const [isNew, setIsNew] = useState(false); // svc 는 PK — 기존 편집 시 잠가 orphan 방지
+  const [isNew, setIsNew] = useState(false); // svc 는 PK
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const blank: Concept = { cat: "", svc: "", deff: "", key: "", when: "", trap: "", vs: "" };
   const setField = (patch: Partial<Concept>) => setDraft((d) => (d ? { ...d, ...patch } : d));
 
   const save = async () => {
@@ -206,22 +262,25 @@ function ConceptsPanel({ examKey, lang, initial }: { examKey: string; lang: stri
     setErr(null);
     setBusy(true);
     const idx = items.findIndex((c) => c.svc === draft.svc);
-    const ord = idx >= 0 ? idx : items.length; // 기존은 위치 보존, 신규는 끝에
-    const res = await putContent({ type: "concept", examKey, lang, ord, concept: draft });
+    const ord = idx >= 0 ? idx : items.length; // 기존은 위치 보존(서버가 ord 보존), 신규는 끝에
+    const res = await putContent({ type: "concept", examKey, lang: editLang, ord, concept: draft });
     setBusy(false);
     if (!res.ok) {
       setErr(`저장 실패 (${res.status}) ${await res.text()}`);
       return;
     }
+    const { svc, ...text } = draft;
     setItems((prev) => {
-      const o = prev.filter((c) => c.svc !== draft.svc);
-      o.splice(ord, 0, draft);
+      const existing = prev.find((c) => c.svc === svc);
+      const merged: LocalizedConcept = { svc, content: { ...(existing?.content ?? {}), [editLang]: text } };
+      const o = prev.filter((c) => c.svc !== svc);
+      o.splice(ord, 0, merged);
       return o;
     });
     setDraft(null);
   };
   const remove = async (svc: string) => {
-    if (!confirm(`개념 "${svc}" 을 삭제할까요?`)) return;
+    if (!confirm(`개념 "${svc}" 을 삭제할까요? (모든 언어)`)) return;
     setBusy(true);
     const res = await delContent({ type: "concept", examKey, svc });
     setBusy(false);
@@ -243,7 +302,7 @@ function ConceptsPanel({ examKey, lang, initial }: { examKey: string; lang: stri
         {err && <p className="text-xs text-[var(--bad)]" role="alert">{err}</p>}
         <div className="flex gap-2">
           <button type="button" disabled={busy} onClick={save} className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-fg)] disabled:opacity-50">
-            {busy ? "저장 중…" : "저장"}
+            {busy ? "저장 중…" : `저장 (${editLang})`}
           </button>
           <button type="button" onClick={() => { setDraft(null); setErr(null); }} className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm">취소</button>
         </div>
@@ -257,21 +316,24 @@ function ConceptsPanel({ examKey, lang, initial }: { examKey: string; lang: stri
         type="button"
         onClick={() => {
           setIsNew(true);
-          setDraft({ ...blank });
+          setDraft({ svc: "", cat: "", deff: "", key: "", when: "", trap: "", vs: "" });
         }}
         className="mb-3 rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm hover:border-[var(--accent)]"
       >
         + 새 개념
       </button>
       <ul className="space-y-1">
-        {items.map((c) => (
-          <li key={c.svc} className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-2 text-sm">
-            <span className="flex-1 truncate font-medium">{c.svc}</span>
-            <span className="shrink-0 text-xs text-[var(--muted)]">{c.cat}</span>
-            <button type="button" onClick={() => { setIsNew(false); setDraft({ ...c }); }} className="text-xs text-[var(--accent)]">편집</button>
-            <button type="button" onClick={() => remove(c.svc)} className="text-xs text-[var(--bad)]">삭제</button>
-          </li>
-        ))}
+        {items.map((i) => {
+          const translated = Boolean(i.content[editLang]);
+          return (
+            <li key={i.svc} className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-2 text-sm">
+              <span className="flex-1 truncate font-medium">{i.svc}</span>
+              {!translated && <span className="shrink-0 text-xs text-[var(--warn)]">(미번역)</span>}
+              <button type="button" onClick={() => { setIsNew(false); setDraft(conceptForLang(i, editLang)); }} className="text-xs text-[var(--accent)]">편집</button>
+              <button type="button" onClick={() => remove(i.svc)} className="text-xs text-[var(--bad)]">삭제</button>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
