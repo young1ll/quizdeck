@@ -32,6 +32,13 @@ better-auth 스키마(`0001`)와 앱 도메인 스키마(`0002~`)를 담는다. 
   > ⚠️ **`admin()` 플러그인이 `getSession` 시 `role`/`banned` 컬럼을 읽으므로, 0004 를 앱
   > 배포보다 먼저 적용해야 한다.** 안 하면 모든 세션 조회가 "column 없음"으로 throw → 인증 전체 중단.
 
+`0005_annotation.sql` — Learner 인라인 주석(이슈 #29 / ADR-0005 D):
+
+- `annotation(id, learner_id, exam_key, qn, lang, field, kind, memo, anchor jsonb, updated_at)`
+  + `(learner_id, exam_key)` 인덱스. 밑줄·형광펜·메모를 quote+문맥 앵커로 콘텐츠에 참조만 건다.
+  `/api/annotations` 가 모든 read/write 를 세션 learner_id 로 스코프한다.
+  > ⚠️ **`/api/annotations` 가 `annotation` 테이블을 읽으므로 0005 를 앱 배포보다 먼저 적용**한다.
+
 ## 어떻게 생성했나
 
 `lib/auth.ts` 설정을 introspect 해 better-auth CLI 가 SQL 을 뽑는다. 빈(또는 기존) DB 에
@@ -54,6 +61,7 @@ psql "$DATABASE_URL" -f db/migrations/0001_better_auth.sql
 psql "$DATABASE_URL" -f db/migrations/0002_progress.sql
 psql "$DATABASE_URL" -f db/migrations/0003_content.sql
 psql "$DATABASE_URL" -f db/migrations/0004_admin.sql   # 앱(admin 플러그인) 배포보다 먼저!
+psql "$DATABASE_URL" -f db/migrations/0005_annotation.sql  # 앱(주석 API) 배포보다 먼저!
 ```
 
 `0002` 의 `progress.learner_id` 가 `user(id)` 를 참조하므로 `0001` 다음에 적용한다.

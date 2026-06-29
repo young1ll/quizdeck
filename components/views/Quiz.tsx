@@ -7,7 +7,7 @@ import { useStore } from "@/lib/store";
 import { setsEqual, shuffle } from "@/lib/session";
 import type { QuizController } from "@/lib/use-quiz";
 import Icon from "@/components/Icon";
-import Markdown from "@/components/Markdown";
+import AnnotatableText from "@/components/AnnotatableText";
 
 export default function Quiz({ quiz }: { quiz: QuizController }) {
   const { byQn, q2svc } = useExam();
@@ -134,7 +134,7 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
           <span>{multi ? `정답 ${d.answer.length}개 선택` : "정답 1개"}</span>
         </div>
         <p className="leading-relaxed">
-          <Markdown text={d.q} />
+          <AnnotatableText qn={qn} field="q" text={d.q} />
         </p>
 
         <ul className="mt-5 space-y-2">
@@ -169,7 +169,7 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
                     {letter}
                   </span>
                   <span className="flex-1 leading-snug">
-                    <Markdown text={d.options[letter]} />
+                    <AnnotatableText qn={qn} field={`opt:${letter}`} text={d.options[letter]} />
                   </span>
                   {mark && (
                     <span className="shrink-0 text-xs text-[var(--muted)]">{mark}</span>
@@ -194,12 +194,12 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
             {d.explanation && (
               <p className="text-sm leading-relaxed">
                 <b className="text-[var(--accent)]">해설</b>{" "}
-                <Markdown text={d.explanation} />
+                <AnnotatableText qn={qn} field="explanation" text={d.explanation} />
               </p>
             )}
             {d.tip && (
               <p className="rounded-lg bg-[var(--panel-2)] p-3 text-sm leading-relaxed text-[var(--muted)]">
-                <b>💡 풀이 팁</b> <Markdown text={d.tip} />
+                <b>💡 풀이 팁</b> <AnnotatableText qn={qn} field="tip" text={d.tip} />
               </p>
             )}
             {rel.length > 0 && (

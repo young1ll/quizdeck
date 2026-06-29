@@ -5,6 +5,7 @@ import { ExamContext, useExam } from "@/lib/exam-context";
 import { StoreContext, useStore, useStoreState, type Mode } from "@/lib/store";
 import { NavContext, type View } from "@/lib/nav-context";
 import { LangContext } from "@/lib/lang-context";
+import { AnnotationContext, useAnnotationState } from "@/lib/annotation-context";
 import {
   projectConcept,
   projectQuestion,
@@ -109,7 +110,13 @@ function StoreProvider({
     [learnerId],
   );
   const ctx = useStoreState(examKey, store);
-  return <StoreContext.Provider value={ctx}>{children}</StoreContext.Provider>;
+  // 주석(#29)도 같은 learnerId 로 스코프 — 로그인 Learner 면 /api/annotations 로드·동기화.
+  const annoCtx = useAnnotationState(examKey, learnerId);
+  return (
+    <StoreContext.Provider value={ctx}>
+      <AnnotationContext.Provider value={annoCtx}>{children}</AnnotationContext.Provider>
+    </StoreContext.Provider>
+  );
 }
 
 const VIEW_TITLE: Partial<Record<View, string>> = {
