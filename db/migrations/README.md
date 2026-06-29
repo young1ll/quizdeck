@@ -47,6 +47,13 @@ better-auth 스키마(`0001`)와 앱 도메인 스키마(`0002~`)를 담는다. 
   > 기존 `annotation` 행의 learner_id 가 모두 유효해야 FK 추가가 성공한다(세션 learner_id 로만
   > 생성되어 충족 — 아직 탈퇴 기능이 없어 고아 행이 없다).
 
+`0007_passkey.sql` — 패스키(WebAuthn) 로그인(이슈 #10 / ADR-0003 결정 2):
+
+- `passkey(id, name, publicKey, userId FK user, credentialID, counter, deviceType, backedUp,
+  transports, createdAt, aaguid)` + `userId`·`credentialID` 인덱스. `@better-auth/passkey` 플러그인의
+  라이브러리 스키마(0001 처럼 CLI generate 산출). 같은 오리진에서 패스키 등록·인증을 받친다.
+  > ⚠️ **`passkey()` 플러그인의 등록/로그인 API 가 이 테이블을 읽으므로 0007 을 앱 배포보다 먼저 적용**한다.
+
 ## 어떻게 생성했나
 
 `lib/auth.ts` 설정을 introspect 해 better-auth CLI 가 SQL 을 뽑는다. 빈(또는 기존) DB 에
@@ -71,6 +78,7 @@ psql "$DATABASE_URL" -f db/migrations/0003_content.sql
 psql "$DATABASE_URL" -f db/migrations/0004_admin.sql   # 앱(admin 플러그인) 배포보다 먼저!
 psql "$DATABASE_URL" -f db/migrations/0005_annotation.sql  # 앱(주석 API) 배포보다 먼저!
 psql "$DATABASE_URL" -f db/migrations/0006_account_fk.sql  # 앱(탈퇴 플로우) 배포보다 먼저!
+psql "$DATABASE_URL" -f db/migrations/0007_passkey.sql    # 앱(패스키 API) 배포보다 먼저!
 ```
 
 `0002` 의 `progress.learner_id` 가 `user(id)` 를 참조하므로 `0001` 다음에 적용한다.

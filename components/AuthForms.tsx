@@ -102,6 +102,24 @@ export default function AuthForms() {
     setResent(true);
   };
 
+  // 패스키(WebAuthn) 로그인 — 비밀번호 없이(이슈 #10). 같은 오리진에서 등록한 패스키로 인증한다.
+  // 성공 시 better-auth 가 세션을 세워 useSession 이 갱신되고 호출부(모달/홈)가 전환된다. 플러그인은
+  // 프롬프트 취소를 throw 가 아니라 res.error(영어 메시지)로 돌려주므로 에러는 한국어로 통일한다.
+  // try/catch 는 throw 하는 버전 대비 안전망(이메일/비번 입력 없이 동작).
+  const signInPasskey = async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      const res = await signIn.passkey();
+      // 취소(등록 패스키 없음 포함)/실패 모두 한국어로 — 라이브러리 영어 문구를 노출하지 않는다.
+      if (res?.error) setError("패스키 로그인이 취소되었거나 등록된 패스키가 없습니다.");
+    } catch {
+      setError("패스키 로그인이 취소되었거나 등록된 패스키가 없습니다.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const shell = "w-full max-w-xs rounded-card border border-[var(--border)] bg-[var(--panel)] p-4";
 
   // ── 안내 화면 ──────────────────────────────────────────────
@@ -227,16 +245,28 @@ export default function AuthForms() {
       </Button>
 
       {tab === "signin" && (
-        <button
-          type="button"
-          onClick={() => {
-            setForgot(true);
-            setError(null);
-          }}
-          className="mt-2 w-full text-xs text-[var(--muted)] hover:text-[var(--fg)]"
-        >
-          비밀번호를 잊으셨나요?
-        </button>
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            fullWidth
+            disabled={busy}
+            onClick={signInPasskey}
+            className="mt-2"
+          >
+            🔑 패스키로 로그인
+          </Button>
+          <button
+            type="button"
+            onClick={() => {
+              setForgot(true);
+              setError(null);
+            }}
+            className="mt-2 w-full text-xs text-[var(--muted)] hover:text-[var(--fg)]"
+          >
+            비밀번호를 잊으셨나요?
+          </button>
+        </>
       )}
     </form>
   );

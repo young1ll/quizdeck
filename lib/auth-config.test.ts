@@ -49,6 +49,41 @@ describe("resolveAuthConfig", () => {
     expect(cfg.secret).toBeUndefined();
     expect(cfg.databaseUrl).toBeUndefined();
   });
+
+  // 패스키(WebAuthn, #10) — rpID·origin 은 baseURL 에서 파생한다(별도 env 없이 단일 소스).
+  // 미지정이면 undefined → passkey 플러그인 기본(rpID "localhost", origin 은 클라이언트가 전달).
+  it("baseURL 에서 rpID(호스트명)·origin 을 파생한다", () => {
+    const cfg = resolveAuthConfig(full);
+    expect(cfg.rpID).toBe("myquizdeck.com");
+    expect(cfg.origin).toBe("https://myquizdeck.com");
+  });
+
+  it("trailing slash·경로가 있어도 origin 은 스킴+호스트(+포트)만, rpID 는 호스트명", () => {
+    const cfg = resolveAuthConfig({ ...full, BETTER_AUTH_URL: "https://myquizdeck.com/app/" });
+    expect(cfg.rpID).toBe("myquizdeck.com");
+    expect(cfg.origin).toBe("https://myquizdeck.com");
+  });
+
+  it("로컬(포트 포함)은 rpID=localhost, origin 에 포트 보존", () => {
+    const cfg = resolveAuthConfig({ ...full, BETTER_AUTH_URL: "http://localhost:3000" });
+    expect(cfg.rpID).toBe("localhost");
+    expect(cfg.origin).toBe("http://localhost:3000");
+  });
+
+  it("baseURL 이 없으면 rpID·origin 은 undefined (플러그인 기본에 위임)", () => {
+    const { BETTER_AUTH_URL, ...rest } = full;
+    void BETTER_AUTH_URL;
+    const cfg = resolveAuthConfig(rest);
+    expect(cfg.rpID).toBeUndefined();
+    expect(cfg.origin).toBeUndefined();
+  });
+
+  it("잘못된 baseURL 은 rpID·origin 을 undefined 로 둔다(throw 하지 않음)", () => {
+    const cfg = resolveAuthConfig({ ...full, BETTER_AUTH_URL: "not-a-url" });
+    expect(cfg.rpID).toBeUndefined();
+    expect(cfg.origin).toBeUndefined();
+    expect(cfg.missing).toEqual([]); // 해석기는 throw 하지 않는다
+  });
 });
 
 describe("assertAuthConfigReady", () => {

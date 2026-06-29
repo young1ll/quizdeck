@@ -23,6 +23,10 @@ export interface ResolvedAuthConfig {
   databaseUrl?: string;
   /** 절대 URL·trustedOrigins 기준. 미지정 시 better-auth 가 요청 오리진으로 추론. */
   baseURL?: string;
+  /** 패스키(WebAuthn, #10) relying party ID = baseURL 호스트명. 미지정 시 undefined → 플러그인 기본 "localhost". */
+  rpID?: string;
+  /** 패스키 등록·인증 origin = baseURL 의 스킴+호스트(+포트). 미지정 시 undefined → 클라이언트가 전달. */
+  origin?: string;
   /** 런타임 인증에 필수인데 비어 있는 env 키들. 비어 있지 않으면 인증이 동작하지 않는다. */
   missing: string[];
 }
@@ -38,11 +42,26 @@ export function resolveAuthConfig(env: AuthEnvInput): ResolvedAuthConfig {
   const databaseUrl = nonEmpty(env.DATABASE_URL);
   const baseURL = nonEmpty(env.BETTER_AUTH_URL);
 
+  // 패스키 rpID·origin 을 baseURL 에서 파생 — 별도 env 없이 단일 소스. 파싱 실패 시 둘 다
+  // undefined(해석기는 throw 하지 않는다 — 빌드 경로 보호). origin 은 URL.origin 이라 경로·
+  // trailing slash 가 제거되고 포트는 보존된다(WebAuthn origin 규약: 트레일링 / 금지).
+  let rpID: string | undefined;
+  let origin: string | undefined;
+  if (baseURL) {
+    try {
+      const u = new URL(baseURL);
+      rpID = u.hostname;
+      origin = u.origin;
+    } catch {
+      /* 잘못된 URL — 파생 생략(플러그인 기본/클라이언트 전달에 위임) */
+    }
+  }
+
   const missing: string[] = [];
   if (!secret) missing.push("BETTER_AUTH_SECRET");
   if (!databaseUrl) missing.push("DATABASE_URL");
 
-  return { secret, databaseUrl, baseURL, missing };
+  return { secret, databaseUrl, baseURL, rpID, origin, missing };
 }
 
 /** 런타임 시작/테스트에서 설정 완전성을 강제한다. 빌드 경로에서는 호출하지 않는다. */
