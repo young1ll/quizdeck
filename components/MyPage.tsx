@@ -11,7 +11,7 @@ import {
 } from "@/lib/auth-client";
 import { Field } from "@/components/ui/Field";
 import { Msg } from "@/components/ui/Msg";
-import { primaryButton } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { normalizeEmail } from "@/lib/format";
 
 // 마이페이지 계정 관리 (이슈 #36/#38 / ADR-0006). 프로필(이름)·이메일 변경·보안(비번)·위험 구역(탈퇴).
@@ -85,9 +85,9 @@ function ProfileSection({ initialName, email }: { initialName: string; email: st
         />
         {error && <Msg kind="bad">{error}</Msg>}
         {done && <Msg kind="good">저장되었습니다.</Msg>}
-        <button type="submit" disabled={busy || name.trim() === initialName} className={primaryButton}>
+        <Button type="submit" variant="primary" fullWidth disabled={busy || name.trim() === initialName}>
           {busy ? "저장 중…" : "저장"}
-        </button>
+        </Button>
       </form>
     </Section>
   );
@@ -144,9 +144,9 @@ function EmailSection() {
             placeholder="new@example.com"
           />
           {error && <Msg kind="bad">{error}</Msg>}
-          <button type="submit" disabled={busy || !newEmail.trim()} className={primaryButton}>
+          <Button type="submit" variant="primary" fullWidth disabled={busy || !newEmail.trim()}>
             {busy ? "보내는 중…" : "인증 메일 보내기"}
-          </button>
+          </Button>
         </form>
       )}
     </Section>
@@ -204,9 +204,9 @@ function PasswordSection() {
         />
         {error && <Msg kind="bad">{error}</Msg>}
         {done && <Msg kind="good">비밀번호를 변경했습니다. 다른 기기는 로그아웃됩니다.</Msg>}
-        <button type="submit" disabled={busy || !current || next.length < 8} className={primaryButton}>
+        <Button type="submit" variant="primary" fullWidth disabled={busy || !current || next.length < 8}>
           {busy ? "변경 중…" : "비밀번호 변경"}
-        </button>
+        </Button>
       </form>
     </Section>
   );
@@ -247,13 +247,9 @@ function DangerSection({ email }: { email: string }) {
         삭제됩니다. 되돌릴 수 없습니다.
       </p>
       {!open ? (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="mt-3 rounded-lg border border-[var(--bad)] px-3 py-2 text-sm font-medium text-[var(--bad)] transition-colors hover:bg-[color-mix(in_srgb,var(--bad)_12%,transparent)]"
-        >
+        <Button type="button" variant="dangerOutline" className="mt-3" onClick={() => setOpen(true)}>
           회원 탈퇴
-        </button>
+        </Button>
       ) : (
         <form onSubmit={remove} className="mt-3 space-y-3 border-t border-[var(--border)] pt-3">
           <Field
@@ -273,25 +269,22 @@ function DangerSection({ email }: { email: string }) {
           />
           {error && <Msg kind="bad">{error}</Msg>}
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              className="flex-1"
               onClick={() => {
                 setOpen(false);
                 setPassword("");
                 setConfirm("");
                 setError(null);
               }}
-              className="flex-1 rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:text-[var(--fg)]"
             >
               취소
-            </button>
-            <button
-              type="submit"
-              disabled={!canDelete}
-              className="flex-1 rounded-lg bg-[var(--bad)] px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
-            >
+            </Button>
+            <Button type="submit" variant="danger" className="flex-1" disabled={!canDelete}>
               {busy ? "탈퇴 중…" : "영구 탈퇴"}
-            </button>
+            </Button>
           </div>
           <p className="text-xs text-[var(--muted)]">{email} 계정이 삭제됩니다.</p>
         </form>
