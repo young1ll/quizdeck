@@ -1,4 +1,5 @@
 import { mastery, type Progress } from "./progress";
+import { streak } from "./dates";
 
 // 학습 대시보드 집계 (이슈 #37 / ADR-0006 결정 5). client-safe(순수, no pg) — /me 서버 컴포넌트가
 // 전 Exam Progress 를 모아 이 함수들로 집계하고, 테스트도 결정적이다. 한 Learner 의 여러 Exam
@@ -44,22 +45,13 @@ export function examStat(examKey: string, p: Progress, total: number): ExamStat 
   };
 }
 
-// 전 Exam days 합집합에서 todayKey 부터 거꾸로 연속한 날 수. days 키는 dayKey()(UTC)로 찍히므로
-// 여기도 UTC 로 센다 — Home 의 streak(lib/store)은 로컬 TZ 지만 이쪽이 days 키 생성과 정합하다.
-// todayKey 를 주입받아 결정적으로 테스트한다.
+// 전 Exam days 합집합을 todayKey 부터 거꾸로 세어 종합 연속학습일을 낸다. 일자 키는 dayKey()(UTC)로
+// 찍히므로 lib/dates 의 streak(UTC 단일 기준, ADR-0007)을 그대로 쓴다 — Home 의 per-exam streak 과 같은
+// 정의. todayKey 를 주입받아 결정적으로 테스트한다.
 export function overallStreak(allDays: Record<string, number>[], todayKey: string): number {
-  const active = new Set<string>();
-  for (const d of allDays) for (const k of Object.keys(d)) if (d[k] > 0) active.add(k);
-  let s = 0;
-  const cur = new Date(`${todayKey}T00:00:00Z`);
-  for (;;) {
-    const k = cur.toISOString().slice(0, 10);
-    if (active.has(k)) {
-      s++;
-      cur.setUTCDate(cur.getUTCDate() - 1);
-    } else break;
-  }
-  return s;
+  const union: Record<string, number> = {};
+  for (const d of allDays) for (const k of Object.keys(d)) if (d[k] > 0) union[k] = 1;
+  return streak(union, todayKey);
 }
 
 export function buildDashboard(

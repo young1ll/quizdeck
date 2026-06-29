@@ -3,14 +3,8 @@
 import { useMemo, useRef } from "react";
 import { useExam } from "@/lib/exam-context";
 import { useNav } from "@/lib/nav-context";
-import {
-  MODE_LABEL,
-  streak,
-  today,
-  useStore,
-  type Mode,
-  type Store,
-} from "@/lib/store";
+import { MODE_LABEL, useStore, type Mode, type Store } from "@/lib/store";
+import { streak, today } from "@/lib/dates";
 import { topicStat } from "@/lib/session";
 import { exportProgressPDF } from "@/lib/pdf";
 

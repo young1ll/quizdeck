@@ -3,6 +3,8 @@
 import { useEffect, useState, type SubmitEvent } from "react";
 import Link from "next/link";
 import { resetPassword } from "@/lib/auth-client";
+import { Field } from "@/components/ui/Field";
+import { Msg } from "@/components/ui/Msg";
 
 // 비밀번호 재설정 랜딩 (이슈 #21 / ADR-0004).
 // 재설정 메일 링크 → better-auth 서버 콜백이 토큰을 검증하고 이 페이지로 리다이렉트한다:
@@ -59,26 +61,18 @@ export default function ResetPasswordPage() {
           </>
         ) : (
           <form onSubmit={submit} className="mt-4 space-y-3">
-            <label className="block">
-              <span className="mb-1 block text-xs text-[var(--muted)]">새 비밀번호</span>
-              <input
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={8}
-                disabled={!token}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--fg)] outline-none focus:border-[var(--accent)] disabled:opacity-50"
-              />
-            </label>
+            <Field
+              label="새 비밀번호"
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={setPassword}
+              placeholder="••••••••"
+              minLength={8}
+              disabled={!token}
+            />
 
-            {error && (
-              <p className="text-xs text-[var(--bad)]" role="alert">
-                {error}
-              </p>
-            )}
+            {error && <Msg kind="bad">{error}</Msg>}
 
             <button
               type="submit"

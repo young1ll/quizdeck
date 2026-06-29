@@ -7,6 +7,9 @@ import {
   sendVerificationEmail,
   requestPasswordReset,
 } from "@/lib/auth-client";
+import { Field } from "@/components/ui/Field";
+import { Msg } from "@/components/ui/Msg";
+import { normalizeEmail } from "@/lib/format";
 
 // 인증 폼 (이슈 #6 + ADR-0004): 로그인·가입 + 이메일 인증·비밀번호 재설정.
 // 이메일 인증 필수 — 가입 후엔 세션 없이 "메일 확인" 안내, 미검증 로그인 시도엔 재발송 안내.
@@ -41,7 +44,7 @@ export default function AuthForms() {
 
   // 제출 전 이메일 정규화 — better-auth lookup 은 소문자화하나 trim 은 안 한다(특히 비밀번호
   // 재설정 경로). 모바일 자동완성이 붙이는 앞뒤 공백이 "User not found" 를 유발하므로 차단.
-  const cleanEmail = () => email.trim().toLowerCase();
+  const cleanEmail = () => normalizeEmail(email);
 
   const submit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -122,9 +125,9 @@ export default function AuthForms() {
           </button>
         )}
         {error && (
-          <p className="mt-2 text-xs text-[var(--bad)]" role="alert">
+          <Msg kind="bad" className="mt-2">
             {error}
-          </p>
+          </Msg>
         )}
         <button
           type="button"
@@ -151,9 +154,9 @@ export default function AuthForms() {
           placeholder="you@example.com"
         />
         {error && (
-          <p className="mt-2 text-xs text-[var(--bad)]" role="alert">
+          <Msg kind="bad" className="mt-2">
             {error}
-          </p>
+          </Msg>
         )}
         <button
           type="submit"
@@ -268,41 +271,5 @@ function TabButton({
     >
       {children}
     </button>
-  );
-}
-
-function Field({
-  label,
-  type,
-  value,
-  onChange,
-  placeholder,
-  autoComplete,
-  required = true,
-  minLength,
-}: {
-  label: string;
-  type: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  autoComplete?: string;
-  required?: boolean;
-  minLength?: number;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs text-[var(--muted)]">{label}</span>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        required={required}
-        minLength={minLength}
-        className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--fg)] outline-none focus:border-[var(--accent)]"
-      />
-    </label>
   );
 }

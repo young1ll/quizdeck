@@ -62,22 +62,7 @@ export interface SessionState {
 // 읽기 뷰: Progress + 진행 중 active Session. (백업/복원 입력 타입이기도 함)
 export type Store = Progress & { active: SessionState | null };
 
-export function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-export function streak(days: Record<string, number>): number {
-  let s = 0;
-  const d = new Date();
-  for (;;) {
-    const k = d.toISOString().slice(0, 10);
-    if (days[k]) {
-      s++;
-      d.setDate(d.getDate() - 1);
-    } else break;
-  }
-  return s;
-}
+// today/streak 은 lib/dates(UTC 단일 기준, ADR-0007)로 이전 — Home 등 소비부는 거기서 import.
 
 const ACTIVE_PREFIX = "quizdeck:active:"; // 진행 중 Session(기기-국소)
 const LEGACY_PREFIX = "quizdeck:store:"; // Phase 2 통짜 blob (active 복구용)

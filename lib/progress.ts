@@ -1,6 +1,12 @@
 // Progress — 한 학습자의 한 Exam에 대한 durable 학습 기록.
 // 모든 변경은 순수 함수(reducer)다 — React/저장소와 무관하게 테스트된다.
 
+import { dayKey } from "./dates";
+
+// 일자 키는 lib/dates(UTC 단일 기준, ADR-0007)로 통합 — recordResult 가 활동을 찍는 키와
+// dashboard·store 의 streak 도출이 같은 정의를 공유한다. 공개 표면 유지를 위해 재노출.
+export { dayKey };
+
 export type Mode = "study" | "smart" | "exam" | "wrong" | "star";
 
 export interface QHist {
@@ -45,10 +51,6 @@ export function emptyProgress(): Progress {
     sessions: [],
     prefs: { shuffle: false, goal: 30 },
   };
-}
-
-export function dayKey(now: number): string {
-  return new Date(now).toISOString().slice(0, 10);
 }
 
 export function toggleStar(p: Progress, qn: number): Progress {

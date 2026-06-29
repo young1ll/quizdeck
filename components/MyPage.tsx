@@ -9,6 +9,9 @@ import {
   signOut,
   updateUser,
 } from "@/lib/auth-client";
+import { Field } from "@/components/ui/Field";
+import { Msg } from "@/components/ui/Msg";
+import { normalizeEmail } from "@/lib/format";
 
 // 마이페이지 계정 관리 (이슈 #36/#38 / ADR-0006). 프로필(이름)·이메일 변경·보안(비번)·위험 구역(탈퇴).
 // AuthForms 와 같은 폼 규약(Field·accent 버튼·--bad/--good·better-auth res.error)을 따른다.
@@ -33,42 +36,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="mb-3 text-sm font-semibold">{title}</h2>
       {children}
     </section>
-  );
-}
-
-function Field({
-  label,
-  type = "text",
-  value,
-  onChange,
-  autoComplete,
-  placeholder,
-  minLength,
-  required = true,
-}: {
-  label: string;
-  type?: string;
-  value: string;
-  onChange: (v: string) => void;
-  autoComplete?: string;
-  placeholder?: string;
-  minLength?: number;
-  required?: boolean;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs text-[var(--muted)]">{label}</span>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        autoComplete={autoComplete}
-        placeholder={placeholder}
-        minLength={minLength}
-        required={required}
-        className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--fg)] outline-none focus:border-[var(--accent)]"
-      />
-    </label>
   );
 }
 
@@ -139,7 +106,7 @@ function EmailSection() {
     e.preventDefault();
     setError(null);
     // 이메일 정규화 — 모바일 자동완성 앞뒤 공백/대문자 차단(AuthForms 와 같은 이유).
-    const addr = newEmail.trim().toLowerCase();
+    const addr = normalizeEmail(newEmail);
     setBusy(true);
     const res = await changeEmail({ newEmail: addr, callbackURL: "/" });
     setBusy(false);
@@ -332,16 +299,5 @@ function DangerSection({ email }: { email: string }) {
         </form>
       )}
     </Section>
-  );
-}
-
-function Msg({ kind, children }: { kind: "bad" | "good"; children: React.ReactNode }) {
-  return (
-    <p
-      className={`text-xs ${kind === "bad" ? "text-[var(--bad)]" : "text-[var(--good)]"}`}
-      role={kind === "bad" ? "alert" : "status"}
-    >
-      {children}
-    </p>
   );
 }
