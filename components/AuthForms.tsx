@@ -159,8 +159,8 @@ export default function AuthForms() {
             {error}
           </Msg>
         )}
-        <Button type="submit" variant="primary" fullWidth disabled={busy} className="mt-3">
-          {busy ? "처리 중…" : "재설정 메일 보내기"}
+        <Button type="submit" variant="primary" fullWidth loading={busy} className="mt-3">
+          재설정 메일 보내기
         </Button>
         <button
           type="button"
@@ -222,8 +222,8 @@ export default function AuthForms() {
         </p>
       )}
 
-      <Button type="submit" variant="primary" fullWidth disabled={busy} className="mt-3">
-        {busy ? "처리 중…" : tab === "signup" ? "가입하기" : "로그인"}
+      <Button type="submit" variant="primary" fullWidth loading={busy} className="mt-3">
+        {tab === "signup" ? "가입하기" : "로그인"}
       </Button>
 
       {tab === "signin" && (
