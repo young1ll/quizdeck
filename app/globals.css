@@ -36,6 +36,17 @@
   --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* 표면 디자인 토큰 (ADR-0008 결정 5d · 이슈 #50) — radius·elevation 을 색상 토큰처럼 의미 단위로
+   표준화한다. 값은 현재 Tailwind 기본(rounded-lg/xl/2xl·shadow-lg)과 동일 → 시각 회귀 없이 흩어진
+   표면을 한 토큰으로 수렴(control·card·panel·popover). rounded-control/card/panel·shadow-popover
+   유틸을 생성하며, 기본 rounded-*·shadow-* 스케일은 그대로 둔다(키 추가일 뿐). */
+@theme {
+  --radius-control: 0.5rem; /* = rounded-lg(8px) — 버튼·입력 등 컨트롤 */
+  --radius-card: 0.75rem; /* = rounded-xl(12px) — 카드·폼 표면 */
+  --radius-panel: 1rem; /* = rounded-2xl(16px) — 큰 패널·섹션 */
+  --shadow-popover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); /* = shadow-lg — 떠 있는 팝오버 */
+}
+
 html,
 body {
   background: var(--bg);

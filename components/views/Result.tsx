@@ -46,7 +46,7 @@ export default function Result({ quiz }: { quiz: QuizController }) {
         </button>
       </header>
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
+      <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-6 text-center">
         <div className="text-5xl font-bold" style={{ color: scoreColor }}>
           {okCount} / {Q.length}
         </div>

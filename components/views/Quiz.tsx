@@ -129,7 +129,7 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
       </div>
 
       {/* 문항 카드 */}
-      <article className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5">
+      <article className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
         <div className="mb-2 flex items-center gap-2 text-xs text-[var(--muted)]">
           <span>{multi ? `정답 ${d.answer.length}개 선택` : "정답 1개"}</span>
         </div>

@@ -12,7 +12,7 @@ export default function Dashboard({
   meta: Record<string, { name: string; code: string; href: string }>;
 }) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5">
+    <section className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
       <h2 className="mb-3 text-sm font-semibold">학습 현황</h2>
       {data.totalExams === 0 ? (
         <p className="text-sm text-[var(--muted)]">
@@ -36,7 +36,7 @@ export default function Dashboard({
                 <li key={e.examKey}>
                   <Link
                     href={m?.href ?? "/"}
-                    className="block rounded-xl border border-[var(--border)] bg-[var(--panel-2)] p-3 transition-colors hover:border-[var(--accent)]"
+                    className="block rounded-card border border-[var(--border)] bg-[var(--panel-2)] p-3 transition-colors hover:border-[var(--accent)]"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">

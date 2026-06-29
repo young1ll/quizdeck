@@ -22,7 +22,7 @@ export default async function AdminHome() {
           <li key={`${e.provider}/${e.slug}`}>
             <Link
               href={`/admin/${e.provider}/${e.slug}`}
-              className="block rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 transition-colors hover:border-[var(--accent)]"
+              className="block rounded-card border border-[var(--border)] bg-[var(--panel)] p-4 transition-colors hover:border-[var(--accent)]"
             >
               <div className="font-mono text-xs text-[var(--accent)]">{e.code}</div>
               <div className="mt-1 font-medium">{e.name}</div>

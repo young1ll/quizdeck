@@ -1,8 +1,9 @@
 import type { ButtonHTMLAttributes } from "react";
 
-// 공통 버튼 (ADR-0008 결정 2·3 · #47/#48). variant·size·fullWidth·loading 을 무의존 class-map 으로 —
+// 공통 버튼 (ADR-0008 결정 2·3 · #47/#48/#50). variant·size·fullWidth·loading 을 무의존 class-map 으로 —
 // cva/Radix 없음. 상호작용 floor(cursor·focus-visible·disabled, ADR-0008 결정 1, globals.css @layer
 // base)는 이미 깔려 있으므로 여기선 시각(색·여백·모양·로딩)만 얹는다. button.ts 의 primaryButton 흡수.
+// 모양은 rounded-control 토큰(ADR-0008 결정 5d · #50 — = rounded-lg 8px)으로 표면 radius 를 수렴한다.
 //
 // inline-flex 중앙정렬은 loading 스피너와 라벨을 나란히 가운데 둔다. variant 는 ADR-0008 결정 3
 // 의 집합 — ghost(여백 없는 텍스트-링크)는 패딩 버튼이 아니라 도입을 보류(텍스트 링크는 Button 의
@@ -11,7 +12,7 @@ import type { ButtonHTMLAttributes } from "react";
 type Variant = "primary" | "danger" | "dangerOutline" | "outline";
 type Size = "sm" | "md" | "lg";
 
-const BASE = "inline-flex items-center justify-center rounded-lg transition disabled:opacity-50";
+const BASE = "inline-flex items-center justify-center rounded-control transition disabled:opacity-50";
 
 const VARIANT: Record<Variant, string> = {
   primary: "bg-[var(--accent)] text-[var(--accent-fg)] font-medium hover:opacity-90",
