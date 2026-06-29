@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { jwt, admin } from "better-auth/plugins";
+import { passkey } from "@better-auth/passkey";
 import { dash } from "@better-auth/infra";
 import { pool } from "./db";
 import { resolveAuthConfig } from "./auth-config";
@@ -78,5 +79,16 @@ export const auth = betterAuth({
   // admin — 콘텐츠 편집 권한 경계(ADR-0005 B / 이슈 #27). user.role 을 더해 'admin' role 만
   // /admin·콘텐츠 변경 API 를 통과시킨다(getSession 이 role 을 실어준다). ban/impersonate API 도
   // 따라오나 지금 소비자는 콘텐츠 CRUD 의 role 체크뿐. 첫 admin 은 DB 에서 수동 지정(0004 참고).
-  plugins: [jwt(), dash(), admin()],
+  //
+  // passkey — WebAuthn 패스키 로그인(V5 / 이슈 #10, ADR-0003 결정 2의 인증 수단). better-auth
+  // 1.4 부터 core 에서 분리돼 @better-auth/passkey 패키지로 제공된다. 외부 IdP·OAuth 등록 없이
+  // 같은 오리진에서 등록·인증한다. rpID·origin 은 baseURL 에서 파생(auth-config) — 미지정(로컬)
+  // 이면 기본 rpID "localhost"/클라이언트 origin. 패스키 테이블은 라이브러리 스키마(0007, 0001 처럼).
+  // > 0007 을 앱(패스키 API) 배포보다 먼저 적용해야 등록/로그인이 동작한다.
+  plugins: [
+    jwt(),
+    dash(),
+    admin(),
+    passkey({ rpID: cfg.rpID, rpName: "quizdeck", origin: cfg.origin }),
+  ],
 });

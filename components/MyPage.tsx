@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, type SubmitEvent } from "react";
+import { useCallback, useEffect, useState, type SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   changeEmail,
   changePassword,
   deleteUser,
+  passkey,
   signOut,
   updateUser,
 } from "@/lib/auth-client";
@@ -26,6 +27,7 @@ export default function MyPage({ name, email }: { name: string; email: string })
       <ProfileSection initialName={name} email={email} />
       <EmailSection />
       <PasswordSection />
+      <PasskeySection />
       <DangerSection email={email} />
     </>
   );
@@ -208,6 +210,102 @@ function PasswordSection() {
           비밀번호 변경
         </Button>
       </form>
+    </Section>
+  );
+}
+
+// ── 보안 — 패스키(WebAuthn) ───────────────────────────────────
+// 로그인한 Learner 가 기기 생체인증·보안키를 비밀번호 없는 로그인 수단으로 등록·관리한다(이슈 #10).
+// 등록/인증은 같은 오리진(myquizdeck.com)에서 — 외부 IdP·OAuth 등록 없음. 로그인은 AuthForms 의
+// "패스키로 로그인". 플러그인은 프롬프트 취소를 throw 가 아니라 res.error(영어 메시지)로 돌려주므로
+// 에러는 한국어로 통일해 노출한다(라이브러리 영어 문구를 그대로 보이지 않게). try/catch 는 throw
+// 하는 버전 대비 안전망.
+type PasskeyItem = { id: string; name?: string | null; createdAt: string | Date };
+
+function PasskeySection() {
+  const [list, setList] = useState<PasskeyItem[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await passkey.listUserPasskeys();
+      if (!res.error) setList(res.data ?? []);
+    } catch {
+      /* 목록 조회 실패는 조용히 — 등록/삭제 액션에서만 에러를 노출 */
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const add = async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      const res = await passkey.addPasskey();
+      // 취소/실패 모두 res.error(영어)로 온다 — 라이브러리 문구 대신 한국어로 통일.
+      if (res?.error) {
+        setError("패스키 등록이 취소되었거나 실패했습니다.");
+        return;
+      }
+      await refresh();
+    } catch {
+      // 일부 버전은 프롬프트 취소를 throw — 같은 한국어 메시지로 처리.
+      setError("패스키 등록이 취소되었거나 실패했습니다.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (id: string) => {
+    setError(null);
+    const res = await passkey.deletePasskey({ id });
+    if (res.error) {
+      setError("패스키를 삭제하지 못했습니다.");
+      return;
+    }
+    await refresh();
+  };
+
+  return (
+    <Section title="보안 — 패스키">
+      <p className="text-sm text-[var(--muted)]">
+        기기 생체인증(지문·얼굴)이나 보안키로 <b className="text-[var(--fg)]">비밀번호 없이</b>
+        로그인합니다. 등록한 기기에서 만들어 두세요.
+      </p>
+      {list && list.length > 0 && (
+        <ul className="mt-3 space-y-2">
+          {list.map((pk) => (
+            <li
+              key={pk.id}
+              className="flex items-center justify-between rounded-control border border-[var(--border)] px-3 py-2 text-sm"
+            >
+              <span>
+                🔑 {pk.name || "패스키"}{" "}
+                <span className="text-xs text-[var(--muted)]">
+                  · {new Date(pk.createdAt).toLocaleDateString("ko-KR")}
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => remove(pk.id)}
+                className="text-xs text-[var(--muted)] hover:text-[var(--bad)]"
+              >
+                삭제
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {list && list.length === 0 && (
+        <p className="mt-3 text-xs text-[var(--muted)]">등록된 패스키가 없습니다.</p>
+      )}
+      {error && <Msg kind="bad" className="mt-2">{error}</Msg>}
+      <Button type="button" variant="outline" loading={busy} onClick={add} className="mt-3">
+        패스키 등록
+      </Button>
     </Section>
   );
 }
