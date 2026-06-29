@@ -17,6 +17,13 @@ better-auth 스키마(`0001`)와 앱 도메인 스키마(`0002~`)를 담는다. 
   세션 Learner 로 스코프해 위임하고, `postgresProgressStore`(lib/progress-store-postgres.ts)가
   upsert/select 한다. 직접 설계한 도메인 테이블이라 better-auth CLI 가 만지지 않는다.
 
+`0003_content.sql` — Question·Concept 콘텐츠(이슈 #26 / ADR-0005 A):
+
+- `question(exam_key, qn, answer text[], content jsonb, PK(exam_key, qn))`,
+  `concept(exam_key, svc, content jsonb, PK(exam_key, svc))` — 콘텐츠를 DB 단일 소스로.
+  언어 의존 텍스트는 `content` jsonb 의 언어 슬롯(`{ko:{…}}`)에, 언어 무관 식별/검증 필드는
+  컬럼에 둔다. Exam 페이지가 ISR 로 읽고(`lib/content.ts`), 어드민(#27)이 편집한다.
+
 ## 어떻게 생성했나
 
 `lib/auth.ts` 설정을 introspect 해 better-auth CLI 가 SQL 을 뽑는다. 빈(또는 기존) DB 에
@@ -37,9 +44,29 @@ DB 접속정보는 k8s Secret `db-credentials` 의 `DATABASE_URL` 이다(생성 
 ```sh
 psql "$DATABASE_URL" -f db/migrations/0001_better_auth.sql
 psql "$DATABASE_URL" -f db/migrations/0002_progress.sql
+psql "$DATABASE_URL" -f db/migrations/0003_content.sql
 ```
 
 `0002` 의 `progress.learner_id` 가 `user(id)` 를 참조하므로 `0001` 다음에 적용한다.
 신규(빈) DB 에 1회 적용하는 평범한 `CREATE TABLE` 이다(IF NOT EXISTS 아님 — 재적용은 에러).
 이미 적용된 DB 에 스키마 변경분만 반영하려면 `npx @better-auth/cli migrate` 를 쓰거나
 새 마이그레이션 파일의 변경 구문만 적용한다.
+
+### 콘텐츠 seed (0003 적용 후, 배포 전)
+
+`0003` 적용 후 `content/` JSON 을 DB 로 적재한다(idempotent — 재실행 안전). 두 방법:
+
+```sh
+# (a) node 가 있는 호스트(repo 체크아웃 필요)
+DATABASE_URL="$DATABASE_URL" node db/seed-content.mjs
+
+# (b) node 없이 — 생성된 seed SQL 을 psql 로(k3s-home 등, 마이그레이션과 같은 워크플로)
+psql "$DATABASE_URL" -f db/seed-content.sql
+```
+
+`db/seed-content.sql` 은 `seed-content.mjs` 의 pg_dump 산출(선두 `truncate` 로 재적용 안전).
+콘텐츠가 바뀌면 재생성한다(`#27` 어드민 편집 후엔 DB 가 소스 — 이 파일은 초기 시드용).
+
+Exam 페이지가 런타임에 DB 에서 Question·Concept 을 읽으므로(ISR), **마이그레이션+seed 를
+새 앱 배포보다 먼저** 하는 게 안전하다(seed 전엔 문항이 0 으로 보임). diagrams·q2svc·icons·
+meta 는 파일 잔존이라 seed 대상이 아니다.
