@@ -48,11 +48,14 @@ export function resolveEmailConfig(env: EmailEnvInput): ResolvedEmailConfig {
 }
 
 // ── 템플릿(순수) ─────────────────────────────────────────────
+// 가입 검증과 이메일 변경(이슈 #38)이 공유하는 템플릿 — 문구는 둘 다에 자연스럽게 중립적으로.
+// (better-auth 의 change-email 은 verified 사용자일 때 이 sendVerificationEmail 콜백을 재사용해
+//  새 주소로 링크를 보낸다 — 클릭 시 이메일이 교체된다.)
 export function verificationEmail(url: string): Omit<EmailMessage, "to"> {
   return {
     subject: `${APP} 이메일 인증`,
     html:
-      `<p>${APP} 가입을 마치려면 아래 링크로 이메일을 인증하세요.</p>` +
+      `<p>${APP} 에서 이 이메일 주소를 인증하려면 아래 링크를 누르세요.</p>` +
       `<p><a href="${url}">이메일 인증하기</a></p>` +
       `<p>본인이 요청하지 않았다면 이 메일을 무시하세요.</p>`,
     text: `${APP} 이메일 인증: ${url}`,

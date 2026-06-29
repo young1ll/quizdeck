@@ -25,4 +25,6 @@ export const {
   updateUser,
   changePassword,
   deleteUser,
+  // 이메일 변경 (ADR-0006 / 이슈 #38)
+  changeEmail,
 } = authClient;

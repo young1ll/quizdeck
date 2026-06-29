@@ -41,8 +41,13 @@ export const auth = betterAuth({
   // 회원 탈퇴 활성화 (이슈 #36 / ADR-0006). client deleteUser({ password }) 가 현재 비번을
   // 재확인하고 user 행을 지운다 → DB FK cascade(Progress 0002·Annotation 0006·session·account)로
   // 그 Learner 데이터가 함께 정리된다. 이메일-링크 확인은 후속(비번 확인으로 충분, ADR-0006).
+  //
+  // 이메일 변경 활성화 (이슈 #38 / ADR-0006). verified 사용자가 changeEmail({ newEmail }) 하면
+  // better-auth 가 아래 emailVerification.sendVerificationEmail 콜백을 재사용해 **새 주소로** 인증
+  // 링크를 보내고, 클릭 전까지는 기존 이메일을 유지한다(클릭 시 교체). 별도 콜백/2단계 불요.
   user: {
     deleteUser: { enabled: true },
+    changeEmail: { enabled: true },
   },
   emailAndPassword: {
     enabled: true,
