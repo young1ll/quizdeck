@@ -1,31 +1,22 @@
 "use client";
 
 import { useState, type SubmitEvent } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { changePassword, deleteUser, signOut, updateUser } from "@/lib/auth-client";
 
 // 마이페이지 계정 관리 (이슈 #36 / ADR-0006). 프로필(이름)·보안(비번 변경)·위험 구역(탈퇴).
 // AuthForms 와 같은 폼 규약(Field·accent 버튼·--bad/--good·better-auth res.error)을 따른다.
-// 허브의 '활동' 섹션(학습 대시보드)은 후속 슬라이스(#37).
+// 레이아웃(main·헤더)과 활동 섹션(Dashboard, #37)은 app/me/page.tsx 가 소유 — 여기선 계정 섹션만.
 
 const DELETE_PHRASE = "삭제합니다";
 
 export default function MyPage({ name, email }: { name: string; email: string }) {
   return (
-    <main className="mx-auto max-w-lg px-5 py-10">
-      <div className="mb-6 flex items-center gap-3">
-        <Link href="/" className="text-sm text-[var(--muted)] hover:text-[var(--fg)]">
-          ← 홈
-        </Link>
-        <h1 className="text-2xl font-bold">마이페이지</h1>
-      </div>
-      <div className="space-y-5">
-        <ProfileSection initialName={name} email={email} />
-        <PasswordSection />
-        <DangerSection email={email} />
-      </div>
-    </main>
+    <>
+      <ProfileSection initialName={name} email={email} />
+      <PasswordSection />
+      <DangerSection email={email} />
+    </>
   );
 }
 

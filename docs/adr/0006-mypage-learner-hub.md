@@ -13,6 +13,7 @@ Status: accepted
 3. **회원 탈퇴 = DB FK cascade + 비밀번호 확인.** `deleteUser({ password })`(better-auth) + 타이핑 확인 모달. 데이터 정리는 **DB `ON DELETE CASCADE` FK**로 선언적으로 — Progress(0002)는 이미 `references "user"("id") on delete cascade`, Annotation(0005)은 FK가 없어 **0006 마이그레이션으로 추가**한다. `user` 행 삭제 → Progress·Annotation·session·account 가 함께 자동 정리.
 4. **비밀번호 변경 시 다른 세션 폐기**(`revokeOtherSessions: true`).
 5. **학습 대시보드는 후속 슬라이스.** cross-exam 집계(여러 Exam의 Progress를 **계정 레벨**에서 모아 [[../../CONTEXT.md#Mastery|Mastery]]·연속학습일·오답/즐겨찾기 수 등)는 **새 데이터 경로**(전 Exam Progress 로드/집계 — 현재 Progress 는 ExamApp 안에서 examKey 별로만 로드)가 필요해, 계정 MVP 와 분리해 신중히 결정한다. 허브에 '활동' 섹션으로 합류.
+   - **집계 경로(이슈 #37 에서 해소)**: `/me` **서버 컴포넌트가 progress 전 행을 DB 에서 직접 읽고 순수 함수(lib/dashboard)로 집계**한다 — 새 API 엔드포인트·클라 fetch·로딩 상태 없음(content.ts 가 RSC 에서 DB 읽는 것과 같은 결). 대시보드는 읽기 전용 표시라 RSC 가 자연스럽고, `mastery`·streak 도출은 Home 의 per-exam 통계와 같은 정의를 재사용한다. DB(동기화된 Progress)가 소스라 기기 간 정합 — 막 만든 미동기 로컬 변경은 동기화 후 반영. (대안: 전용 `/api/progress/summary`·목록 모드 — 한 겹 더라 보류.)
 6. **이메일 변경도 후속.** `requireEmailVerification: true` 때문에 새 주소 재인증(pending) 플로우 무게가 있어 별도 슬라이스(`sendChangeEmailVerification` 설정 + 검증 경로).
 
 ## 왜
