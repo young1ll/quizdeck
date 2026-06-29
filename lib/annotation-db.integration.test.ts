@@ -28,10 +28,17 @@ const mk = (id: string, over: Partial<Annotation> = {}): Annotation => ({
 
 describe.skipIf(!hasDb)("annotation-db (실 postgres 필요)", () => {
   beforeAll(async () => {
-    await pool.query(`delete from "annotation" where "learner_id" in ($1,$2)`, [A, B]);
+    // annotation.learner_id 는 user(id) FK(0006). 두 Learner 의 user 행을 먼저 만든다.
+    await pool.query(`delete from "user" where "id" in ($1,$2)`, [A, B]);
+    await pool.query(
+      `insert into "user" ("id","name","email","emailVerified")
+        values ($1,'A',$2,true), ($3,'B',$4,true)`,
+      [A, `${A}@example.com`, B, `${B}@example.com`],
+    );
   });
   afterAll(async () => {
-    await pool.query(`delete from "annotation" where "learner_id" in ($1,$2)`, [A, B]);
+    // user 삭제 → FK cascade 로 그 Learner 의 annotation 도 정리.
+    await pool.query(`delete from "user" where "id" in ($1,$2)`, [A, B]);
   });
 
   it("upsert→list round-trip, 그리고 다른 learner 의 주석은 보이지 않는다", async () => {
