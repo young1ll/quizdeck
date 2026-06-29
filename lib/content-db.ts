@@ -71,6 +71,8 @@ export async function upsertQuestion(
   );
 }
 
+// ord 는 INSERT 에서만 설정한다 — 기존 개념 편집(conflict)은 순서를 보존(어드민이 한 항목을
+// 고쳐도 목록이 재배열되지 않음, #27). 초기 seed 는 파일 인덱스를 ord 로 넣는다.
 export async function upsertConcept(
   pool: Pool,
   examKey: string,
@@ -84,8 +86,15 @@ export async function upsertConcept(
     `insert into "concept" ("exam_key", "svc", "ord", "content")
           values ($1, $2, $3, $4::jsonb)
      on conflict ("exam_key", "svc")
-          do update set "ord" = excluded."ord",
-                        "content" = "concept"."content" || excluded."content"`,
+          do update set "content" = "concept"."content" || excluded."content"`,
     [examKey, svc, ord, JSON.stringify(content)],
   );
+}
+
+export async function deleteQuestion(pool: Pool, examKey: string, qn: number): Promise<void> {
+  await pool.query(`delete from "question" where "exam_key" = $1 and "qn" = $2`, [examKey, qn]);
+}
+
+export async function deleteConcept(pool: Pool, examKey: string, svc: string): Promise<void> {
+  await pool.query(`delete from "concept" where "exam_key" = $1 and "svc" = $2`, [examKey, svc]);
 }
