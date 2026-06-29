@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { DashboardData } from "@/lib/dashboard";
+import { StatTile } from "@/components/ui/StatTile";
 
 // 학습 현황 — /me 허브의 활동 섹션 (이슈 #37 / ADR-0006 결정 5). 서버에서 집계된 plain 데이터를
 // 표시만 한다(서버 컴포넌트, 클라 번들 무게 없음). meta 는 examKey → 표시 이름·코드·링크.
@@ -23,10 +24,10 @@ export default function Dashboard({
       ) : (
         <>
           <div className="grid grid-cols-4 gap-2 text-center">
-            <Tile b={data.totalExams} s="학습 시험" />
-            <Tile b={`🔥${data.streak}`} s="연속일" />
-            <Tile b={data.totalSeen} s="학습 문항" />
-            <Tile b={data.totalWrong} s="오답" />
+            <StatTile b={data.totalExams} s="학습 시험" className="py-2" />
+            <StatTile b={`🔥${data.streak}`} s="연속일" className="py-2" />
+            <StatTile b={data.totalSeen} s="학습 문항" className="py-2" />
+            <StatTile b={data.totalWrong} s="오답" className="py-2" />
           </div>
           <ul className="mt-4 space-y-2">
             {data.exams.map((e) => {
@@ -66,14 +67,5 @@ export default function Dashboard({
         </>
       )}
     </section>
-  );
-}
-
-function Tile({ b, s }: { b: React.ReactNode; s: string }) {
-  return (
-    <div className="rounded-lg bg-[var(--panel-2)] py-2">
-      <div className="text-base font-bold">{b}</div>
-      <div className="text-[10px] text-[var(--muted)]">{s}</div>
-    </div>
   );
 }

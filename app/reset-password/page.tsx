@@ -5,6 +5,7 @@ import Link from "next/link";
 import { resetPassword } from "@/lib/auth-client";
 import { Field } from "@/components/ui/Field";
 import { Msg } from "@/components/ui/Msg";
+import { primaryButton } from "@/components/ui/button";
 
 // 비밀번호 재설정 랜딩 (이슈 #21 / ADR-0004).
 // 재설정 메일 링크 → better-auth 서버 콜백이 토큰을 검증하고 이 페이지로 리다이렉트한다:
@@ -77,7 +78,7 @@ export default function ResetPasswordPage() {
             <button
               type="submit"
               disabled={busy || !token}
-              className="w-full rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-[var(--accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-50"
+              className={primaryButton}
             >
               {busy ? "처리 중…" : token ? "비밀번호 변경" : "링크 확인 중…"}
             </button>

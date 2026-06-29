@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth-client";
 import { Field } from "@/components/ui/Field";
 import { Msg } from "@/components/ui/Msg";
+import { primaryButton } from "@/components/ui/button";
 import { normalizeEmail } from "@/lib/format";
 
 // 마이페이지 계정 관리 (이슈 #36/#38 / ADR-0006). 프로필(이름)·이메일 변경·보안(비번)·위험 구역(탈퇴).
@@ -38,9 +39,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </section>
   );
 }
-
-const primaryBtn =
-  "w-full rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-[var(--accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-50";
 
 // ── 프로필 — 이름 수정 ────────────────────────────────────────
 function ProfileSection({ initialName, email }: { initialName: string; email: string }) {
@@ -87,7 +85,7 @@ function ProfileSection({ initialName, email }: { initialName: string; email: st
         />
         {error && <Msg kind="bad">{error}</Msg>}
         {done && <Msg kind="good">저장되었습니다.</Msg>}
-        <button type="submit" disabled={busy || name.trim() === initialName} className={primaryBtn}>
+        <button type="submit" disabled={busy || name.trim() === initialName} className={primaryButton}>
           {busy ? "저장 중…" : "저장"}
         </button>
       </form>
@@ -146,7 +144,7 @@ function EmailSection() {
             placeholder="new@example.com"
           />
           {error && <Msg kind="bad">{error}</Msg>}
-          <button type="submit" disabled={busy || !newEmail.trim()} className={primaryBtn}>
+          <button type="submit" disabled={busy || !newEmail.trim()} className={primaryButton}>
             {busy ? "보내는 중…" : "인증 메일 보내기"}
           </button>
         </form>
@@ -206,7 +204,7 @@ function PasswordSection() {
         />
         {error && <Msg kind="bad">{error}</Msg>}
         {done && <Msg kind="good">비밀번호를 변경했습니다. 다른 기기는 로그아웃됩니다.</Msg>}
-        <button type="submit" disabled={busy || !current || next.length < 8} className={primaryBtn}>
+        <button type="submit" disabled={busy || !current || next.length < 8} className={primaryButton}>
           {busy ? "변경 중…" : "비밀번호 변경"}
         </button>
       </form>

@@ -9,6 +9,7 @@ import {
 } from "@/lib/auth-client";
 import { Field } from "@/components/ui/Field";
 import { Msg } from "@/components/ui/Msg";
+import { primaryButton } from "@/components/ui/button";
 import { normalizeEmail } from "@/lib/format";
 
 // 인증 폼 (이슈 #6 + ADR-0004): 로그인·가입 + 이메일 인증·비밀번호 재설정.
@@ -161,7 +162,7 @@ export default function AuthForms() {
         <button
           type="submit"
           disabled={busy}
-          className="mt-3 w-full rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-[var(--accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-50"
+          className={`mt-3 ${primaryButton}`}
         >
           {busy ? "처리 중…" : "재설정 메일 보내기"}
         </button>
@@ -228,7 +229,7 @@ export default function AuthForms() {
       <button
         type="submit"
         disabled={busy}
-        className="mt-3 w-full rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-[var(--accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-50"
+        className={`mt-3 ${primaryButton}`}
       >
         {busy ? "처리 중…" : tab === "signup" ? "가입하기" : "로그인"}
       </button>
