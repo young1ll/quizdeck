@@ -61,15 +61,28 @@ export default function AnnotatableText({
   const anns = forField(qn, lang, field);
   const { segments, orphans } = useMemo(() => segmentText(plain, anns), [plain, anns]);
 
-  // 바깥을 누르면 툴바·편집 팝오버를 닫는다(툴바/팝오버 자체는 onMouseDown 으로 전파를 막아 유지).
+  // 바깥을 누르거나 Esc 를 누르면 툴바·편집 팝오버를 닫는다(툴바/팝오버 자체는 onMouseDown 으로
+  // 전파를 막아 유지). 이 둘은 비차단 플로팅 팝오버라 모달 포커스 트랩(이슈 #49)은 적용하지 않는다
+  // — Tab 으로 빠져나갈 수 있어야 하기 때문. 대신 Esc 닫기로 키보드 접근성을 맞춘다.
   useEffect(() => {
     if (!toolbar && !editing) return;
-    const onDown = () => {
+    const close = () => {
       setToolbar(null);
       setEditing(null);
     };
+    const onDown = () => close();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      // 닫기 전 활성 요소를 blur — 메모 textarea 의 onBlur 저장이 언마운트보다 먼저 돌게 한다.
+      (document.activeElement as HTMLElement | null)?.blur?.();
+      close();
+    };
     document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [toolbar, editing]);
 
   // 비활성(익명)·빈 텍스트면 평문만 렌더(상호작용 없음).
