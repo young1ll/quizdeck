@@ -39,6 +39,36 @@ body {
     "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
 
+/* 상호작용 어포던스 floor (ADR-0008 결정 1) — interactive 요소에 일관된 cursor·focus 링.
+   Tailwind v4 preflight 가 버튼에 pointer 를 안 깔아 대부분 기본 커서다. @layer base 라
+   요소별 Tailwind 유틸리티(cursor-*, focus-visible:outline-* 등)가 항상 위에서 덮을 수 있다. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href]:not([aria-disabled="true"]),
+  summary:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  /* 키보드 포커스에만 링(마우스 클릭엔 안 뜸) — 기존 focus:border-accent 와 공존(outline≠border). */
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  a[href]:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  summary:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
 /* PDF 인쇄 영역 — 화면 숨김, 인쇄 시 본문 대체 */
 #printarea {
   display: none;
