@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useRef } from "react";
+import Link from "next/link";
 import { useExam } from "@/lib/exam-context";
-import { useNav } from "@/lib/nav-context";
 import { MODE_LABEL, useStore, type Mode, type Store } from "@/lib/store";
 import { streak, today } from "@/lib/dates";
 import { StatTile } from "@/components/ui/StatTile";
@@ -30,7 +30,6 @@ export default function Home({
   onDiscard: () => void;
 }) {
   const { questions, meta } = useExam();
-  const { go } = useNav();
   const { store, setPrefs, resetAll, replaceStore } = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -184,14 +183,9 @@ export default function Home({
       {/* 모드 */}
       <ModeGrid onStartMode={onStartMode} />
 
-      {/* 참고 뷰 네비 */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <NavBtn label="📖 개념" onClick={() => go("concept")} />
-        <NavBtn label="🗺️ 서비스맵" onClick={() => go("map")} />
-        <NavBtn label="📐 다이어그램" onClick={() => go("diagram")} />
-        <NavBtn label="🔎 검색" onClick={() => go("search")} />
-        <NavBtn label="📜 히스토리" onClick={() => go("history")} />
-      </div>
+      {/* 참고 뷰 — 라우트로(hub-and-spoke, ADR-0010 슬라이스 B). 뒤로가기·딥링크. */}
+      <RefNav base={`/${meta.provider}/${meta.slug}`} history />
+
 
       {/* 주제별 정답률 */}
       <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
@@ -270,7 +264,6 @@ export default function Home({
 // 로그인 CTA. Progress 의존 블록(숙련도·통계·도구·히스토리)은 익명에 의미 없어 숨긴다.
 function AnonymousHome({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
   const { meta, questions } = useExam();
-  const { go } = useNav();
   return (
     <div className="space-y-6">
       <header>
@@ -290,12 +283,7 @@ function AnonymousHome({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
       <ModeGrid onStartMode={onStartMode} />
 
       {/* 열람(익명 허용) — 히스토리는 Progress 의존이라 제외 */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <NavBtn label="📖 개념" onClick={() => go("concept")} />
-        <NavBtn label="🗺️ 서비스맵" onClick={() => go("map")} />
-        <NavBtn label="📐 다이어그램" onClick={() => go("diagram")} />
-        <NavBtn label="🔎 검색" onClick={() => go("search")} />
-      </div>
+      <RefNav base={`/${meta.provider}/${meta.slug}`} />
     </div>
   );
 }
@@ -318,15 +306,28 @@ function ModeGrid({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
   );
 }
 
-function NavBtn({ label, onClick }: { label: string; onClick: () => void }) {
+// 참조 뷰 네비 — 라우트 링크(hub-and-spoke, ADR-0010 슬라이스 B). 히스토리는 Progress 의존이라
+// Learner 홈에만(history). 모바일 뒤로가기·딥링크.
+function RefNav({ base, history = false }: { base: string; history?: boolean }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-xl border border-[var(--border)] bg-[var(--panel-2)] p-3 text-sm hover:border-[var(--accent)]"
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <NavLink href={`${base}/concepts`} label="📖 개념" />
+      <NavLink href={`${base}/map`} label="🗺️ 서비스맵" />
+      <NavLink href={`${base}/diagrams`} label="📐 다이어그램" />
+      <NavLink href={`${base}/search`} label="🔎 검색" />
+      {history && <NavLink href={`${base}/history`} label="📜 히스토리" />}
+    </div>
+  );
+}
+
+function NavLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-[44px] items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--panel-2)] p-3 text-sm hover:border-[var(--accent)]"
     >
       {label}
-    </button>
+    </Link>
   );
 }
 
