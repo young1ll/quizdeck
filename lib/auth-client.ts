@@ -1,6 +1,7 @@
 "use client";
 
 import { createAuthClient } from "better-auth/react";
+import { genericOAuthClient } from "better-auth/client/plugins";
 import { passkeyClient } from "@better-auth/passkey/client";
 import { dashClient } from "@better-auth/infra/client";
 
@@ -11,8 +12,10 @@ import { dashClient } from "@better-auth/infra/client";
 // 클라이언트 액션($Infer 등)을 authClient 에 추가한다.
 // passkeyClient — 서버 passkey() 짝(V5 / 이슈 #10). signIn.passkey(비번 없는 로그인) +
 // passkey.addPasskey/listUserPasskeys/deletePasskey(등록·조회·삭제)를 authClient 에 더한다.
+// genericOAuthClient — 서버 genericOAuth() 짝(V4 / 이슈 #9, Naver). signIn.oauth2({providerId})
+// 를 더한다. GitHub·Google 은 built-in 이라 signIn.social({provider}) 로 충분(코어 — 짝 불요).
 export const authClient = createAuthClient({
-  plugins: [dashClient(), passkeyClient()],
+  plugins: [dashClient(), passkeyClient(), genericOAuthClient()],
 });
 
 export const {

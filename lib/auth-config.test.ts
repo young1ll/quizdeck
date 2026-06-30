@@ -84,6 +84,58 @@ describe("resolveAuthConfig", () => {
     expect(cfg.origin).toBeUndefined();
     expect(cfg.missing).toEqual([]); // 해석기는 throw 하지 않는다
   });
+
+  // 소셜 로그인(V4, #9) — GitHub·Google·Naver 의 client id/secret 은 모두 선택(optional).
+  // 외부 앱 등록이 선행돼야 하므로 미주입이 정상 상태 — missing 에 넣지 않고, 양쪽(id+secret)이
+  // 모두 있을 때만 그 provider 를 enable 한다(부분 설정은 미구성으로 취급). git 밖 k8s Secret 주입.
+  const withSocial = {
+    ...full,
+    GITHUB_CLIENT_ID: "gh-id",
+    GITHUB_CLIENT_SECRET: "gh-secret",
+    GOOGLE_CLIENT_ID: "goog-id",
+    GOOGLE_CLIENT_SECRET: "goog-secret",
+    NAVER_CLIENT_ID: "naver-id",
+    NAVER_CLIENT_SECRET: "naver-secret",
+  };
+
+  it("세 provider 의 id+secret 가 모두 있으면 social 에 셋 다 채워진다", () => {
+    const cfg = resolveAuthConfig(withSocial);
+    expect(cfg.social.github).toEqual({ clientId: "gh-id", clientSecret: "gh-secret" });
+    expect(cfg.social.google).toEqual({ clientId: "goog-id", clientSecret: "goog-secret" });
+    expect(cfg.social.naver).toEqual({ clientId: "naver-id", clientSecret: "naver-secret" });
+  });
+
+  it("소셜 env 가 전혀 없으면 social 은 빈 객체이고 missing 에 들어가지 않는다", () => {
+    const cfg = resolveAuthConfig(full);
+    expect(cfg.social).toEqual({});
+    expect(cfg.missing).toEqual([]);
+  });
+
+  it("id 만 있고 secret 이 없으면 그 provider 는 미구성(undefined)으로 둔다", () => {
+    const cfg = resolveAuthConfig({ ...full, GITHUB_CLIENT_ID: "gh-id" });
+    expect(cfg.social.github).toBeUndefined();
+    expect(cfg.missing).toEqual([]); // 부분 설정도 인증 전체를 막지 않는다
+  });
+
+  it("일부 provider 만 구성되면 그 provider 만 enable 된다", () => {
+    const cfg = resolveAuthConfig({
+      ...full,
+      GITHUB_CLIENT_ID: "gh-id",
+      GITHUB_CLIENT_SECRET: "gh-secret",
+    });
+    expect(cfg.social.github).toEqual({ clientId: "gh-id", clientSecret: "gh-secret" });
+    expect(cfg.social.google).toBeUndefined();
+    expect(cfg.social.naver).toBeUndefined();
+  });
+
+  it("소셜 자격증명의 공백 only 값은 미설정으로 취급한다", () => {
+    const cfg = resolveAuthConfig({
+      ...full,
+      GOOGLE_CLIENT_ID: "  ",
+      GOOGLE_CLIENT_SECRET: "goog-secret",
+    });
+    expect(cfg.social.google).toBeUndefined();
+  });
 });
 
 describe("assertAuthConfigReady", () => {
