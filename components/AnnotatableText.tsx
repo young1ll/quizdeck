@@ -9,6 +9,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { createPortal } from "react-dom";
+import { LuX } from "react-icons/lu";
 import { useLang } from "@/lib/lang-context";
 import { useAnnotations } from "@/lib/annotation-context";
 import {
@@ -207,9 +208,10 @@ export default function AnnotatableText({
                 type="button"
                 onClick={() => remove(o.id)}
                 className="text-[var(--muted)] hover:text-[var(--bad)]"
+                aria-label="삭제"
                 title="삭제"
               >
-                ✕
+                <LuX className="size-3.5" aria-hidden />
               </button>
             </span>
           ))}

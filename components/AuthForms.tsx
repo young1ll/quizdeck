@@ -7,6 +7,8 @@ import {
   sendVerificationEmail,
   requestPasswordReset,
 } from "@/lib/auth-client";
+import { SiGithub, SiGoogle, SiNaver } from "react-icons/si";
+import { LuKeyRound, LuMail, LuCheck, LuArrowLeft } from "react-icons/lu";
 import { Field } from "@/components/ui/Field";
 import { Msg } from "@/components/ui/Msg";
 import { Button } from "@/components/ui/Button";
@@ -162,17 +164,26 @@ export default function AuthForms() {
         : `인증 메일을 ${notice.email}로 보냈습니다. 메일의 링크를 눌러 인증을 완료하세요.`;
     return (
       <div className={shell}>
-        <p className="text-sm" role="status">
-          ✉️ {text}
+        <p className="flex items-start gap-2 text-sm" role="status">
+          <LuMail className="mt-0.5 size-4 shrink-0 text-[var(--muted)]" aria-hidden />
+          <span>{text}</span>
         </p>
         {notice.kind === "unverified" && (
           <button
             type="button"
             disabled={busy || resent}
             onClick={resend}
-            className="mt-3 w-full rounded-lg border border-[var(--border)] px-3 py-2 text-xs text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--fg)] disabled:opacity-50"
+            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] px-3 py-2 text-xs text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--fg)] disabled:opacity-50"
           >
-            {busy ? "처리 중…" : resent ? "✓ 재발송했습니다" : "인증 메일 재발송"}
+            {busy ? (
+              "처리 중…"
+            ) : resent ? (
+              <>
+                <LuCheck className="size-3.5 text-[var(--good)]" aria-hidden /> 재발송했습니다
+              </>
+            ) : (
+              "인증 메일 재발송"
+            )}
           </button>
         )}
         {error && (
@@ -183,9 +194,9 @@ export default function AuthForms() {
         <button
           type="button"
           onClick={reset}
-          className="mt-2 w-full text-xs text-[var(--muted)] hover:text-[var(--fg)]"
+          className="mt-2 flex w-full items-center justify-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--fg)]"
         >
-          ← 돌아가기
+          <LuArrowLeft className="size-3.5" aria-hidden /> 돌아가기
         </button>
       </div>
     );
@@ -215,9 +226,9 @@ export default function AuthForms() {
         <button
           type="button"
           onClick={reset}
-          className="mt-2 w-full text-xs text-[var(--muted)] hover:text-[var(--fg)]"
+          className="mt-2 flex w-full items-center justify-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--fg)]"
         >
-          ← 로그인으로
+          <LuArrowLeft className="size-3.5" aria-hidden /> 로그인으로
         </button>
       </form>
     );
@@ -283,47 +294,35 @@ export default function AuthForms() {
         <span className="h-px flex-1 bg-[var(--border)]" />
       </div>
       <div className="space-y-2">
-        <Button
-          type="button"
-          variant="outline"
-          fullWidth
+        <IconButton
+          icon={<SiGithub className="size-[18px]" />}
+          label="GitHub 계정으로 계속"
           disabled={busy}
           onClick={() => socialSignIn("github")}
-        >
-          GitHub 계정으로 계속
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          fullWidth
+        />
+        <IconButton
+          icon={<SiGoogle className="size-[18px]" />}
+          label="Google 계정으로 계속"
           disabled={busy}
           onClick={() => socialSignIn("google")}
-        >
-          Google 계정으로 계속
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          fullWidth
+        />
+        <IconButton
+          icon={<SiNaver className="size-[15px]" style={{ color: "#03C75A" }} />}
+          label="네이버 계정으로 계속"
           disabled={busy}
           onClick={naverSignIn}
-        >
-          네이버 계정으로 계속
-        </Button>
+        />
       </div>
 
       {tab === "signin" && (
         <>
-          <Button
-            type="button"
-            variant="outline"
-            fullWidth
+          <IconButton
+            icon={<LuKeyRound className="size-4" />}
+            label="패스키로 로그인"
             disabled={busy}
             onClick={signInPasskey}
             className="mt-2"
-          >
-            🔑 패스키로 로그인
-          </Button>
+          />
           <button
             type="button"
             onClick={() => {
@@ -362,5 +361,38 @@ function TabButton({
     >
       {children}
     </button>
+  );
+}
+
+// 아이콘 버튼(ADR-0009 파일럿) — 공통 Button(outline) + 왼쪽 고정 아이콘 + 중앙 라벨.
+// 아이콘은 absolute left 라 세 버튼 라벨 정렬이 흐트러지지 않는다. 소셜·패스키 버튼이 공유.
+// 아이콘은 장식이라 호출부에서 aria-hidden 없이도 라벨이 의미를 전한다(여기선 텍스트 라벨 동반).
+function IconButton({
+  icon,
+  label,
+  onClick,
+  disabled,
+  className = "",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  className?: string;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      fullWidth
+      disabled={disabled}
+      onClick={onClick}
+      className={`relative${className ? " " + className : ""}`}
+    >
+      <span aria-hidden className="absolute left-3 flex items-center">
+        {icon}
+      </span>
+      {label}
+    </Button>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { LuX } from "react-icons/lu";
 import AuthForms from "./AuthForms";
 import { useFocusTrap } from "@/lib/use-focus-trap";
 
@@ -34,9 +35,9 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
           type="button"
           onClick={onClose}
           aria-label="닫기"
-          className="absolute -right-2 -top-2 z-10 grid h-7 w-7 place-items-center rounded-full border border-[var(--border)] bg-[var(--panel)] text-xs text-[var(--muted)] hover:text-[var(--fg)]"
+          className="absolute -right-2 -top-2 z-10 grid h-7 w-7 place-items-center rounded-full border border-[var(--border)] bg-[var(--panel)] text-[var(--muted)] hover:text-[var(--fg)]"
         >
-          ✕
+          <LuX className="size-3.5" aria-hidden />
         </button>
         <p id="login-modal-title" className="mb-2 text-center text-sm font-semibold">
           로그인하고 학습 시작
