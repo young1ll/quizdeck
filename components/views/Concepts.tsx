@@ -28,20 +28,18 @@ function searchHaystack(c: Concept): string {
   );
 }
 
-export default function Concepts() {
+export default function Concepts({ initialSeed = "" }: { initialSeed?: string }) {
   const { concepts } = useExam();
-  const { studyOne, conceptSeed, clearConceptSeed } = useNav();
+  const { studyOne } = useNav();
 
   const [cat, setCat] = useState<string>("전체");
-  const [query, setQuery] = useState<string>("");
+  const [query, setQuery] = useState<string>(initialSeed);
 
-  // 다른 화면(openConceptFor)에서 넘어온 초기 검색어를 1회 소비
+  // 다른 화면(서비스맵 openConceptFor)에서 ?seed 로 넘어온 초기 검색어 — 라우트 prop 으로 받는다.
+  // (ADR-0010 슬라이스 B: conceptSeed 컨텍스트 → 라우트 query). seed 가 바뀌면 검색어 적용.
   useEffect(() => {
-    if (conceptSeed) {
-      setQuery(conceptSeed);
-      clearConceptSeed();
-    }
-  }, [conceptSeed, clearConceptSeed]);
+    if (initialSeed) setQuery(initialSeed);
+  }, [initialSeed]);
 
   // 카테고리 칩: ["전체", ...등장 카테고리(중복 제거, 등장 순서)]
   const cats = useMemo<string[]>(() => {

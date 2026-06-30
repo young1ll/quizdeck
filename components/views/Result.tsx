@@ -7,9 +7,9 @@ import { setsEqual } from "@/lib/session";
 import type { QuizController } from "@/lib/use-quiz";
 import { exportResultPDF } from "@/lib/pdf";
 
-export default function Result({ quiz }: { quiz: QuizController }) {
+export default function Result({ quiz, onHome }: { quiz: QuizController; onHome: () => void }) {
   const { byQn, meta } = useExam();
-  const { go, studyOne } = useNav();
+  const { studyOne } = useNav();
   const s = quiz.session;
   if (!s) return null;
 
@@ -133,7 +133,7 @@ export default function Result({ quiz }: { quiz: QuizController }) {
         )}
         <button
           type="button"
-          onClick={() => go("home")}
+          onClick={onHome}
           className="flex-1 rounded-xl border border-[var(--border)] px-5 py-3 font-semibold hover:border-[var(--accent)]"
         >
           홈으로

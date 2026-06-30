@@ -44,7 +44,8 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5 py-12">
+    <div className="w-full max-w-md">
+      {/* 중앙정렬·min-h 는 (auth) 레이아웃이 제공 — 여기선 카드만(ADR-0010 결정 2·3). */}
       <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-6">
         <h1 className="text-lg font-bold">비밀번호 재설정</h1>
 
@@ -83,7 +84,7 @@ export default function ResetPasswordPage() {
           </form>
         )}
       </div>
-    </main>
+    </div>
   );
 }
 

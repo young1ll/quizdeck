@@ -29,8 +29,31 @@ export default function MyPage({ name, email }: { name: string; email: string })
       <EmailSection />
       <PasswordSection />
       <PasskeySection />
+      <LogoutSection />
       <DangerSection email={email} />
     </>
+  );
+}
+
+// ── 로그아웃 ──────────────────────────────────────────────────
+// home 헤더의 로그인/마이페이지 칩 외, 계정 허브(/me)가 로그아웃을 소유한다(ADR-0010 슬라이스 C —
+// home AccountMenu 제거). signOut 후 full reload 로 home — 세션·캐시를 깨끗이 비운다.
+function LogoutSection() {
+  const [busy, setBusy] = useState(false);
+  return (
+    <Section title="세션">
+      <Button
+        variant="outline"
+        loading={busy}
+        onClick={async () => {
+          setBusy(true);
+          await signOut().catch(() => {});
+          window.location.href = "/";
+        }}
+      >
+        로그아웃
+      </Button>
+    </Section>
   );
 }
 
