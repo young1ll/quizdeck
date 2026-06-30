@@ -14,6 +14,7 @@ import { Msg } from "@/components/ui/Msg";
 import { Button } from "@/components/ui/Button";
 import { normalizeEmail } from "@/lib/format";
 import { authErrorMessage } from "@/lib/auth-error";
+import { detectInApp, buildEscapeTarget } from "@/lib/in-app-browser";
 
 // 인증 폼 (이슈 #6 + ADR-0004): 로그인·가입 + 이메일 인증·비밀번호 재설정.
 // 이메일 인증 필수 — 가입 후엔 세션 없이 "메일 확인" 안내, 미검증 로그인 시도엔 재발송 안내.
@@ -133,8 +134,20 @@ export default function AuthForms() {
   // 성공 시 provider 로 리다이렉트되어 사실상 반환하지 않는다. res.error 는 미등록·실패 →
   // 한국어로 안내. throw 는 client 규약상 드물지만 finally 로 busy 고착을 막는다(패스키 핸들러와 동일).
   const SOCIAL_FAIL = "이 로그인 수단을 지금 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.";
+  // 인앱 웹뷰(카카오톡 등)에서 소셜 로그인을 누르면 OAuth app-to-app(네이버 앱 인증·패스키)이 막힌다 —
+  // 강제 가능한 플랫폼은 기본 브라우저의 /login 으로 탈출시키고 현재 흐름을 끊는다(true). 강제 불가
+  // (iOS 네이버앱·인스타)면 false → 인앱 안에서라도 그대로 진행(아이디·비번 폴백; 배너가 별도 안내).
+  const escapedToExternal = (): boolean => {
+    const info = detectInApp(navigator.userAgent);
+    if (!info.isInApp) return false;
+    const plan = buildEscapeTarget(`${window.location.origin}${BASE_PATH}/login`, info);
+    if (plan.method !== "navigate") return false;
+    window.location.href = plan.href;
+    return true;
+  };
   const socialSignIn = async (provider: "github" | "google") => {
     setError(null);
+    if (escapedToExternal()) return;
     setBusy(true);
     try {
       const res = await signIn.social({ provider, callbackURL: `${BASE_PATH}/` });
@@ -147,6 +160,7 @@ export default function AuthForms() {
   };
   const naverSignIn = async () => {
     setError(null);
+    if (escapedToExternal()) return;
     setBusy(true);
     try {
       const res = await signIn.oauth2({ providerId: "naver", callbackURL: `${BASE_PATH}/` });
