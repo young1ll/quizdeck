@@ -307,7 +307,7 @@ export default function AuthForms() {
           onClick={() => socialSignIn("google")}
         />
         <IconButton
-          icon={<SiNaver className="size-[15px]" style={{ color: "#03C75A" }} />}
+          icon={<SiNaver className="size-[15px]" />}
           label="네이버 계정으로 계속"
           disabled={busy}
           onClick={naverSignIn}
