@@ -58,7 +58,8 @@ describe("/api/annotations — 인가", () => {
 
 describe("/api/annotations — 검증·스코프 (인증됨)", () => {
   beforeEach(() => {
-    getSession.mockResolvedValue({ user: { id: "learner-1" } });
+    // Learner = 이메일 검증된 신원 — requireLearner 가 emailVerified 를 직접 본다(ADR-0004 애던덤).
+    getSession.mockResolvedValue({ user: { id: "learner-1", emailVerified: true } });
   });
 
   it("exam 없는 GET 은 400", async () => {

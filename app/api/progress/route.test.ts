@@ -40,11 +40,20 @@ describe("/api/progress — 인가", () => {
     );
     expect(res.status).toBe(401);
   });
+
+  // 세션이 있어도 미검증이면 401 — 서버가 emailVerified 를 직접 본다(defense-in-depth, ADR-0004
+  // 애던덤). requireLearner 를 'session 존재'로 단순화하면 이 가드가 깨진다.
+  it("미검증 세션(emailVerified:false) GET 은 401", async () => {
+    getSession.mockResolvedValue({ user: { id: "learner-1", emailVerified: false } });
+    const res = await GET(req("GET", `${BASE}?exam=aws/x`));
+    expect(res.status).toBe(401);
+  });
 });
 
 describe("/api/progress — 입력 검증 (인증됨)", () => {
   beforeEach(() => {
-    getSession.mockResolvedValue({ user: { id: "learner-1" } });
+    // Learner = 이메일 검증된 신원 — requireLearner 가 emailVerified 를 직접 본다(ADR-0004 애던덤).
+    getSession.mockResolvedValue({ user: { id: "learner-1", emailVerified: true } });
   });
 
   it("exam 파라미터 없는 GET 은 400", async () => {

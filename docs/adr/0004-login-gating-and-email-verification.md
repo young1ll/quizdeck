@@ -40,3 +40,33 @@ Status: accepted
 - **도메인**: [[../../CONTEXT.md|CONTEXT.md]]에서 Learner = 이메일 검증된 신원, 익명 방문자(미인증 가입자 포함) = 열람 전용으로 갱신됨.
 - ADR-0001/0003의 "익명 사용 불변식"은 **연습에 한해** 폐기된다(열람은 익명 유지). 동기화 LWW·active Session 비동기화 등 #7 결정은 그대로 승계.
 - 후속 이슈로 슬라이스화: (A) 이메일 인프라 + better-auth 검증/재설정, (B) 연습 게이트 + 로그인 모달 + 익명 Home. B는 A의 verified-Learner 의미에 의존.
+
+## 애던덤 (2026-06-30) — Learner 신원을 단일 모듈로
+
+아키텍처 리뷰(`/improve-codebase-architecture` C1)에서 발견: "이 세션은 Learner인가"라는 술어가
+**모듈 없이 5곳에 흩어져** 두 규칙으로 갈렸다 — 클라 연습 게이트는 `emailVerified`(ExamApp), 서버
+가드·클라 store 선택·페이지 가드는 `id`-존재(progress/annotations route, ExamApp store, /me). 현재
+`requireEmailVerification:true`가 "세션 존재 ⟺ 검증됨"을 보장해 우연히 일치할 뿐, 불변식은 코드가
+아닌 주석에만 있었다. admin 경계는 이미 `lib/admin.ts`(`isAdminRole`+`getAdminSession`)로 깊은
+모듈이 있으나 Learner엔 그 대칭이 없었다.
+
+**결정**: Learner 신원을 admin과 대칭인 모듈로 추출한다(seam = 한 곳에서 정의·검증). 단 Learner
+술어는 admin과 달리 **클라(ExamApp 게이트·store 선택)에서도** 쓰여, 서버 전용 `lib/auth`(=pg)를
+끌면 클라 번들이 깨진다. 그래서 RSC 경계를 따라 **두 파일**로 가른다: `lib/learner.ts`(순수 술어,
+auth 무의존, 클라-안전) + `lib/learner-server.ts`(세션 해석, 서버 전용). 개념상 한 모듈, 물리상 둘.
+
+- **정규 술어 `isLearner(session) = session.user.emailVerified === true`** (`lib/learner.ts`) —
+  CONTEXT.md의 정의(검증된 신원)를 코드로 인코딩. `id`-존재가 아니라 검증 자체를 본다.
+- 순수 `learnerId(session) = isLearner ? user.id : null` (`lib/learner.ts`) — 클라 store 선택·게이트 공유.
+- `getLearnerSession(headers) → LearnerSession | null` (`lib/learner-server.ts`) — 헤더 주입식
+  (RSC `/me` + 라우트 공용, admin 대칭).
+- `requireLearner(req) → string | Response` (`lib/learner-server.ts`) — API 라우트용. 5× 복붙된 401 수렴.
+- **서버(requireLearner)도 `emailVerified`를 직접 확인한다 — `session`-존재로 단순화하지 말 것.**
+  클라 게이트와 규칙이 갈라지는 드리프트 방지이자 설정 변경에 대한 defense-in-depth. (미래 리뷰가
+  "세션 존재면 이미 검증인데 왜 또 보나"로 단순화하면 드리프트가 되살아난다 — 의도된 중복이다.)
+- 테스트: 순수 `isLearner`/`learnerId`는 off-stack 단위테스트(검증→id, 미검증→null, 무세션→null);
+  401/redirect 래핑은 기존 route integration 테스트(getSession 모킹)가 그대로 커버.
+- admin과는 **형제 모듈**로 둔다(`getAdminSession`을 `isLearner`에 얹지 않음 — ADR-0005 B authz 불변).
+
+ADR-0007 결정 5("2번째 중복에서 추출")를 충족하며, ADR-0004 결정 2(서버 가드가 실질 경계)는 유지된다
+— 이 애던덤은 그 경계를 한 모듈로 수렴할 뿐이다.
