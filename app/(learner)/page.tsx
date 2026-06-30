@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listExams } from "@/lib/content";
 import AccountMenu from "@/components/AccountMenu";
+import { Container } from "@/components/ui/Container";
 
 export default function Home() {
   const exams = listExams();
@@ -14,15 +15,11 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-12">
-      <header className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">QuizDeck</h1>
-          <p className="mt-2 text-[var(--muted)]">
-            자격·기술 시험 대비 퀴즈 · 학습
-          </p>
-        </div>
-        {/* 로그인하면 현재 Learner 가 보인다. 익명도 그대로 사용 가능. (이슈 #6) */}
+    <Container size="lg" className="py-8">
+      {/* 브랜드·전역 nav 는 learner shell 헤더(로고→home). 여기선 태그라인 + 계정만. AccountMenu 는
+          익명이면 로그인 폼·Learner 면 프로필 — home 의 로그인 surface(슬라이스 C 의 /login 전까지). */}
+      <header className="mb-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-[var(--muted)]">자격·기술 시험 대비 퀴즈 · 학습</p>
         <AccountMenu />
       </header>
 
@@ -63,6 +60,6 @@ export default function Home() {
       <footer className="mt-16 text-center text-xs text-[var(--muted)]">
         QuizDeck · self-hosted
       </footer>
-    </main>
+    </Container>
   );
 }

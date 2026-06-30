@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getLearnerSession } from "@/lib/learner-server";
+import { Container } from "@/components/ui/Container";
 import { pool } from "@/lib/db";
 import { listExams } from "@/lib/content";
 import { loadAllProgress } from "@/lib/progress-db";
@@ -33,17 +33,13 @@ export default async function Me() {
   const dashboard = buildDashboard(rows, totalByKey, today());
 
   return (
-    <main className="mx-auto max-w-lg px-5 py-10">
-      <div className="mb-6 flex items-center gap-3">
-        <Link href="/" className="text-sm text-[var(--muted)] hover:text-[var(--fg)]">
-          ← 홈
-        </Link>
-        <h1 className="text-2xl font-bold">마이페이지</h1>
-      </div>
+    <Container size="sm" className="py-8">
+      {/* 전역 home 복귀는 learner shell 헤더(로고). 여기선 페이지 제목만. */}
+      <h1 className="mb-6 text-2xl font-bold">마이페이지</h1>
       <div className="space-y-5">
         <Dashboard data={dashboard} meta={meta} />
         <MyPage name={session.user.name} email={session.user.email} />
       </div>
-    </main>
+    </Container>
   );
 }

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadExamLocalized } from "@/lib/content";
 import ExamApp from "@/components/ExamApp";
+import { Container } from "@/components/ui/Container";
 
 // 콘텐츠(Question·Concept)가 DB 라(ADR-0005 A) 빌드타임 SSG 폐기 → ISR.
 //  - generateStaticParams=[] : 빌드 시 어떤 Exam 도 프리렌더하지 않음 → 빌드는 DB 불필요.
@@ -25,17 +25,11 @@ export default async function ExamPage({
   const data = await loadExamLocalized(provider, exam);
   if (!data) notFound();
 
+  // 컨테이너·전역 home 복귀(로고)는 learner shell. 여기선 ExamApp 만(학습 view 의 라우팅 분해는
+  // 슬라이스 B — 이번 슬라이스는 shell·container 까지).
   return (
-    <main className="mx-auto max-w-2xl px-4 py-6">
-      <nav className="mb-4">
-        <Link
-          href="/"
-          className="text-sm text-[var(--muted)] hover:text-[var(--fg)]"
-        >
-          ← 시험 목록
-        </Link>
-      </nav>
+    <Container className="py-6">
       <ExamApp data={data} />
-    </main>
+    </Container>
   );
 }
