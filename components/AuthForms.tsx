@@ -120,6 +120,38 @@ export default function AuthForms() {
     }
   };
 
+  // 소셜 로그인(V4, 이슈 #9) — 익숙한 계정으로 비밀번호 없이 Learner 가 된다. 성공 시 better-auth 가
+  // 외부 provider 로 리다이렉트했다가 콜백으로 돌아와 세션을 세우고 callbackURL(홈)로 보낸다 →
+  // useSession 갱신. 자격증명 미주입(미등록) provider 는 res.error 로 와서 한국어로 안내한다.
+  // GitHub·Google 은 built-in signIn.social, Naver 는 generic OAuth signIn.oauth2.
+  // 성공 시 provider 로 리다이렉트되어 사실상 반환하지 않는다. res.error 는 미등록·실패 →
+  // 한국어로 안내. throw 는 client 규약상 드물지만 finally 로 busy 고착을 막는다(패스키 핸들러와 동일).
+  const SOCIAL_FAIL = "이 로그인 수단을 지금 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.";
+  const socialSignIn = async (provider: "github" | "google") => {
+    setError(null);
+    setBusy(true);
+    try {
+      const res = await signIn.social({ provider, callbackURL: `${BASE_PATH}/` });
+      if (res?.error) setError(SOCIAL_FAIL);
+    } catch {
+      setError(SOCIAL_FAIL);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const naverSignIn = async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      const res = await signIn.oauth2({ providerId: "naver", callbackURL: `${BASE_PATH}/` });
+      if (res?.error) setError(SOCIAL_FAIL);
+    } catch {
+      setError(SOCIAL_FAIL);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const shell = "w-full max-w-xs rounded-card border border-[var(--border)] bg-[var(--panel)] p-4";
 
   // ── 안내 화면 ──────────────────────────────────────────────
@@ -243,6 +275,42 @@ export default function AuthForms() {
       <Button type="submit" variant="primary" fullWidth loading={busy} className="mt-3">
         {tab === "signup" ? "가입하기" : "로그인"}
       </Button>
+
+      {/* 소셜 로그인(#9) — 양 탭 공통(소셜은 가입도 겸함). 미등록 provider 는 클릭 시 한국어 안내. */}
+      <div className="my-3 flex items-center gap-2 text-[10px] text-[var(--muted)]">
+        <span className="h-px flex-1 bg-[var(--border)]" />
+        또는
+        <span className="h-px flex-1 bg-[var(--border)]" />
+      </div>
+      <div className="space-y-2">
+        <Button
+          type="button"
+          variant="outline"
+          fullWidth
+          disabled={busy}
+          onClick={() => socialSignIn("github")}
+        >
+          GitHub 계정으로 계속
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          fullWidth
+          disabled={busy}
+          onClick={() => socialSignIn("google")}
+        >
+          Google 계정으로 계속
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          fullWidth
+          disabled={busy}
+          onClick={naverSignIn}
+        >
+          네이버 계정으로 계속
+        </Button>
+      </div>
 
       {tab === "signin" && (
         <>

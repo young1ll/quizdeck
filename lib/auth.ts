@@ -1,9 +1,10 @@
 import { betterAuth } from "better-auth";
-import { jwt, admin } from "better-auth/plugins";
+import { jwt, admin, genericOAuth } from "better-auth/plugins";
 import { passkey } from "@better-auth/passkey";
 import { dash } from "@better-auth/infra";
 import { pool } from "./db";
 import { resolveAuthConfig } from "./auth-config";
+import { naverGenericOAuth } from "./auth-naver";
 import { sendEmail, verificationEmail, resetPasswordEmail } from "./email";
 
 // better-auth (in-app, postgres adapter) — 별도 IdP 프로세스 없음. (ADR-0003 / 이슈 #6)
@@ -12,6 +13,20 @@ import { sendEmail, verificationEmail, resetPasswordEmail } from "./email";
 // + JWKS 노출. 소셜 로그인(V4)·패스키(V5)·Progress 동기화(V2)는 후속.
 
 const cfg = resolveAuthConfig(process.env);
+
+// 소셜 로그인(V4, #9 / ADR-0003) — GitHub·Google 은 built-in socialProviders, Naver 는
+// generic OAuth(auth-naver). 자격증명이 주입된 provider 만 enable 한다(미구성이면 버튼·플러그인
+// 미노출). 콜백 URL(외부 앱 등록 시 이대로):
+//   GitHub·Google(built-in) → {baseURL}/api/auth/callback/{github,google}
+//   Naver(generic OAuth)    → {baseURL}/api/auth/oauth2/callback/naver  ← 경로가 다르다!
+// 자격증명은 git 밖 k8s Secret 로 주입(저장소 커밋 금지).
+const socialProviders: Record<string, { clientId: string; clientSecret: string }> = {};
+if (cfg.social.github) socialProviders.github = cfg.social.github;
+if (cfg.social.google) socialProviders.google = cfg.social.google;
+// Naver 만 generic OAuth — 구성됐을 때만 플러그인을 끼운다(빈 config 회피).
+const naverPlugins = cfg.social.naver
+  ? [genericOAuth({ config: [naverGenericOAuth(cfg.social.naver)] })]
+  : [];
 
 if (cfg.missing.length > 0) {
   // 빌드 시점(컨테이너 빌드엔 env 없음)엔 정상 — 런타임 요청에서 명확히 실패한다.
@@ -49,6 +64,18 @@ export const auth = betterAuth({
   user: {
     deleteUser: { enabled: true },
     changeEmail: { enabled: true },
+  },
+  // 소셜 로그인(V4, #9). GitHub·Google 자격증명이 주입된 것만 채워진다(빈 객체면 미노출).
+  // Naver 는 generic OAuth 라 아래 plugins 의 naverPlugins 로 따로 들어간다.
+  socialProviders,
+  // 계정 연결(account linking, #9) — 한 Learner 에 여러 로그인 수단을 묶는다. 같은 (검증된)
+  // 이메일이면 자동 연결해, 한 수단이 막혀도 다른 수단으로 같은 계정에 들어가게 한다. 소셜은
+  // 검증된 이메일을 주고(이메일+비밀번호는 requireEmailVerification) trustedProviders 로 신뢰한다.
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["github", "google", "naver"],
+    },
   },
   emailAndPassword: {
     enabled: true,
@@ -90,5 +117,8 @@ export const auth = betterAuth({
     dash(),
     admin(),
     passkey({ rpID: cfg.rpID, rpName: "quizdeck", origin: cfg.origin }),
+    // Naver generic OAuth(#9) — 자격증명이 주입됐을 때만(naverPlugins). GitHub·Google 은
+    // built-in 이라 위 socialProviders 로 충분하고 별도 플러그인이 필요 없다.
+    ...naverPlugins,
   ],
 });

@@ -33,6 +33,31 @@ kubectl -n quizdeck patch secret quizdeck-auth --type merge \
 kubectl -n quizdeck rollout restart deploy/quizdeck   # env 재주입
 ```
 
+### 소셜 로그인 OAuth 키 (V4 / 이슈 #9)
+
+GitHub·Google·Naver 의 client id/secret 6개도 같은 `quizdeck-auth` Secret 에 보관한다.
+Deployment 는 이들을 `optional: true` 로 참조하므로 **키가 없어도 파드는 정상 기동**하고,
+양쪽(id+secret)이 채워진 provider 만 런타임에 켜진다(`lib/auth-config.ts`). 외부 앱을 먼저
+등록해야 한다 — **콜백 URL**:
+
+- GitHub: `https://myquizdeck.com/api/auth/callback/github` (github.com/settings/developers)
+- Google: `https://myquizdeck.com/api/auth/callback/google` (console.cloud.google.com OAuth 클라이언트)
+- Naver: `https://myquizdeck.com/api/auth/oauth2/callback/naver` (developers.naver.com — generic
+  OAuth 라 **경로가 `/oauth2/callback/` 로 다르다**. 네아로 제공정보에 이메일·이름 필수)
+
+발급한 6개 값을 Secret 에 병합 후 rollout 하면 버튼이 동작한다:
+
+```sh
+kubectl -n quizdeck patch secret quizdeck-auth --type merge -p "{\"data\":{
+  \"GITHUB_CLIENT_ID\":\"$(printf %s '...' | base64)\",
+  \"GITHUB_CLIENT_SECRET\":\"$(printf %s '...' | base64)\",
+  \"GOOGLE_CLIENT_ID\":\"$(printf %s '...' | base64)\",
+  \"GOOGLE_CLIENT_SECRET\":\"$(printf %s '...' | base64)\",
+  \"NAVER_CLIENT_ID\":\"$(printf %s '...' | base64)\",
+  \"NAVER_CLIENT_SECRET\":\"$(printf %s '...' | base64)\"}}"
+kubectl -n quizdeck rollout restart deploy/quizdeck
+```
+
 ## `db-credentials` (이슈 #4 가 생성)
 
 DB VM postgres 접속 문자열(`DATABASE_URL`). 생성 절차는 #4 가 추가한

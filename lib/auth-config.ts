@@ -12,8 +12,28 @@ export interface AuthEnvInput {
   BETTER_AUTH_SECRET?: string;
   DATABASE_URL?: string;
   BETTER_AUTH_URL?: string;
+  // 소셜 로그인(V4, #9) — 모두 선택. 외부 앱 등록 후 k8s Secret 로 주입.
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  NAVER_CLIENT_ID?: string;
+  NAVER_CLIENT_SECRET?: string;
   // process.env(인덱스 시그니처)도 그대로 받기 위함 — 위 키만 읽는다.
   [key: string]: string | undefined;
+}
+
+/** 한 OAuth provider 의 자격증명(양쪽이 모두 있을 때만 생성). */
+export interface SocialProviderCreds {
+  clientId: string;
+  clientSecret: string;
+}
+
+/** 구성된 소셜 provider 자격증명 — 미구성 provider 는 undefined(버튼·플러그인 미노출). */
+export interface ResolvedSocial {
+  github?: SocialProviderCreds;
+  google?: SocialProviderCreds;
+  naver?: SocialProviderCreds;
 }
 
 export interface ResolvedAuthConfig {
@@ -27,6 +47,8 @@ export interface ResolvedAuthConfig {
   rpID?: string;
   /** 패스키 등록·인증 origin = baseURL 의 스킴+호스트(+포트). 미지정 시 undefined → 클라이언트가 전달. */
   origin?: string;
+  /** 소셜 로그인(V4, #9) 구성된 provider 자격증명. 모두 선택 — 미구성은 빈 객체. */
+  social: ResolvedSocial;
   /** 런타임 인증에 필수인데 비어 있는 env 키들. 비어 있지 않으면 인증이 동작하지 않는다. */
   missing: string[];
 }
@@ -57,11 +79,24 @@ export function resolveAuthConfig(env: AuthEnvInput): ResolvedAuthConfig {
     }
   }
 
+  // 소셜 provider 자격증명 — id·secret 양쪽이 모두 있을 때만 enable(부분 설정은 미구성 취급).
+  // 모두 선택이라 missing 에 넣지 않는다(외부 앱 등록 전이 정상 상태). (이슈 #9 / ADR-0003)
+  const creds = (id?: string, secret?: string): SocialProviderCreds | undefined => {
+    const clientId = nonEmpty(id);
+    const clientSecret = nonEmpty(secret);
+    return clientId && clientSecret ? { clientId, clientSecret } : undefined;
+  };
+  const social: ResolvedSocial = {
+    github: creds(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET),
+    google: creds(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET),
+    naver: creds(env.NAVER_CLIENT_ID, env.NAVER_CLIENT_SECRET),
+  };
+
   const missing: string[] = [];
   if (!secret) missing.push("BETTER_AUTH_SECRET");
   if (!databaseUrl) missing.push("DATABASE_URL");
 
-  return { secret, databaseUrl, baseURL, rpID, origin, missing };
+  return { secret, databaseUrl, baseURL, rpID, origin, social, missing };
 }
 
 /** 런타임 시작/테스트에서 설정 완전성을 강제한다. 빌드 경로에서는 호출하지 않는다. */
