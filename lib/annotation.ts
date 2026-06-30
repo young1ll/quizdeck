@@ -86,6 +86,20 @@ function prefixMatch(actual: string, expected: string): number {
   return n;
 }
 
+// 평문 [start,end) 에 정확히 걸린(앵커 재배치 후 offset 일치) 주석을 찾는다. create 의
+// 토글/스타일전환/메모재사용 판단에 쓴다 — 같은 구간 중복 누적 방지. 순수라 단위테스트된다(리뷰 C3).
+export function findAnnotationAt(
+  plain: string,
+  annotations: Annotation[],
+  start: number,
+  end: number,
+): Annotation | undefined {
+  return annotations.find((a) => {
+    const loc = locateAnchor(plain, a.anchor);
+    return loc !== null && loc.start === start && loc.end === end;
+  });
+}
+
 export interface Segment {
   start: number;
   end: number;
