@@ -88,3 +88,9 @@ Status: accepted — 그릴링 2026-06-30 (구현은 후속 슬라이스)
 - 후속 이슈로 슬라이스화: **(A)** route group 섹션 + learner shell + 반응형 토대, **(B)** 학습 하이브리드
   라우팅(참조 라우트 + 허브, 퀴즈 상태 플로), **(C)** `/login` 라우트, **(D)** 마이페이지·관리자
   mobile/desktop 다듬기. **B 는 A 의 shell·네비에 의존**한다.
+- 구현 메모: **B 는 B1·B2 로 나눠 전달**. **B1** = 참조 뷰를 라우트로 + 허브, 퀴즈는 index 의 상태 플로
+  유지(컨트롤러 미이동 — 저위험). **B2** = 퀴즈 컨트롤러·phase 를 exam `layout`(ExamProviders 내부
+  ExamQuizFlow)으로 올려 **`/quiz` 라우트**로 분해(허브·/quiz·검색 studyOne 이 한 컨트롤러 공유,
+  studyIntent 우회 제거). 알려진 한계: 세션·진도가 클라이언트 해석이고 학습 페이지는 정적 프리렌더라
+  익명→Learner hydration 전환(dev 경고·짧은 flash)이 있다 — 선재 특성, 서버 세션 해석(정적↔동적
+  트레이드오프)으로의 근본 해결은 별도 과제.

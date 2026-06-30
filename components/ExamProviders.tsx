@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ExamContext } from "@/lib/exam-context";
-import { StoreContext, useStoreState } from "@/lib/store";
+import { ExamContext, useExam } from "@/lib/exam-context";
+import { StoreContext, useStoreState, type Mode } from "@/lib/store";
 import { NavContext } from "@/lib/nav-context";
+import { QuizFlowContext, type QuizPhase } from "@/lib/quiz-flow-context";
+import { useQuizController } from "@/lib/use-quiz";
 import { LangContext } from "@/lib/lang-context";
 import { AnnotationContext, useAnnotationState } from "@/lib/annotation-context";
 import {
@@ -24,10 +26,10 @@ import LoginModal from "./LoginModal";
 
 const LANG_PREF_KEY = "quizdeck:lang"; // 기기-국소 선호 표시 언어(학습 진도 아님 → localStorage)
 
-// exam 섹션 shell (ADR-0010 슬라이스 B). exam layout 이 콘텐츠를 1회 로드해 이 클라이언트 provider 에
-// 넘긴다 — lang·content·store·annotation 컨텍스트 + 연습 게이트(LoginModal) + cross-route NavContext.
-// layout 이라 라우트(hub·참조 뷰)를 가로질러 **상태가 유지**된다(퀴즈 active·게이트·studyIntent).
-// 퀴즈 플로(컨트롤러·뷰 전환)는 index 페이지가 들고 있다 — 여기선 공유 상태만.
+// exam 섹션 shell (ADR-0010 슬라이스 B·B2). exam layout 이 콘텐츠를 1회 로드해 이 클라이언트 provider 에
+// 넘긴다 — lang·content·store·annotation 컨텍스트 + 연습 게이트(LoginModal) + cross-route NavContext +
+// 퀴즈 플로(QuizFlowContext). layout 이라 라우트(hub·참조 뷰·/quiz)를 가로질러 **상태가 유지**된다.
+// B2: 퀴즈 컨트롤러·phase 를 여기로 올려 hub·/quiz·studyOne 이 한 컨트롤러를 공유한다(/quiz 라우트).
 export default function ExamProviders({
   data,
   children,
@@ -120,32 +122,14 @@ export default function ExamProviders({
     setGateOpen(false);
   }, []);
 
-  // cross-route nav — studyOne 은 게이트 후 index 로(studyIntent 전달), openConceptFor 는 개념 라우트로.
-  const router = useRouter();
-  const base = `/${data.meta.provider}/${data.meta.slug}`;
-  const [studyIntent, setStudyIntent] = useState<number | null>(null);
-  const nav = useMemo(
-    () => ({
-      requireLearner,
-      studyOne: (qn: number) =>
-        requireLearner(() => {
-          setStudyIntent(qn);
-          router.push(base);
-        }),
-      openConceptFor: (svc: string) =>
-        router.push(`${base}/concepts?seed=${encodeURIComponent(svc)}`),
-      studyIntent,
-      clearStudyIntent: () => setStudyIntent(null),
-    }),
-    [requireLearner, router, base, studyIntent],
-  );
-
+  // 퀴즈 플로·nav 는 StoreContext **안쪽**의 ExamQuizFlow 가 제공한다 — useQuizController 가 useStore 를
+  // 쓰는데, 그 Provider 를 이 컴포넌트가 렌더하므로 같은 본문에서 호출하면 컨텍스트가 아직 없다(슬라이스 B2).
   return (
     <LangContext.Provider value={langValue}>
       <ExamContext.Provider value={examValue}>
         <StoreContext.Provider value={storeCtx}>
           <AnnotationContext.Provider value={annoCtx}>
-            <NavContext.Provider value={nav}>
+            <ExamQuizFlow requireLearner={requireLearner}>
               <LangToggle />
               <SyncIndicator />
               {storeCtx.loaded ? (
@@ -153,11 +137,83 @@ export default function ExamProviders({
               ) : (
                 <div className="py-20 text-center text-sm text-[var(--muted)]">불러오는 중…</div>
               )}
-              {gateOpen && <LoginModal onClose={closeGate} />}
-            </NavContext.Provider>
+            </ExamQuizFlow>
+            {gateOpen && <LoginModal onClose={closeGate} />}
           </AnnotationContext.Provider>
         </StoreContext.Provider>
       </ExamContext.Provider>
     </LangContext.Provider>
+  );
+}
+
+// 퀴즈 플로 + cross-route nav (ADR-0010 슬라이스 B2). StoreContext·ExamContext **안쪽**이라
+// useQuizController(→ useStore)·useExam 이 동작한다 — 컨트롤러·phase 를 라우트를 가로질러 유지하고
+// 허브·/quiz·studyOne 이 한 컨트롤러를 공유한다. 게이트(requireLearner)는 상위에서 받는다.
+function ExamQuizFlow({
+  requireLearner,
+  children,
+}: {
+  requireLearner: (action: () => void) => void;
+  children: React.ReactNode;
+}) {
+  const { questions, byQn, meta } = useExam();
+  const router = useRouter();
+  const base = `/${meta.provider}/${meta.slug}`;
+
+  // 콜백은 phase 로 전환, 중단/복귀는 라우팅으로: onResult→결과, onHome(quit)→허브, goQuiz→active.
+  const [phase, setPhase] = useState<QuizPhase>("setup");
+  const [setupMode, setSetupMode] = useState<Mode>("study");
+  const onResult = useCallback(() => setPhase("result"), []);
+  const onHome = useCallback(() => {
+    setPhase("setup");
+    router.push(base);
+  }, [router, base]);
+  const goQuiz = useCallback(() => setPhase("active"), []);
+  const quiz = useQuizController(questions, byQn, onResult, onHome, goQuiz);
+
+  const quizFlow = useMemo(
+    () => ({
+      quiz,
+      phase,
+      setupMode,
+      // 허브: 모드 시작 — 게이트 후 setup 단계로 /quiz 진입.
+      startMode: (mode: Mode) =>
+        requireLearner(() => {
+          setSetupMode(mode);
+          setPhase("setup");
+          router.push(`${base}/quiz`);
+        }),
+      // 허브: 진행 중 세션 이어하기 → goQuiz(active) + /quiz.
+      resume: () =>
+        requireLearner(() => {
+          quiz.resume();
+          router.push(`${base}/quiz`);
+        }),
+      discard: () => quiz.discard(),
+      // /quiz: 허브 복귀(setup 취소·결과 홈).
+      goHub: () => router.push(base),
+    }),
+    [quiz, phase, setupMode, requireLearner, router, base],
+  );
+
+  // cross-route nav — studyOne 은 게이트 후 컨트롤러로 바로 띄우고 /quiz 로(B2), openConceptFor 는 개념 라우트로.
+  const nav = useMemo(
+    () => ({
+      requireLearner,
+      studyOne: (qn: number) =>
+        requireLearner(() => {
+          quiz.studyOne(qn);
+          router.push(`${base}/quiz`);
+        }),
+      openConceptFor: (svc: string) =>
+        router.push(`${base}/concepts?seed=${encodeURIComponent(svc)}`),
+    }),
+    [requireLearner, quiz, router, base],
+  );
+
+  return (
+    <NavContext.Provider value={nav}>
+      <QuizFlowContext.Provider value={quizFlow}>{children}</QuizFlowContext.Provider>
+    </NavContext.Provider>
   );
 }
