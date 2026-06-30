@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getAdminSession } from "@/lib/admin";
@@ -20,19 +19,13 @@ export default async function AdminExamPage({
   const data = await loadExamLocalized(provider, exam);
   if (!data) notFound();
 
+  // 어드민 복귀(← 어드민)는 admin 레이아웃 헤더의 브랜드가 소유(ADR-0010 슬라이스 D).
   return (
-    <>
-      <nav className="mx-auto max-w-3xl px-4 pt-6">
-        <Link href="/admin" className="text-sm text-[var(--muted)] hover:text-[var(--fg)]">
-          ← 어드민
-        </Link>
-      </nav>
-      <ContentEditor
-        examKey={`${provider}/${exam}`}
-        defaultLang={data.meta.language}
-        questions={data.questions}
-        concepts={data.concepts}
-      />
-    </>
+    <ContentEditor
+      examKey={`${provider}/${exam}`}
+      defaultLang={data.meta.language}
+      questions={data.questions}
+      concepts={data.concepts}
+    />
   );
 }
