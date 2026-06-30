@@ -10,10 +10,13 @@ import {
   useState,
 } from "react";
 import type { Anchor, Annotation, AnnotationKind } from "./annotation";
+import { remoteApiAnnotationStore, type AnnotationStore } from "./annotation-store-remote";
 
 // 주석 상태 (이슈 #29 / ADR-0005 D). store.tsx 와 같은 hook+Provider 형태 — 로그인 Learner 면
-// /api/annotations 로 로드 + 낙관적 CRUD(서버 권위, 로컬 미러). 익명이면 비활성(연습은 로그인
-// 게이트 뒤라 Quiz 에선 항상 enabled). 한 시험의 **모든 언어** 주석을 보유하고, 소비부가 언어로 거른다.
+// 주입된 AnnotationStore(기본 /api/annotations 어댑터)로 로드 + 낙관적 CRUD(서버 권위, 로컬 미러).
+// 익명이면 비활성(연습은 로그인 게이트 뒤라 Quiz 에선 항상 enabled). 한 시험의 **모든 언어** 주석을
+// 보유하고, 소비부가 언어로 거른다. 전송은 어댑터가 소유(progress 대칭, 리뷰 C4) — 훅은 낙관적
+// 상태 + best-effort swallow 만 한다.
 
 export interface AnnotationTarget {
   qn: number;
@@ -48,7 +51,9 @@ function newId(): string {
 export function useAnnotationState(
   examKey: string,
   learnerId: string | null,
+  injected?: AnnotationStore,
 ): AnnotationContextValue {
+  const store = useMemo(() => injected ?? remoteApiAnnotationStore(), [injected]);
   const [items, setItems] = useState<Annotation[]>([]);
   const enabled = !!learnerId;
 
@@ -58,17 +63,18 @@ export function useAnnotationState(
     ref.current = items;
   }, [items]);
 
-  // 로그인/시험 바뀌면 서버에서 그 Learner 의 주석 전부를 로드. 익명이면 비운다.
+  // 로그인/시험 바뀌면 서버에서 그 Learner 의 주석 전부를 로드. 익명이면 비운다. best-effort —
+  // 실패(오프라인 등)는 swallow 하고 빈 상태로 둔다(어댑터가 throw, 훅이 정책 소유).
   useEffect(() => {
     if (!learnerId) {
       setItems([]);
       return;
     }
     let alive = true;
-    fetch(`/api/annotations?exam=${encodeURIComponent(examKey)}`)
-      .then((r) => (r.ok ? r.json() : []))
+    store
+      .load(examKey)
       .then((data) => {
-        if (alive && Array.isArray(data)) setItems(data);
+        if (alive) setItems(data);
       })
       .catch(() => {
         /* best-effort: 오프라인이면 빈 상태로 둔다 */
@@ -76,17 +82,13 @@ export function useAnnotationState(
     return () => {
       alive = false;
     };
-  }, [examKey, learnerId]);
+  }, [examKey, learnerId, store]);
 
   const put = useCallback(
     (a: Annotation) => {
-      fetch("/api/annotations", {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ exam: examKey, annotation: a }),
-      }).catch(() => {});
+      store.upsert(examKey, a).catch(() => {});
     },
-    [examKey],
+    [store, examKey],
   );
 
   const add = useCallback(
@@ -118,10 +120,13 @@ export function useAnnotationState(
     [put],
   );
 
-  const remove = useCallback((id: string) => {
-    setItems((prev) => prev.filter((a) => a.id !== id));
-    fetch(`/api/annotations?id=${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => {});
-  }, []);
+  const remove = useCallback(
+    (id: string) => {
+      setItems((prev) => prev.filter((a) => a.id !== id));
+      store.remove(id).catch(() => {});
+    },
+    [store],
+  );
 
   const forField = useCallback(
     (qn: number, lang: string, field: string) =>
