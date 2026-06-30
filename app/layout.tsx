@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import InAppBrowserBanner from "@/components/InAppBrowserBanner";
 
 export const metadata: Metadata = {
   title: "QuizDeck — 자격 시험 학습",
@@ -26,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="min-h-dvh">
+        <InAppBrowserBanner />
         {children}
         {/* PDF 내보내기(window.print) 전용 영역 — 화면에선 숨김 */}
         <div id="printarea" aria-hidden />
