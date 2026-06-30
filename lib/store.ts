@@ -100,6 +100,9 @@ export { Ctx as StoreContext };
 export function useStoreState(
   examKey: string,
   injected?: ProgressStore,
+  // LWW 동기화 타임스탬프 소스(테스트 주입용). 기본 Date.now. composite 의 opts.now 와는 별개 —
+  // 이건 save 가 양측에 싣는 봉투 stamp(=LWW 의 결정적 입력)다.
+  now: () => number = Date.now,
 ): StoreCtx {
   const progressStore = useMemo(
     () => injected ?? localStorageProgressStore(),
@@ -153,16 +156,18 @@ export function useStoreState(
     };
   }, [examKey, progressStore]);
 
-  // Progress 변경 → 순수 reducer 적용 + seam 저장
+  // Progress 변경 → 순수 reducer 적용 + seam 저장. LWW 타임스탬프(now)는 setState updater 밖에서
+  // 1회 민팅하고 save 도 1회만 호출한다 — updater 안 부수효과는 StrictMode 이중호출 시 한 mutation 을
+  // 두 stamp 로 두 번 save 하므로(LWW 의 결정적 입력) 밖으로 뺀다. next 는 동기 갱신되는 progressRef
+  // 로 계산해 같은 tick 의 연속 mutate 가 올바로 합성되게 한다(setState updater 의 prev 누적과 동치).
   const mutate = useCallback(
     (fn: (p: Progress) => Progress) => {
-      setProgress((prev) => {
-        const next = fn(prev);
-        progressStore.save(examKey, next, Date.now()).catch(() => {});
-        return next;
-      });
+      const next = fn(progressRef.current);
+      progressRef.current = next;
+      setProgress(next);
+      progressStore.save(examKey, next, now()).catch(() => {});
     },
-    [progressStore, examKey],
+    [progressStore, examKey, now],
   );
 
   const persistActive = useCallback(
@@ -222,12 +227,13 @@ export function useStoreState(
         ...rest,
         prefs: { ...base.prefs, ...rest.prefs },
       };
+      progressRef.current = next;
       setProgress(next);
-      progressStore.save(examKey, next, Date.now()).catch(() => {});
+      progressStore.save(examKey, next, now()).catch(() => {});
       setActiveState(imported ?? null);
       persistActive(imported ?? null);
     },
-    [progressStore, examKey, persistActive],
+    [progressStore, examKey, persistActive, now],
   );
 
   const store = useMemo<Store>(() => ({ ...progress, active }), [progress, active]);
