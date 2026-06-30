@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LuX } from "react-icons/lu";
 import type { Concept, Question } from "@/lib/types";
 import {
   conceptForLang,
@@ -188,7 +189,14 @@ function QuestionsPanel({
                   onChange={(e) => setOpt(k, e.target.value)}
                   className="flex-1 rounded border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-sm"
                 />
-                <button type="button" onClick={() => removeOpt(k)} className="text-xs text-[var(--bad)]">✕</button>
+                <button
+                  type="button"
+                  onClick={() => removeOpt(k)}
+                  aria-label="옵션 삭제"
+                  className="text-[var(--bad)]"
+                >
+                  <LuX className="size-3.5" aria-hidden />
+                </button>
               </div>
             ))}
           </div>
