@@ -13,6 +13,7 @@ import { Field } from "@/components/ui/Field";
 import { Msg } from "@/components/ui/Msg";
 import { Button } from "@/components/ui/Button";
 import { normalizeEmail } from "@/lib/format";
+import { authErrorMessage } from "@/lib/auth-error";
 
 // 인증 폼 (이슈 #6 + ADR-0004): 로그인·가입 + 이메일 인증·비밀번호 재설정.
 // 이메일 인증 필수 — 가입 후엔 세션 없이 "메일 확인" 안내, 미검증 로그인 시도엔 재발송 안내.
@@ -60,13 +61,14 @@ export default function AuthForms() {
         : await signIn.email({ email: addr, password });
     setBusy(false);
 
-    if (res.error) {
-      // 미검증 로그인 — 에러 대신 "메일 확인" 안내 + 재발송 경로.
-      if (res.error.code === "EMAIL_NOT_VERIFIED") {
-        setNotice({ kind: "unverified", email: addr });
-        return;
-      }
-      setError(res.error.message ?? "요청을 처리하지 못했습니다.");
+    // 미검증 로그인 — 에러 대신 "메일 확인" 안내 + 재발송 경로(정규화기 앞에서 가로챈다).
+    if (res.error?.code === "EMAIL_NOT_VERIFIED") {
+      setNotice({ kind: "unverified", email: addr });
+      return;
+    }
+    const err = authErrorMessage(res, "요청을 처리하지 못했습니다.");
+    if (err) {
+      setError(err);
       return;
     }
     setPassword("");
@@ -85,8 +87,9 @@ export default function AuthForms() {
       redirectTo: `${window.location.origin}${BASE_PATH}/reset-password`,
     });
     setBusy(false);
-    if (res.error) {
-      setError(res.error.message ?? "요청을 처리하지 못했습니다.");
+    const err = authErrorMessage(res, "요청을 처리하지 못했습니다.");
+    if (err) {
+      setError(err);
       return;
     }
     setNotice({ kind: "resetSent", email: addr });
@@ -97,8 +100,9 @@ export default function AuthForms() {
     setBusy(true);
     const res = await sendVerificationEmail({ email: cleanEmail(), callbackURL: `${BASE_PATH}/` });
     setBusy(false);
-    if (res.error) {
-      setError(res.error.message ?? "재발송에 실패했습니다.");
+    const err = authErrorMessage(res, "재발송에 실패했습니다.");
+    if (err) {
+      setError(err);
       return;
     }
     setResent(true);
