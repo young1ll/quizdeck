@@ -13,12 +13,13 @@ import { LuX } from "react-icons/lu";
 import { useLang } from "@/lib/lang-context";
 import { useAnnotations } from "@/lib/annotation-context";
 import {
-  locateAnchor,
+  findAnnotationAt,
   makeAnchor,
   segmentText,
   toPlainText,
   type AnnotationKind,
 } from "@/lib/annotation";
+import { rangeToOffsets } from "@/lib/annotation-dom";
 
 // 주석 가능한 텍스트 (이슈 #29 / ADR-0005 D). 콘텐츠를 **평문**(마크다운 마커 제거)으로 렌더하되
 // white-space:pre-wrap 으로 줄바꿈을 살린다 — 그러면 브라우저 선택 오프셋이 평문 오프셋과 1:1 이라
@@ -27,19 +28,6 @@ import {
 
 type Toolbar = { s: number; e: number; x: number; y: number };
 type Editing = { id: string; x: number; y: number };
-
-// 선택 끝점(텍스트 노드, 오프셋)을 평문 전역 오프셋으로 — 조상 중 data-start 를 가진 세그먼트 span
-// 을 찾아 그 시작 + 노드내 오프셋. 각 세그먼트 span 은 텍스트 노드 하나라 오프셋이 그대로 더해진다.
-function offsetOf(node: Node, offset: number, container: HTMLElement): number | null {
-  let el: Node | null = node.nodeType === Node.TEXT_NODE ? node.parentNode : node;
-  while (el && el !== container) {
-    if (el instanceof HTMLElement && el.dataset.start != null) {
-      return Number(el.dataset.start) + offset;
-    }
-    el = el.parentNode;
-  }
-  return null;
-}
 
 export default function AnnotatableText({
   qn,
@@ -97,25 +85,18 @@ export default function AnnotatableText({
     if (!sel || sel.isCollapsed || sel.rangeCount === 0 || !c) return;
     const range = sel.getRangeAt(0);
     if (!c.contains(range.commonAncestorContainer)) return;
-    const a = offsetOf(range.startContainer, range.startOffset, c);
-    const b = offsetOf(range.endContainer, range.endOffset, c);
-    if (a == null || b == null) return;
-    const s = Math.min(a, b);
-    const e = Math.max(a, b);
-    if (e <= s) return;
+    const r = rangeToOffsets(c, range);
+    if (!r) return;
     const rect = range.getBoundingClientRect();
     setEditing(null);
-    setToolbar({ s, e, x: rect.left + rect.width / 2, y: rect.top });
+    setToolbar({ s: r.start, e: r.end, x: rect.left + rect.width / 2, y: rect.top });
   }
 
   function create(kind: AnnotationKind, withMemo: boolean) {
     const tb = toolbar;
     if (!tb) return;
     // 같은 구간에 이미 주석이 있나 — 토글/스타일전환/메모재사용을 판단(중복 누적 방지).
-    const existing = anns.find((a) => {
-      const loc = locateAnchor(plain, a.anchor);
-      return loc !== null && loc.start === tb.s && loc.end === tb.e;
-    });
+    const existing = findAnnotationAt(plain, anns, tb.s, tb.e);
     if (withMemo) {
       // 메모 — 같은 구간 주석이 있으면 그 메모를 열고, 없으면 형광펜으로 잡고 연다.
       const target = existing ?? add({ qn, lang, field }, kind, makeAnchor(plain, tb.s, tb.e));

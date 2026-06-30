@@ -1,11 +1,31 @@
 import { describe, expect, it } from "vitest";
 import {
+  findAnnotationAt,
   makeAnchor,
   locateAnchor,
   segmentText,
   toPlainText,
   type Annotation,
 } from "./annotation";
+
+describe("findAnnotationAt", () => {
+  const ann = (id: string, quote: string, prefix: string, suffix: string): Annotation => ({
+    id, qn: 1, lang: "ko", field: "q", kind: "highlight", anchor: { quote, prefix, suffix },
+  });
+  const plain = "the quick brown fox";
+
+  it("앵커 재배치 후 [start,end) 가 정확히 일치하는 주석을 찾는다", () => {
+    const anns = [ann("a", "quick", "the ", " brown"), ann("b", "brown", "quick ", " fox")];
+    expect(findAnnotationAt(plain, anns, 4, 9)?.id).toBe("a"); // "quick"
+    expect(findAnnotationAt(plain, anns, 10, 15)?.id).toBe("b"); // "brown"
+  });
+
+  it("그 구간에 정확히 걸린 주석이 없으면 undefined", () => {
+    const anns = [ann("a", "quick", "the ", " brown")];
+    expect(findAnnotationAt(plain, anns, 0, 3)).toBeUndefined(); // "the"
+    expect(findAnnotationAt(plain, anns, 4, 8)).toBeUndefined(); // 부분 겹침
+  });
+});
 
 const ann = (over: Partial<Annotation> & { anchor: Annotation["anchor"] }): Annotation => ({
   id: "a1",
