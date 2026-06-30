@@ -50,14 +50,17 @@ Status: accepted
 아닌 주석에만 있었다. admin 경계는 이미 `lib/admin.ts`(`isAdminRole`+`getAdminSession`)로 깊은
 모듈이 있으나 Learner엔 그 대칭이 없었다.
 
-**결정**: Learner 신원을 admin과 대칭인 단일 모듈 `lib/learner.ts`로 추출한다(seam = 한 곳에서
-정의·검증).
+**결정**: Learner 신원을 admin과 대칭인 모듈로 추출한다(seam = 한 곳에서 정의·검증). 단 Learner
+술어는 admin과 달리 **클라(ExamApp 게이트·store 선택)에서도** 쓰여, 서버 전용 `lib/auth`(=pg)를
+끌면 클라 번들이 깨진다. 그래서 RSC 경계를 따라 **두 파일**로 가른다: `lib/learner.ts`(순수 술어,
+auth 무의존, 클라-안전) + `lib/learner-server.ts`(세션 해석, 서버 전용). 개념상 한 모듈, 물리상 둘.
 
-- **정규 술어 `isLearner(session) = session.user.emailVerified === true`** — CONTEXT.md의 정의(검증된
-  신원)를 코드로 인코딩. `id`-존재가 아니라 검증 자체를 본다.
-- 순수 `learnerId(session) = isLearner ? user.id : null` — 클라 store 선택·게이트가 한 술어를 공유.
-- `getLearnerSession(headers) → LearnerSession | null` — 헤더 주입식(RSC `/me` + 라우트 공용, admin 대칭).
-- `requireLearner(req) → string | Response` — API 라우트용. 5× 복붙된 401을 모듈로 수렴.
+- **정규 술어 `isLearner(session) = session.user.emailVerified === true`** (`lib/learner.ts`) —
+  CONTEXT.md의 정의(검증된 신원)를 코드로 인코딩. `id`-존재가 아니라 검증 자체를 본다.
+- 순수 `learnerId(session) = isLearner ? user.id : null` (`lib/learner.ts`) — 클라 store 선택·게이트 공유.
+- `getLearnerSession(headers) → LearnerSession | null` (`lib/learner-server.ts`) — 헤더 주입식
+  (RSC `/me` + 라우트 공용, admin 대칭).
+- `requireLearner(req) → string | Response` (`lib/learner-server.ts`) — API 라우트용. 5× 복붙된 401 수렴.
 - **서버(requireLearner)도 `emailVerified`를 직접 확인한다 — `session`-존재로 단순화하지 말 것.**
   클라 게이트와 규칙이 갈라지는 드리프트 방지이자 설정 변경에 대한 defense-in-depth. (미래 리뷰가
   "세션 존재면 이미 검증인데 왜 또 보나"로 단순화하면 드리프트가 되살아난다 — 의도된 중복이다.)

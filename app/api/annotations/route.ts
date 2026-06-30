@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { requireLearner } from "@/lib/learner-server";
 import { pool } from "@/lib/db";
 import type { Annotation } from "@/lib/annotation";
 import {
@@ -8,15 +8,10 @@ import {
 } from "@/lib/annotation-db";
 
 // 주석 동기화 Route Handler (이슈 #29 / ADR-0005 D). 진행(#7) 라우트와 같은 형태 — 얇은 핸들러 =
-// 인가 + DB 위임. learner_id 는 항상 better-auth 세션에서 해석하므로(client 가 절대 못 정함) 타인
-// (learner_id) 주석 접근이 구조적으로 차단된다. 미인증은 401. (exam_key·id 만 client 가 보낸다.)
+// 인가 + DB 위임. learner_id 는 항상 세션에서 해석하므로(requireLearner, client 가 절대 못 정함) 타인
+// (learner_id) 주석 접근이 구조적으로 차단된다. 미인증·미검증은 401. (exam_key·id 만 client 가 보낸다.)
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-async function resolveLearnerId(req: Request): Promise<string | null> {
-  const session = await auth.api.getSession({ headers: req.headers });
-  return session?.user?.id ?? null;
-}
 
 // 경계 검증 — 타입을 확정한다(SQL 은 파라미터화라 주입 불가, 형태만 막는다).
 function parseAnnotation(v: unknown): Annotation | null {
@@ -55,8 +50,8 @@ function parseAnnotation(v: unknown): Annotation | null {
 
 // GET /api/annotations?exam=<exam_key> — 세션 Learner 의 해당 Exam 주석 전부(배열).
 export async function GET(req: Request): Promise<Response> {
-  const learnerId = await resolveLearnerId(req);
-  if (!learnerId) return new Response("unauthorized", { status: 401 });
+  const learnerId = await requireLearner(req);
+  if (learnerId instanceof Response) return learnerId;
 
   const exam = new URL(req.url).searchParams.get("exam");
   if (!exam) return new Response("missing exam", { status: 400 });
@@ -66,8 +61,8 @@ export async function GET(req: Request): Promise<Response> {
 
 // PUT /api/annotations  body: { exam, annotation } — 세션 Learner 로 스코프해 upsert.
 export async function PUT(req: Request): Promise<Response> {
-  const learnerId = await resolveLearnerId(req);
-  if (!learnerId) return new Response("unauthorized", { status: 401 });
+  const learnerId = await requireLearner(req);
+  if (learnerId instanceof Response) return learnerId;
 
   let body: unknown;
   try {
@@ -88,8 +83,8 @@ export async function PUT(req: Request): Promise<Response> {
 
 // DELETE /api/annotations?id=<id> — 세션 Learner 스코프 삭제.
 export async function DELETE(req: Request): Promise<Response> {
-  const learnerId = await resolveLearnerId(req);
-  if (!learnerId) return new Response("unauthorized", { status: 401 });
+  const learnerId = await requireLearner(req);
+  if (learnerId instanceof Response) return learnerId;
 
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return new Response("missing id", { status: 400 });

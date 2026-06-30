@@ -14,6 +14,7 @@ import {
 import { topicsOf } from "@/lib/session";
 import { useQuizController } from "@/lib/use-quiz";
 import { useSession } from "@/lib/auth-client";
+import { isLearner, learnerId } from "@/lib/learner";
 import { localStorageProgressStore } from "@/lib/progress-store";
 import { compositeProgressStore } from "@/lib/progress-store-composite";
 import { remoteApiProgressStore } from "@/lib/progress-store-remote";
@@ -98,20 +99,21 @@ function StoreProvider({
   children: React.ReactNode;
 }) {
   const { data: session } = useSession();
-  const learnerId = session?.user?.id ?? null;
+  // 검증된 Learner 면 그 id, 아니면 null — 게이트(:135)와 같은 술어(lib/learner, ADR-0004 애던덤).
+  const id = learnerId(session);
   // 로그인 Learner → local-first composite(localStorage + /api/progress 동기화).
   // 익명(또는 세션 해석 전) → localStorage 단독(useStoreState 기본). (ADR-0001 seam 무변경 drop-in)
   // 첫 로그인 시 local↔server 는 평범한 LWW 로 reconcile 된다 — 전용 anonymous→login 병합은 V3.
   const store = useMemo(
     () =>
-      learnerId
+      id
         ? compositeProgressStore(localStorageProgressStore(), remoteApiProgressStore())
         : undefined,
-    [learnerId],
+    [id],
   );
   const ctx = useStoreState(examKey, store);
-  // 주석(#29)도 같은 learnerId 로 스코프 — 로그인 Learner 면 /api/annotations 로드·동기화.
-  const annoCtx = useAnnotationState(examKey, learnerId);
+  // 주석(#29)도 같은 learner id 로 스코프 — 로그인 Learner 면 /api/annotations 로드·동기화.
+  const annoCtx = useAnnotationState(examKey, id);
   return (
     <StoreContext.Provider value={ctx}>
       <AnnotationContext.Provider value={annoCtx}>{children}</AnnotationContext.Provider>
@@ -131,8 +133,8 @@ function ExamInner() {
   const { byQn, questions } = useExam();
   const { loaded } = useStore();
   const { data: session } = useSession();
-  // Learner = 이메일 검증된 신원(미인증은 세션이 없음). 연습은 Learner 전용. (ADR-0004)
-  const isLearner = !!session?.user?.emailVerified;
+  // Learner = 이메일 검증된 신원. 연습은 Learner 전용. 술어는 lib/learner 한 곳(ADR-0004 애던덤).
+  const learner = isLearner(session);
   const [view, setView] = useState<View>("home");
   const [setupMode, setSetupMode] = useState<Mode>("study");
   const [conceptSeed, setConceptSeed] = useState("");
@@ -153,26 +155,26 @@ function ExamInner() {
   // 콘텐츠는 공개라 이 게이트는 클라이언트 UX(전환 유도)다. (ADR-0004 결정 1·2)
   const requireLearner = useCallback(
     (action: () => void) => {
-      if (isLearner) {
+      if (learner) {
         action();
         return;
       }
       pendingPractice.current = action;
       setGateOpen(true);
     },
-    [isLearner],
+    [learner],
   );
 
   // 모달에서 (기존) verified 로그인 성공 → 막혔던 연습을 이어 진입하고 모달을 닫는다.
   // 신규 가입은 세션이 안 생기므로(메일 인증 대기) 보류분이 그대로 남고 사용자가 모달을 닫는다.
   useEffect(() => {
-    if (isLearner && gateOpen) {
+    if (learner && gateOpen) {
       const action = pendingPractice.current;
       pendingPractice.current = null;
       setGateOpen(false);
       action?.();
     }
-  }, [isLearner, gateOpen]);
+  }, [learner, gateOpen]);
 
   const closeGate = useCallback(() => {
     pendingPractice.current = null;
@@ -219,7 +221,7 @@ function ExamInner() {
 
       {view === "home" && (
         <Home
-          isLearner={isLearner}
+          isLearner={learner}
           onStartMode={(m) =>
             requireLearner(() => {
               setSetupMode(m);
