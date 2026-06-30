@@ -3,6 +3,7 @@
 import { useEffect, useState, type SubmitEvent } from "react";
 import Link from "next/link";
 import { resetPassword } from "@/lib/auth-client";
+import { authErrorMessage } from "@/lib/auth-error";
 import { Field } from "@/components/ui/Field";
 import { Msg } from "@/components/ui/Msg";
 import { Button } from "@/components/ui/Button";
@@ -34,8 +35,9 @@ export default function ResetPasswordPage() {
     setBusy(true);
     const res = await resetPassword({ newPassword: password, token });
     setBusy(false);
-    if (res.error) {
-      setError(res.error.message ?? "재설정에 실패했습니다. 링크가 만료되었을 수 있습니다.");
+    const err = authErrorMessage(res, "재설정에 실패했습니다. 링크가 만료되었을 수 있습니다.");
+    if (err) {
+      setError(err);
       return;
     }
     setDone(true);

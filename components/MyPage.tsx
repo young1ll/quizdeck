@@ -10,6 +10,7 @@ import {
   signOut,
   updateUser,
 } from "@/lib/auth-client";
+import { authErrorMessage } from "@/lib/auth-error";
 import { Field } from "@/components/ui/Field";
 import { Msg } from "@/components/ui/Msg";
 import { Button } from "@/components/ui/Button";
@@ -56,8 +57,9 @@ function ProfileSection({ initialName, email }: { initialName: string; email: st
     setBusy(true);
     const res = await updateUser({ name: name.trim() });
     setBusy(false);
-    if (res.error) {
-      setError(res.error.message ?? "저장하지 못했습니다.");
+    const err = authErrorMessage(res, "저장하지 못했습니다.");
+    if (err) {
+      setError(err);
       return;
     }
     setDone(true);
@@ -110,8 +112,9 @@ function EmailSection() {
     setBusy(true);
     const res = await changeEmail({ newEmail: addr, callbackURL: "/" });
     setBusy(false);
-    if (res.error) {
-      setError(res.error.message ?? "요청을 처리하지 못했습니다.");
+    const err = authErrorMessage(res, "요청을 처리하지 못했습니다.");
+    if (err) {
+      setError(err);
       return;
     }
     setSent(addr);
@@ -175,8 +178,9 @@ function PasswordSection() {
       revokeOtherSessions: true,
     });
     setBusy(false);
-    if (res.error) {
-      setError(res.error.message ?? "변경하지 못했습니다.");
+    const err = authErrorMessage(res, "변경하지 못했습니다.");
+    if (err) {
+      setError(err);
       return;
     }
     setDone(true);
@@ -327,9 +331,10 @@ function DangerSection({ email }: { email: string }) {
     setError(null);
     setBusy(true);
     const res = await deleteUser({ password });
-    if (res.error) {
+    const err = authErrorMessage(res, "탈퇴하지 못했습니다.");
+    if (err) {
       setBusy(false);
-      setError(res.error.message ?? "탈퇴하지 못했습니다.");
+      setError(err);
       return;
     }
     // user 행 삭제 → DB FK cascade 로 Progress·Annotation 정리됨. 세션은 이미 무효라 signOut 이
