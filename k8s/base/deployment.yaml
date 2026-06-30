@@ -51,6 +51,47 @@ spec:
                 secretKeyRef:
                   name: quizdeck-auth
                   key: RESEND_API_KEY
+            # 소셜 로그인(V4 / 이슈 #9) OAuth 자격증명 — git 밖 quizdeck-auth Secret.
+            # optional:true — 외부 앱 등록 전(키 부재)에도 파드가 정상 기동하고, 키가 채워진
+            # provider 만 런타임에 enable 된다(lib/auth-config.ts 가 양쪽 다 있을 때만 켠다).
+            # 콜백: GitHub·Google = /api/auth/callback/{github,google},
+            #       Naver = /api/auth/oauth2/callback/naver (generic OAuth — 경로 다름).
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: quizdeck-auth
+                  key: GITHUB_CLIENT_ID
+                  optional: true
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: quizdeck-auth
+                  key: GITHUB_CLIENT_SECRET
+                  optional: true
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: quizdeck-auth
+                  key: GOOGLE_CLIENT_ID
+                  optional: true
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: quizdeck-auth
+                  key: GOOGLE_CLIENT_SECRET
+                  optional: true
+            - name: NAVER_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: quizdeck-auth
+                  key: NAVER_CLIENT_ID
+                  optional: true
+            - name: NAVER_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: quizdeck-auth
+                  key: NAVER_CLIENT_SECRET
+                  optional: true
           readinessProbe:
             # /api/health/ — Route Handler 토대 증명. trailingSlash:true 라 슬래시 포함이 곧장 200.
             httpGet:
