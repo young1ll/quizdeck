@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { listExams } from "@/lib/content";
-import AccountMenu from "@/components/AccountMenu";
 import { Container } from "@/components/ui/Container";
 
 export default function Home() {
@@ -16,11 +15,10 @@ export default function Home() {
 
   return (
     <Container size="lg" className="py-8">
-      {/* 브랜드·전역 nav 는 learner shell 헤더(로고→home). 여기선 태그라인 + 계정만. AccountMenu 는
-          익명이면 로그인 폼·Learner 면 프로필 — home 의 로그인 surface(슬라이스 C 의 /login 전까지). */}
-      <header className="mb-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* 브랜드·계정(로고·로그인/마이페이지)은 learner shell 헤더가 소유(ADR-0010 슬라이스 C —
+          로그인은 /login). 여기선 태그라인만. */}
+      <header className="mb-8">
         <p className="text-sm text-[var(--muted)]">자격·기술 시험 대비 퀴즈 · 학습</p>
-        <AccountMenu />
       </header>
 
       {exams.length === 0 ? (
