@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useExam } from "@/lib/exam-context";
 import { MODE_LABEL, useStore, type Mode } from "@/lib/store";
 import type { StartOpts } from "@/lib/use-quiz";
+import { myProblems } from "@/lib/progress";
 
 const MODE_ICON: Record<Mode, string> = {
   study: "📚",
@@ -11,6 +12,8 @@ const MODE_ICON: Record<Mode, string> = {
   exam: "⏱️",
   wrong: "🔁",
   star: "⭐",
+  mine: "🗂️",
+  memo: "📝",
 };
 
 export default function Setup({
@@ -25,19 +28,23 @@ export default function Setup({
   const { topics } = useExam();
   const { store, setPrefs } = useStore();
 
+  const mineCount = myProblems(store).length;
+  const memoCount = Object.keys(store.memos).length;
   const avail =
     mode === "wrong"
       ? store.wrong.length
       : mode === "star"
         ? store.stars.length
-        : store.hist // 전체 모드는 전체 문항 수를 모르므로 충분히 큰 기본값 사용
-          ? Infinity
-          : Infinity;
+        : mode === "mine"
+          ? mineCount
+          : mode === "memo"
+            ? memoCount
+            : Infinity; // study·smart·exam 은 전체 풀에서 뽑으므로 상한 없음
 
   const defaultCount =
     mode === "exam"
       ? 75
-      : mode === "wrong" || mode === "star"
+      : mode === "wrong" || mode === "star" || mode === "mine" || mode === "memo"
         ? Math.min(avail || 1, 30)
         : 20;
 
@@ -54,8 +61,11 @@ export default function Setup({
       return "오답으로 기록된 문항이 없습니다.";
     if (mode === "star" && store.stars.length === 0)
       return "즐겨찾기한 문항이 없습니다.";
+    if (mode === "mine" && mineCount === 0)
+      return "내 문제함이 비어 있습니다. 오답·즐겨찾기·메모가 쌓이면 여기 모입니다.";
+    if (mode === "memo" && memoCount === 0) return "메모한 문항이 없습니다.";
     return "";
-  }, [mode, store.wrong.length, store.stars.length]);
+  }, [mode, store.wrong.length, store.stars.length, mineCount, memoCount]);
 
   return (
     <div>

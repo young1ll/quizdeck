@@ -1,5 +1,6 @@
 import type { Question } from "./types";
 import type { Mode, QHist, Store } from "./store";
+import { myProblems } from "./progress";
 
 export function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -63,6 +64,11 @@ export function basePool(
   if (topic !== "all") p = p.filter((d) => d.topic === topic);
   if (mode === "wrong") p = p.filter((d) => store.wrong.includes(d.qn));
   if (mode === "star") p = p.filter((d) => store.stars.includes(d.qn));
+  if (mode === "mine") {
+    const set = new Set(myProblems(store));
+    p = p.filter((d) => set.has(d.qn));
+  }
+  if (mode === "memo") p = p.filter((d) => store.memos[d.qn] != null);
   return p;
 }
 

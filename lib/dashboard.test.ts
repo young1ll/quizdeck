@@ -34,6 +34,7 @@ describe("examStat", () => {
       accuracy: 33, // 시도 3 중 정답 1
       wrong: 1,
       stars: 2,
+      mine: 3, // 오답{2}∪별표{1,5} = {1,2,5}
       sessions: 1,
       lastActiveDay: "2026-06-29",
     });
@@ -88,7 +89,17 @@ describe("buildDashboard", () => {
     expect(d.totalSeen).toBe(3); // a:1 + b:2
     expect(d.totalWrong).toBe(2); // a:1 + b:1
     expect(d.totalStars).toBe(1);
+    expect(d.totalMine).toBe(3); // a:{3,1}=2 + b:{2}=1
     expect(d.streak).toBe(1); // 오늘(b) 만, 어제 활동 없음
+  });
+
+  it("메모만 있는 Exam 도 내 문제함 활동으로 포함한다(ADR-0011)", () => {
+    const rows = [{ examKey: "aws/m", snapshot: mk({ memos: { 7: "note" } }) }];
+    const d = buildDashboard(rows, { "aws/m": 5 }, "2026-06-29");
+    expect(d.exams.map((e) => e.examKey)).toEqual(["aws/m"]);
+    expect(d.exams[0].seen).toBe(0);
+    expect(d.exams[0].mine).toBe(1);
+    expect(d.totalMine).toBe(1);
   });
 
   it("학습 이력은 없고 즐겨찾기만 있는 Exam 도 활동으로 포함한다", () => {

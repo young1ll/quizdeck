@@ -27,7 +27,7 @@ export default function Dashboard({
             <StatTile b={data.totalExams} s="학습 시험" className="py-2" />
             <StatTile b={`🔥${data.streak}`} s="연속일" className="py-2" />
             <StatTile b={data.totalSeen} s="학습 문항" className="py-2" />
-            <StatTile b={data.totalWrong} s="오답" className="py-2" />
+            <StatTile b={data.totalMine} s="내 문제함" className="py-2" />
           </div>
           <ul className="mt-4 space-y-2">
             {data.exams.map((e) => {
@@ -55,6 +55,7 @@ export default function Dashboard({
                         학습 {e.seen}/{e.total}
                       </span>
                       <span>정답률 {e.accuracy}%</span>
+                      <span>🗂️ 내 문제함 {e.mine}</span>
                       <span>오답 {e.wrong}</span>
                       <span>즐겨찾기 {e.stars}</span>
                       {e.lastActiveDay && <span>최근 {e.lastActiveDay}</span>}
