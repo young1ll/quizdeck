@@ -14,7 +14,8 @@ import { useSetHeaderSlot } from "@/lib/header-slot";
 // 헤더 슬롯을 채운다. 3단 적응(결정 6):
 //  · 퀴즈 active(/quiz + phase active) → focus chrome: `진행 n/N · [타이머] · 나가기`. 검색·허브·계정 숨김
 //    (집중, 결정 9). 나가기=quiz.quit(세션을 store.active 에 보존 → 허브 이어하기 배너, 비파괴).
-//  · 그 외 exam 안 → `‹시험코드(→허브) · [✏️편집(admin)] · 🔎검색 · 계정`(결정 5·10).
+//  · 그 외 exam 안 → `QuizDeck(→홈) › 시험코드(→허브) · [✏️편집(admin)] · 🔎검색 · 계정`(결정 5·10).
+//    브레드크럼으로 홈(`/`)·허브 둘 다 상시 도달 — exam 안에서 홈으로 못 가던 회귀 수정.
 // 시각 출력 없음(슬롯만 설정). 바깥(카탈로그·/me)의 기본 헤더는 LearnerHeader 가 슬롯 없을 때 렌더.
 const fmtTime = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 
@@ -65,15 +66,24 @@ export default function ExamHeaderBinder() {
     }
     return (
       <>
-        <Link
-          href={base}
-          className="flex min-h-[44px] min-w-0 items-center gap-1 font-semibold tracking-tight hover:text-[var(--accent)]"
-        >
-          <span aria-hidden className="text-[var(--muted)]">
-            ‹
+        <div className="flex min-w-0 items-center gap-1.5">
+          <Link
+            href="/"
+            className="flex min-h-[44px] shrink-0 items-center font-bold tracking-tight hover:text-[var(--accent)]"
+          >
+            QuizDeck
+          </Link>
+          <span aria-hidden className="shrink-0 text-[var(--muted)]">
+            ›
           </span>
-          <span className="truncate font-mono text-sm">{meta.code}</span>
-        </Link>
+          <Link
+            href={base}
+            aria-label="시험 허브"
+            className="flex min-h-[44px] min-w-0 items-center hover:text-[var(--fg)]"
+          >
+            <span className="truncate font-mono text-sm text-[var(--muted)]">{meta.code}</span>
+          </Link>
+        </div>
         <div className="flex shrink-0 items-center gap-3">
           {admin && (
             <Link
