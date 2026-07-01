@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* astryx 디자인 시스템 (ADR-0014 Phase 0) — 레이어 캐스케이드: reset(@layer reset) → astryx.css
+   (@layer astryx-base) → theme.css(@layer astryx-theme). Tailwind v4 유틸이 위에서 override 가능한지
+   Phase 0 에서 검증. 지금은 neutral 테마 그대로(브랜드 토큰 매핑은 다음 스텝). */
+@import "@astryxdesign/core/reset.css";
+@import "@astryxdesign/core/astryx.css";
+@import "@astryxdesign/theme-neutral/theme.css";
+
 :root {
   --bg: #0f1419;
   --panel: #161d26;
