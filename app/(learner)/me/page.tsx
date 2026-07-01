@@ -9,6 +9,7 @@ import { loadAllProgress } from "@/lib/progress-db";
 import { buildDashboard } from "@/lib/dashboard";
 import { today } from "@/lib/dates";
 import Dashboard from "@/components/Dashboard";
+import AdminLink from "@/components/AdminLink";
 
 // 마이페이지 — 전 시험 인덱스(회고) (ADR-0012 결정 2·7). 계정 관리는 /me/account 로 분리(파괴적·
 // 저빈도 격리). 진도 스코프 사다리의 최상단(전부) — 시험별 행이 그 시험 허브로 진입. 검증된 Learner
@@ -37,12 +38,16 @@ export default async function Me() {
       {/* 전역 home 복귀는 learner shell 헤더(로고). 여기선 제목 + 계정 관리 진입만. */}
       <div className="mb-6 flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">마이페이지</h1>
-        <Link
-          href="/me/account"
-          className="flex min-h-[44px] items-center text-sm text-[var(--muted)] hover:text-[var(--fg)]"
-        >
-          계정 관리 ›
-        </Link>
+        <div className="flex items-center gap-3">
+          {/* admin(role=admin)에게만 보이는 보조 진입 — 일반 Learner 엔 렌더 안 됨(ADR-0012 결정 10). */}
+          <AdminLink />
+          <Link
+            href="/me/account"
+            className="flex min-h-[44px] items-center text-sm text-[var(--muted)] hover:text-[var(--fg)]"
+          >
+            계정 관리 ›
+          </Link>
+        </div>
       </div>
       <Dashboard data={dashboard} meta={meta} />
     </Container>
