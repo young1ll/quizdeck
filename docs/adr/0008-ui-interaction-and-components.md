@@ -1,6 +1,7 @@
 # 0008 — UI 상호작용·컴포넌트 확장: 전역 affordance 베이스 + 무의존 컴포넌트, 슬라이스로
 
 Status: accepted — 구현 완료 2026-06-29 (슬라이스 5개 #46·#47·#48·#49·#50 / PR #53–#57, 배포 sha-fcaab31)
+> **애던덤 2026-07-01**: **결정 2(무의존 직접 구축)는 [[0014-astryx-design-system.md|ADR-0014]]로 대체됨** — facebook/astryx 디자인 시스템 전면 도입. affordance floor·Button variant·모달 a11y 개념은 astryx 가 계승. 나머지 결정(base 레이어 접근·슬라이스화)은 사적 유효.
 
 ## 맥락
 
