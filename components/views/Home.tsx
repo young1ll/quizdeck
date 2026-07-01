@@ -117,7 +117,6 @@ export default function Home({
 
       <NavGroup title="내 학습">
         <NavLink href={`${base}/my-problems`} label="🗂️ 내 문제함" badge={mineCount} />
-        <NavLink href={`${base}/history`} label="📜 히스토리" />
       </NavGroup>
     </div>
   );
