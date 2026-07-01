@@ -1,4 +1,4 @@
-import { mastery, type Progress } from "./progress";
+import { mastery, myProblems, type Progress } from "./progress";
 import { streak } from "./dates";
 
 // 학습 대시보드 집계 (이슈 #37 / ADR-0006 결정 5). client-safe(순수, no pg) — /me 서버 컴포넌트가
@@ -14,6 +14,7 @@ export interface ExamStat {
   accuracy: number; // % — 전체 시도 중 정답
   wrong: number; // 오답노트 크기
   stars: number; // 즐겨찾기 수
+  mine: number; // 내 문제함 크기(오답∪별표∪메모, ADR-0011)
   sessions: number; // 완료 세션 수
   lastActiveDay: string | null; // 'YYYY-MM-DD'(활동 일자 중 최신)
 }
@@ -25,6 +26,7 @@ export interface DashboardData {
   totalSeen: number;
   totalWrong: number;
   totalStars: number;
+  totalMine: number;
 }
 
 export function examStat(examKey: string, p: Progress, total: number): ExamStat {
@@ -40,6 +42,7 @@ export function examStat(examKey: string, p: Progress, total: number): ExamStat 
     accuracy: attempts ? Math.round((correct / attempts) * 100) : 0,
     wrong: p.wrong.length,
     stars: p.stars.length,
+    mine: myProblems(p).length,
     sessions: p.sessions.length,
     lastActiveDay: days.length ? days.slice().sort().at(-1)! : null,
   };
@@ -61,7 +64,7 @@ export function buildDashboard(
 ): DashboardData {
   const exams = rows
     .map((r) => examStat(r.examKey, r.snapshot, totalByKey[r.examKey] ?? 0))
-    .filter((e) => e.seen > 0 || e.stars > 0) // 활동(학습 이력 또는 즐겨찾기) 있는 Exam 만 노출
+    .filter((e) => e.seen > 0 || e.mine > 0) // 활동(학습 이력 또는 내 문제함=오답·별표·메모) 있는 Exam 만 노출
     .sort((a, b) => (b.lastActiveDay ?? "").localeCompare(a.lastActiveDay ?? ""));
   return {
     exams,
@@ -73,5 +76,6 @@ export function buildDashboard(
     totalSeen: exams.reduce((s, e) => s + e.seen, 0),
     totalWrong: exams.reduce((s, e) => s + e.wrong, 0),
     totalStars: exams.reduce((s, e) => s + e.stars, 0),
+    totalMine: exams.reduce((s, e) => s + e.mine, 0),
   };
 }
