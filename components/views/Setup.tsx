@@ -13,6 +13,7 @@ const MODE_ICON: Record<Mode, string> = {
   wrong: "🔁",
   star: "⭐",
   mine: "🗂️",
+  memo: "📝",
 };
 
 export default function Setup({
@@ -28,6 +29,7 @@ export default function Setup({
   const { store, setPrefs } = useStore();
 
   const mineCount = myProblems(store).length;
+  const memoCount = Object.keys(store.memos).length;
   const avail =
     mode === "wrong"
       ? store.wrong.length
@@ -35,12 +37,14 @@ export default function Setup({
         ? store.stars.length
         : mode === "mine"
           ? mineCount
-          : Infinity; // study·smart·exam 은 전체 풀에서 뽑으므로 상한 없음
+          : mode === "memo"
+            ? memoCount
+            : Infinity; // study·smart·exam 은 전체 풀에서 뽑으므로 상한 없음
 
   const defaultCount =
     mode === "exam"
       ? 75
-      : mode === "wrong" || mode === "star" || mode === "mine"
+      : mode === "wrong" || mode === "star" || mode === "mine" || mode === "memo"
         ? Math.min(avail || 1, 30)
         : 20;
 
@@ -59,8 +63,9 @@ export default function Setup({
       return "즐겨찾기한 문항이 없습니다.";
     if (mode === "mine" && mineCount === 0)
       return "내 문제함이 비어 있습니다. 오답·즐겨찾기·메모가 쌓이면 여기 모입니다.";
+    if (mode === "memo" && memoCount === 0) return "메모한 문항이 없습니다.";
     return "";
-  }, [mode, store.wrong.length, store.stars.length, mineCount]);
+  }, [mode, store.wrong.length, store.stars.length, mineCount, memoCount]);
 
   return (
     <div>

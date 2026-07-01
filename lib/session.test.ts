@@ -38,3 +38,13 @@ describe("basePool mine (내 문제함, ADR-0011)", () => {
     expect(pool).toEqual([]);
   });
 });
+
+describe("basePool memo (내 문제함 메모 필터, ADR-0011 Slice 3)", () => {
+  const questions = [q(1), q(2), q(3), q(4)];
+
+  it("메모가 달린 문항만 남긴다(오답·별표는 제외)", () => {
+    const store = storeWith({ memos: { 2: "m", 4: "n" }, wrong: [1], stars: [3] });
+    const pool = basePool(questions, "memo", "all", store);
+    expect(pool.map((d) => d.qn).sort((a, b) => a - b)).toEqual([2, 4]);
+  });
+});

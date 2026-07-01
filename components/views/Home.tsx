@@ -20,6 +20,7 @@ const MODE_ICON: Record<Mode, string> = {
   wrong: "🔁",
   star: "⭐",
   mine: "🗂️",
+  memo: "📝",
 };
 
 export default function Home({

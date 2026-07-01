@@ -68,6 +68,7 @@ export function basePool(
     const set = new Set(myProblems(store));
     p = p.filter((d) => set.has(d.qn));
   }
+  if (mode === "memo") p = p.filter((d) => store.memos[d.qn] != null);
   return p;
 }
 

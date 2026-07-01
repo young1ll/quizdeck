@@ -18,12 +18,12 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "memo", label: "메모" },
 ];
 
-// 필터 → 묶음 풀기 세션 모드. 메모는 배치 모드가 없어(오답·별표만 Mode) 개별 학습만 — 배치 풀기는 후속(Slice 3).
-const FILTER_MODE: Record<Filter, Mode | null> = {
+// 필터 → 묶음 풀기 세션 모드(ADR-0011). 각 필터가 대응 Mode 로 세션을 시작 — 전체=mine·틀린=wrong·별표=star·메모=memo.
+const FILTER_MODE: Record<Filter, Mode> = {
   all: "mine",
   wrong: "wrong",
   star: "star",
-  memo: null,
+  memo: "memo",
 };
 
 export default function MyProblems() {
@@ -61,7 +61,7 @@ export default function MyProblems() {
     <div className="space-y-4">
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold">🗂️ 내 문제함</h1>
-        {batchMode && qns.length > 0 && (
+        {qns.length > 0 && (
           <button
             type="button"
             onClick={() => startMode(batchMode)}

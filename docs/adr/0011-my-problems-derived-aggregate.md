@@ -35,7 +35,7 @@ Status: accepted — 그릴링 2026-07-01 (구현은 후속 슬라이스)
 ## 결과
 
 - **CONTEXT.md**: `내 문제함` 용어 추가; `Wrong-list(오답노트)`는 "하나의 학습 모드" → "내 문제함의 오답 필터"로 신분 조정(0011에서 반영).
-- **Mode enum**: `[전체]` 풀기용 union Mode(예: `mine`) 신설 검토 — `basePool`에 `wrong∪star∪memos` 필터 추가. `wrong`/`star`는 필터 풀기용으로 유지. (구현 세부는 슬라이스에서.)
+- **Mode enum**: `[전체]` 풀기 = union Mode `mine`, `[메모]` 풀기 = `memo` Mode(둘 다 `basePool` 필터로 신설). `wrong`/`star`는 각 필터 풀기용으로 유지 — **필터↔Mode 대칭**(전체=mine·틀린=wrong·별표=star·메모=memo).
 - **라우트**: per-Exam `내 문제함` 뷰(허브-스포크, ADR-0010 참조 라우트 결) + `/me/내 문제함` 롤업(대시보드 확장).
 - **Home**: ⭐🔁 타일 제거, `내 문제함` 타일 추가.
-- 후속/미정: `[전체]`·`[메모]` 풀기의 정확한 큐·정렬, 빈 상태, 모바일 필터 UX, (필요 시) '바로풀기' 숏컷, hybrid dismiss.
+- 후속/미정: `[전체]` 풀기 큐 정렬 다듬기, 모바일 필터 UX, (필요 시) '바로풀기' 숏컷(fold 부분 되돌림이라 신중), hybrid dismiss(보류).

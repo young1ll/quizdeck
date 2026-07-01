@@ -37,6 +37,7 @@ export const MODE_LABEL: Record<Mode, string> = {
   wrong: "오답노트",
   star: "즐겨찾기",
   mine: "내 문제함",
+  memo: "메모",
 };
 
 export interface AnswerRec {
