@@ -1,17 +1,16 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useExam } from "@/lib/exam-context";
-import { MODE_LABEL, useStore, type Mode, type Store } from "@/lib/store";
+import { MODE_LABEL, useStore, type Mode } from "@/lib/store";
 import { streak, today } from "@/lib/dates";
-import { StatTile } from "@/components/ui/StatTile";
-import { topicStat } from "@/lib/session";
 import { myProblems } from "@/lib/progress";
-import { exportProgressPDF } from "@/lib/pdf";
 
-// wrong·star 는 내 문제함(ADR-0011)의 필터로 흡수 — 모드 타일에서 제거. MODE_ICON 은 Record<Mode>라
-// 세션 레벨에 여전히 유효한 wrong·star·mine 키를 모두 유지한다(Setup 헤더 등에서 라벨/아이콘 사용).
+// exam 허브 = 슬림 런처 (ADR-0012 결정 4·5). 이어하기 + 모드(1급) + 압축 현황 한 줄("현황 자세히" →
+// /stats) + 두 묶음 네비(학습 자료 / 내 학습). per-exam 심화 통계·주제별 정답률·데이터 도구는 허브에서
+// 빠져 /stats(슬라이스 D)로 이주한다 — 허브의 1급 시민은 "연습 시작·섹션 이동"이라 첫 화면을 스캔
+// 가능하게 유지. 검색은 섹션이 아니라 도구라 맥락 헤더(슬라이스 C)로 승격 — 허브 카드에서 제거.
 const MODES: Mode[] = ["study", "smart", "exam"];
 const MODE_ICON: Record<Mode, string> = {
   study: "📚",
@@ -35,84 +34,23 @@ export default function Home({
   onDiscard: () => void;
 }) {
   const { questions, meta } = useExam();
-  const { store, setPrefs, resetAll, replaceStore } = useStore();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const { store } = useStore();
+  const base = `/${meta.provider}/${meta.slug}`;
 
   const total = questions.length;
-  const stats = useMemo(() => {
-    const histKeys = Object.keys(store.hist);
-    const mastered = histKeys.filter((q) => store.hist[+q].last === "O").length;
-    const seen = histKeys.length;
-    return {
-      mastered,
-      seen,
-      masteryPct: total ? Math.round((mastered / total) * 100) : 0,
-      acc: seen ? Math.round((mastered / seen) * 100) : 0,
-    };
+  const masteryPct = useMemo(() => {
+    const mastered = Object.keys(store.hist).filter((q) => store.hist[+q].last === "O").length;
+    return total ? Math.round((mastered / total) * 100) : 0;
   }, [store.hist, total]);
 
-  const ts = useMemo(
-    () => topicStat(questions, store.hist),
-    [questions, store.hist],
-  );
-  const sortedTopics = useMemo(
-    () =>
-      Object.entries(ts).sort((a, b) => {
-        const pa = a[1].seen ? a[1].ok / a[1].seen : 2;
-        const pb = b[1].seen ? b[1].ok / b[1].seen : 2;
-        return pa - pb;
-      }),
-    [ts],
-  );
-
-  // 익명 방문자 — Progress 의존 대시보드 대신 축약 + 로그인 CTA. 열람 nav 유지(히스토리 제외). (ADR-0004)
+  // 익명 방문자 — Progress 의존 요소(현황·내 학습) 대신 축약 + 로그인 CTA. 학습 자료 열람은 허용. (ADR-0004)
   if (!isLearner) return <AnonymousHome onStartMode={onStartMode} />;
-  const weak = sortedTopics
-    .filter(([, m]) => m.seen >= 3 && m.ok / m.seen < 0.7)
-    .map(([t]) => t.replace(/^\S+\s/, ""))
-    .slice(0, 3);
 
   const st = streak(store.days);
   const goal = store.prefs.goal;
   const todayCount = store.days[today()] ?? 0;
-
   const active = store.active;
   const mineCount = myProblems(store).length;
-
-  const doBackup = () => {
-    const blob = new Blob([JSON.stringify(store)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${meta.slug}-진행백업-${today()}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
-  const doImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      try {
-        const o = JSON.parse(String(r.result)) as Store;
-        if (!o.hist) {
-          alert("형식이 올바르지 않습니다.");
-          return;
-        }
-        if (confirm("현재 기록을 가져온 데이터로 교체할까요?")) {
-          replaceStore(o);
-          alert("복원 완료");
-        }
-      } catch (x) {
-        alert("읽기 실패: " + x);
-      }
-    };
-    r.readAsText(f);
-    e.target.value = "";
-  };
-  const setGoal = () => {
-    const v = prompt("하루 목표 문항 수", String(goal));
-    if (v && +v > 0) setPrefs({ goal: +v });
-  };
 
   return (
     <div className="space-y-6">
@@ -125,8 +63,7 @@ export default function Home({
       {active && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--warn)]/40 bg-[var(--panel)] p-4">
           <span className="text-sm">
-            ⏸️ 진행 중: {MODE_LABEL[active.mode]} {active.idx + 1}/
-            {active.queue.length}
+            ⏸️ 진행 중: {MODE_LABEL[active.mode]} {active.idx + 1}/{active.queue.length}
           </span>
           <div className="flex gap-2">
             <button
@@ -147,138 +84,49 @@ export default function Home({
         </div>
       )}
 
-      {/* 숙련도 + 통계 */}
-      <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
-        <div className="flex items-center gap-5">
-          <div
-            className="grid h-24 w-24 shrink-0 place-items-center rounded-full"
-            style={{
-              background: `conic-gradient(var(--accent) ${stats.masteryPct}%, var(--panel-2) 0)`,
-            }}
-          >
-            <div className="grid h-[76px] w-[76px] place-items-center rounded-full bg-[var(--panel)] text-xl font-bold">
-              {stats.masteryPct}%
-            </div>
-          </div>
-          <div className="grid flex-1 grid-cols-3 gap-3 text-center">
-            <StatTile b={`${stats.seen}/${total}`} s="학습 문항" />
-            <StatTile b={`${stats.acc}%`} s="정답률" />
-            <StatTile b={store.wrong.length} s="오답" />
-            <StatTile b={`🔥${st}`} s="연속일" />
-            <StatTile b={store.stars.length} s="즐겨찾기" />
-            <StatTile b={store.sessions.length} s="세션" />
-          </div>
+      {/* 압축 현황 한 줄 — 글랜스(숙련도·연속일·오늘 목표) + 심화는 /stats(슬라이스 D). 진도 스코프
+          사다리: 허브=한 줄, /stats=심화. */}
+      <div className="flex items-center justify-between gap-3 rounded-panel border border-[var(--border)] bg-[var(--panel)] px-4 py-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          <span>
+            숙련도 <b className="text-[var(--accent)]">{masteryPct}%</b>
+          </span>
+          <span className="text-[var(--muted)]">🔥 연속 {st}일</span>
+          <span className="text-[var(--muted)]">
+            오늘 {todayCount}/{goal}
+          </span>
         </div>
-        {/* 일일 목표 */}
-        <div className="mt-4">
-          <div className="mb-1 flex items-center justify-between text-xs text-[var(--muted)]">
-            <span>오늘 목표</span>
-            <button type="button" onClick={setGoal} className="hover:text-[var(--fg)]">
-              {todayCount} / {goal} 문항 ⚙️
-            </button>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-[var(--panel-2)]">
-            <div
-              className="h-full bg-[var(--good)]"
-              style={{ width: `${Math.min(100, goal ? (todayCount / goal) * 100 : 0)}%` }}
-            />
-          </div>
-        </div>
+        <Link
+          href={`${base}/stats`}
+          className="shrink-0 whitespace-nowrap text-xs text-[var(--muted)] hover:text-[var(--fg)]"
+        >
+          현황 자세히 ›
+        </Link>
       </div>
 
-      {/* 모드 */}
+      {/* 모드 — 1급 액션 */}
       <ModeGrid onStartMode={onStartMode} />
 
-      {/* 내 문제함 — 오답∪별표∪메모 파생 뷰(ADR-0011). 브라우즈 우선이라 라우트 링크(모드 타일 아님). */}
-      <Link
-        href={`/${meta.provider}/${meta.slug}/my-problems`}
-        className="flex min-h-[44px] items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 hover:border-[var(--accent)]"
-      >
-        <span className="text-sm font-semibold">🗂️ 내 문제함</span>
-        <span className="text-xs text-[var(--muted)]">오답·별표·메모 · {mineCount}</span>
-      </Link>
+      {/* 두 묶음 네비: 학습 자료(참조) / 내 학습(복습) — 참조와 복습은 다른 과업이라 시각 분리(ADR-0012
+          결정 5). 검색은 섹션 아님 → 맥락 헤더(슬라이스 C). */}
+      <NavGroup title="학습 자료">
+        <NavLink href={`${base}/concepts`} label="📖 개념" />
+        <NavLink href={`${base}/map`} label="🗺️ 서비스맵" />
+        <NavLink href={`${base}/diagrams`} label="📐 다이어그램" />
+      </NavGroup>
 
-      {/* 참고 뷰 — 라우트로(hub-and-spoke, ADR-0010 슬라이스 B). 뒤로가기·딥링크. */}
-      <RefNav base={`/${meta.provider}/${meta.slug}`} history />
-
-
-      {/* 주제별 정답률 */}
-      <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[var(--muted)]">주제별 정답률</h2>
-          {weak.length > 0 && (
-            <span className="text-xs text-[var(--bad)]">약점: {weak.join(", ")}</span>
-          )}
-        </div>
-        <div className="space-y-2">
-          {sortedTopics.map(([topic, m]) => {
-            const p = m.seen ? Math.round((m.ok / m.seen) * 100) : -1;
-            const col =
-              p < 0
-                ? "var(--border)"
-                : p < 60
-                  ? "var(--bad)"
-                  : p < 80
-                    ? "var(--warn)"
-                    : "var(--good)";
-            return (
-              <div key={topic} className="flex items-center gap-3 text-sm">
-                <span className="w-32 shrink-0 truncate">{topic}</span>
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--panel-2)]">
-                  <div
-                    className="h-full"
-                    style={{ width: `${p < 0 ? 0 : p}%`, background: col }}
-                  />
-                </div>
-                <span className="w-12 shrink-0 text-right text-[var(--muted)]">
-                  {m.seen}/{m.n}
-                </span>
-                <span className="w-10 shrink-0 text-right" style={{ color: col }}>
-                  {p < 0 ? "–" : p + "%"}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 도구 */}
-      <div className="flex flex-wrap gap-2 text-sm">
-        <Tool
-          label="🖨️ 학습 리포트"
-          onClick={() =>
-            exportProgressPDF(questions, store, meta, stats.masteryPct, st)
-          }
-        />
-        <Tool label="💾 백업" onClick={doBackup} />
-        <Tool label="📥 복원" onClick={() => fileRef.current?.click()} />
-        <Tool
-          label="🗑️ 초기화"
-          onClick={() => {
-            if (
-              confirm(
-                "모든 기록(정답률·오답·즐겨찾기·메모·히스토리)을 지울까요?",
-              )
-            )
-              resetAll();
-          }}
-        />
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json"
-          onChange={doImport}
-          className="hidden"
-        />
-      </div>
+      <NavGroup title="내 학습">
+        <NavLink href={`${base}/my-problems`} label="🗂️ 내 문제함" badge={mineCount} />
+      </NavGroup>
     </div>
   );
 }
 
-// 익명 방문자용 축약 홈 (이슈 #22 / ADR-0004): 모드 버튼(누르면 로그인 게이트) + 열람 nav +
-// 로그인 CTA. Progress 의존 블록(숙련도·통계·도구·히스토리)은 익명에 의미 없어 숨긴다.
+// 익명 방문자용 축약 허브 (이슈 #22 / ADR-0004): 모드 버튼(누르면 로그인 게이트) + 학습 자료 열람 +
+// 로그인 CTA. Progress 의존 블록(현황·내 학습)은 익명에 의미 없어 숨긴다.
 function AnonymousHome({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
   const { meta, questions } = useExam();
+  const base = `/${meta.provider}/${meta.slug}`;
   return (
     <div className="space-y-6">
       <header>
@@ -297,13 +145,17 @@ function AnonymousHome({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
       {/* 학습 모드 — 누르면 로그인 게이트 */}
       <ModeGrid onStartMode={onStartMode} />
 
-      {/* 열람(익명 허용) — 히스토리는 Progress 의존이라 제외 */}
-      <RefNav base={`/${meta.provider}/${meta.slug}`} />
+      {/* 학습 자료(익명 허용) — 내 학습은 Progress 의존이라 제외 */}
+      <NavGroup title="학습 자료">
+        <NavLink href={`${base}/concepts`} label="📖 개념" />
+        <NavLink href={`${base}/map`} label="🗺️ 서비스맵" />
+        <NavLink href={`${base}/diagrams`} label="📐 다이어그램" />
+      </NavGroup>
     </div>
   );
 }
 
-// 학습 모드 버튼 그리드 — Learner 홈과 익명 홈이 공유. 누르면 onStartMode(게이트 경유).
+// 학습 모드 버튼 그리드 — Learner 허브와 익명 허브가 공유. 누르면 onStartMode(게이트 경유).
 function ModeGrid({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -321,39 +173,30 @@ function ModeGrid({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
   );
 }
 
-// 참조 뷰 네비 — 라우트 링크(hub-and-spoke, ADR-0010 슬라이스 B). 히스토리는 Progress 의존이라
-// Learner 홈에만(history). 모바일 뒤로가기·딥링크.
-function RefNav({ base, history = false }: { base: string; history?: boolean }) {
+// 네비 묶음 — 라벨된 섹션 + 라우트 링크 그리드(hub-and-spoke, ADR-0010 슬라이스 B). 모바일 뒤로가기·딥링크.
+function NavGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-      <NavLink href={`${base}/concepts`} label="📖 개념" />
-      <NavLink href={`${base}/map`} label="🗺️ 서비스맵" />
-      <NavLink href={`${base}/diagrams`} label="📐 다이어그램" />
-      <NavLink href={`${base}/search`} label="🔎 검색" />
-      {history && <NavLink href={`${base}/history`} label="📜 히스토리" />}
-    </div>
+    <section>
+      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
+        {title}
+      </h2>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{children}</div>
+    </section>
   );
 }
 
-function NavLink({ href, label }: { href: string; label: string }) {
+function NavLink({ href, label, badge }: { href: string; label: string; badge?: number }) {
   return (
     <Link
       href={href}
-      className="flex min-h-[44px] items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--panel-2)] p-3 text-sm hover:border-[var(--accent)]"
+      className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--panel-2)] p-3 text-sm hover:border-[var(--accent)]"
     >
-      {label}
+      <span>{label}</span>
+      {badge != null && badge > 0 && (
+        <span className="rounded-full bg-[var(--panel)] px-1.5 py-0.5 text-xs text-[var(--muted)]">
+          {badge}
+        </span>
+      )}
     </Link>
-  );
-}
-
-function Tool({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-lg border border-[var(--border)] px-3 py-1.5 hover:border-[var(--accent)]"
-    >
-      {label}
-    </button>
   );
 }

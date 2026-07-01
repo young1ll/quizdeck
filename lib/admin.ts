@@ -1,13 +1,11 @@
 import { auth } from "./auth";
+import { isAdminRole } from "./admin-role";
 
-// admin 권한 경계 (이슈 #27 / ADR-0005 B). /admin 페이지·콘텐츠 변경 API 가 공유한다.
+// admin 권한 경계 — 서버 절반 (이슈 #27 / ADR-0005 B). /admin 페이지·콘텐츠 변경 API 가 공유한다.
 // better-auth admin 플러그인의 adminRoles 기본값은 ["admin"] — user.role 이 'admin' 이어야 통과.
-// 첫 admin 은 DB 에서 수동 지정한다(0004_admin.sql 주석).
-
-/** role 문자열이 admin 을 포함하는가. 단일 role 이 기본이나 콤마 다중 role 도 안전 처리. */
-export function isAdminRole(role: string | null | undefined): boolean {
-  return !!role && role.split(",").map((r) => r.trim()).includes("admin");
-}
+// 첫 admin 은 DB 에서 수동 지정한다(0004_admin.sql 주석). 순수 술어 isAdminRole 은 클라-안전
+// lib/admin-role 로 갈라 두고(ADR-0012 결정 10 — 맥락 헤더·/me 의 admin 진입 조건부 렌더) 재노출한다.
+export { isAdminRole } from "./admin-role";
 
 export interface AdminSession {
   user: { id: string; email: string; name?: string | null; role?: string | null };

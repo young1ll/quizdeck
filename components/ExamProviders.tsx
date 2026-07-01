@@ -23,6 +23,7 @@ import { remoteApiProgressStore } from "@/lib/progress-store-remote";
 import SyncIndicator from "./SyncIndicator";
 import LangToggle from "./LangToggle";
 import LoginModal from "./LoginModal";
+import ExamHeaderBinder from "./ExamHeaderBinder";
 
 const LANG_PREF_KEY = "quizdeck:lang"; // 기기-국소 선호 표시 언어(학습 진도 아님 → localStorage)
 
@@ -130,6 +131,7 @@ export default function ExamProviders({
         <StoreContext.Provider value={storeCtx}>
           <AnnotationContext.Provider value={annoCtx}>
             <ExamQuizFlow requireLearner={requireLearner}>
+              <ExamHeaderBinder />
               <LangToggle />
               <SyncIndicator />
               {storeCtx.loaded ? (

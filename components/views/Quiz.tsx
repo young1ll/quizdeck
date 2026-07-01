@@ -86,28 +86,14 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
   const ok = graded ? setsEqual(sel, d.answer) : false;
   const rel = q2svc[String(qn)] ?? [];
 
-  const fmtTime = (sec: number) =>
-    `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
-
+  // 진행(n/N)·타이머·나가기는 sticky 맥락 헤더의 focus chrome 으로 승격됨(ExamHeaderBinder, ADR-0012
+  // 결정 9) — 여기선 Q번호·주제·별표만. 스크롤 중에도 진행·타이머가 헤더에 상시 보인다.
   return (
     <div>
       {/* 헤더 */}
       <div className="mb-3 flex items-center justify-between gap-2 text-sm">
-        <span className="font-mono text-[var(--muted)]">
-          {s.idx + 1} / {s.queue.length} · Q{qn}
-        </span>
+        <span className="font-mono text-[var(--muted)]">Q{qn}</span>
         <div className="flex items-center gap-2">
-          {s.exam && quiz.timeLeft !== null && (
-            <span
-              className={`rounded-md px-2 py-1 font-mono text-xs ${
-                quiz.timeLeft < 300
-                  ? "bg-[var(--bad)] text-white"
-                  : "bg-[var(--panel-2)]"
-              }`}
-            >
-              ⏱ {fmtTime(Math.max(0, quiz.timeLeft))}
-            </span>
-          )}
           <span className="rounded-full bg-[var(--panel-2)] px-3 py-1 text-xs">
             {d.topic}
           </span>
@@ -290,9 +276,7 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
       {/* 하단 액션 */}
       <div className="mt-5 flex items-center justify-between gap-3">
         <div className="flex gap-3 text-sm text-[var(--muted)]">
-          <button type="button" onClick={quiz.quit} className="hover:text-[var(--fg)]">
-            종료
-          </button>
+          {/* 종료(나가기)는 sticky 헤더 focus chrome 으로 이동(ADR-0012 결정 9). 여기선 메모만. */}
           <button
             type="button"
             onClick={() => setShowMemo((v) => !v)}
