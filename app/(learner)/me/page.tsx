@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getLearnerSession } from "@/lib/learner-server";
 import { Container } from "@/components/ui/Container";
@@ -8,12 +9,11 @@ import { loadAllProgress } from "@/lib/progress-db";
 import { buildDashboard } from "@/lib/dashboard";
 import { today } from "@/lib/dates";
 import Dashboard from "@/components/Dashboard";
-import MyPage from "@/components/MyPage";
 
-// 마이페이지 — Learner 허브(이슈 #36/#37 · ADR-0006). 활동(학습 현황) + 계정 관리. 검증된 Learner
-// (getLearnerSession)가 아니면 홈으로(익명·미인증 → 로그인 유도). Learner 신원 술어는 lib/learner.ts
-// 한 곳(ADR-0004 애던덤 / 리뷰 C1). 대시보드는 RSC 가 progress 전 행을 DB 에서 직접 읽어 순수 함수로
-// 집계(ADR-0006 결정 5 — 새 API 무). 세션·DB 의존이라 동적, node 런타임.
+// 마이페이지 — 전 시험 인덱스(회고) (ADR-0012 결정 2·7). 계정 관리는 /me/account 로 분리(파괴적·
+// 저빈도 격리). 진도 스코프 사다리의 최상단(전부) — 시험별 행이 그 시험 허브로 진입. 검증된 Learner
+// (getLearnerSession)가 아니면 홈으로. 대시보드는 RSC 가 progress 전 행을 DB 에서 직접 읽어 순수
+// 함수로 집계(ADR-0006 결정 5 — 새 API 무). 세션·DB 의존이라 동적, node 런타임.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -34,12 +34,17 @@ export default async function Me() {
 
   return (
     <Container size="sm" className="py-8">
-      {/* 전역 home 복귀는 learner shell 헤더(로고). 여기선 페이지 제목만. */}
-      <h1 className="mb-6 text-2xl font-bold">마이페이지</h1>
-      <div className="space-y-5">
-        <Dashboard data={dashboard} meta={meta} />
-        <MyPage name={session.user.name} email={session.user.email} />
+      {/* 전역 home 복귀는 learner shell 헤더(로고). 여기선 제목 + 계정 관리 진입만. */}
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">마이페이지</h1>
+        <Link
+          href="/me/account"
+          className="flex min-h-[44px] items-center text-sm text-[var(--muted)] hover:text-[var(--fg)]"
+        >
+          계정 관리 ›
+        </Link>
       </div>
+      <Dashboard data={dashboard} meta={meta} />
     </Container>
   );
 }
