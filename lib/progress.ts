@@ -7,7 +7,7 @@ import { dayKey } from "./dates";
 // dashboard·store 의 streak 도출이 같은 정의를 공유한다. 공개 표면 유지를 위해 재노출.
 export { dayKey };
 
-export type Mode = "study" | "smart" | "exam" | "wrong" | "star";
+export type Mode = "study" | "smart" | "exam" | "wrong" | "star" | "mine";
 
 export interface QHist {
   seen: number;
@@ -83,6 +83,14 @@ export function mastery(p: Progress, total: number): number {
   if (!total) return 0;
   const mastered = Object.values(p.hist).filter((h) => h.last === "O").length;
   return Math.round((mastered / total) * 100);
+}
+
+/** 내 문제함 — 오답∪별표∪메모가 달린 문항 집합(파생, ADR-0011). '함'은 UI 은유이며 저장하지 않는다. */
+export function myProblems(p: Progress): number[] {
+  const s = new Set<number>(p.wrong);
+  for (const qn of p.stars) s.add(qn);
+  for (const qn of Object.keys(p.memos)) s.add(Number(qn));
+  return [...s];
 }
 
 export function recordResult(

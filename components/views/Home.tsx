@@ -7,15 +7,19 @@ import { MODE_LABEL, useStore, type Mode, type Store } from "@/lib/store";
 import { streak, today } from "@/lib/dates";
 import { StatTile } from "@/components/ui/StatTile";
 import { topicStat } from "@/lib/session";
+import { myProblems } from "@/lib/progress";
 import { exportProgressPDF } from "@/lib/pdf";
 
-const MODES: Mode[] = ["study", "smart", "exam", "wrong", "star"];
+// wrong·star 는 내 문제함(ADR-0011)의 필터로 흡수 — 모드 타일에서 제거. MODE_ICON 은 Record<Mode>라
+// 세션 레벨에 여전히 유효한 wrong·star·mine 키를 모두 유지한다(Setup 헤더 등에서 라벨/아이콘 사용).
+const MODES: Mode[] = ["study", "smart", "exam"];
 const MODE_ICON: Record<Mode, string> = {
   study: "📚",
   smart: "🧠",
   exam: "⏱️",
   wrong: "🔁",
   star: "⭐",
+  mine: "🗂️",
 };
 
 export default function Home({
@@ -72,6 +76,7 @@ export default function Home({
   const todayCount = store.days[today()] ?? 0;
 
   const active = store.active;
+  const mineCount = myProblems(store).length;
 
   const doBackup = () => {
     const blob = new Blob([JSON.stringify(store)], { type: "application/json" });
@@ -182,6 +187,15 @@ export default function Home({
 
       {/* 모드 */}
       <ModeGrid onStartMode={onStartMode} />
+
+      {/* 내 문제함 — 오답∪별표∪메모 파생 뷰(ADR-0011). 브라우즈 우선이라 라우트 링크(모드 타일 아님). */}
+      <Link
+        href={`/${meta.provider}/${meta.slug}/my-problems`}
+        className="flex min-h-[44px] items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 hover:border-[var(--accent)]"
+      >
+        <span className="text-sm font-semibold">🗂️ 내 문제함</span>
+        <span className="text-xs text-[var(--muted)]">오답·별표·메모 · {mineCount}</span>
+      </Link>
 
       {/* 참고 뷰 — 라우트로(hub-and-spoke, ADR-0010 슬라이스 B). 뒤로가기·딥링크. */}
       <RefNav base={`/${meta.provider}/${meta.slug}`} history />
