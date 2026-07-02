@@ -28,7 +28,9 @@ const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 // 가입/로그인 후 전이되는 안내 상태 — 인증 메일 발송 / 재설정 메일 발송 / 미검증 로그인.
 type Notice = { kind: "verifySent" | "resetSent" | "unverified"; email: string };
 
-export default function AuthForms() {
+// bare — 모달(astryx Dialog) 안에서는 Dialog 가 카드 서피스를 제공하므로 자체 셸(카드)을 벗긴다
+// (카드 중첩 방지). /login 단독 렌더는 기본값(셸 있음) 그대로. — ADR-0014 Phase 2
+export default function AuthForms({ bare = false }: { bare?: boolean } = {}) {
   const [tab, setTab] = useState<Tab>("signin");
   const [forgot, setForgot] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -172,7 +174,9 @@ export default function AuthForms() {
     }
   };
 
-  const shell = "w-full max-w-xs rounded-card border border-[var(--border)] bg-[var(--panel)] p-4";
+  const shell = bare
+    ? "w-full"
+    : "w-full max-w-xs rounded-card border border-[var(--border)] bg-[var(--panel)] p-4";
 
   // ── 안내 화면 ──────────────────────────────────────────────
   if (notice) {
