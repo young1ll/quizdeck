@@ -61,7 +61,7 @@ export default async function Home() {
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
             이어서 학습
           </h2>
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {cont.map(({ exam, mastery, mine }) => (
               <li key={`${exam.provider}/${exam.slug}`}>
                 {/* 재개 카드 — astryx Card 서피스(accent 강조 border). 본문 Link→허브 + 내 문제함 하위 Link
@@ -115,7 +115,7 @@ export default async function Home() {
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
                 {providerName}
               </h2>
-              <ul className="grid gap-3 sm:grid-cols-2">
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {list.map((e) => (
                   <li key={`${e.provider}/${e.slug}`}>
                     {/* 카탈로그 카드 — astryx Card 서피스 + Next Link(클라이언트 내비·prefetch 유지, ADR
