@@ -1,5 +1,6 @@
 "use client";
 
+import { LuFileDown, LuPartyPopper } from "react-icons/lu";
 import { Card } from "@astryxdesign/core/Card";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { useExam } from "@/lib/exam-context";
@@ -44,8 +45,13 @@ export default function Result({ quiz, onHome }: { quiz: QuizController; onHome:
         <div className="font-mono text-xs text-[var(--accent)]">
           {meta.code} · {MODE_LABEL[s.mode]} 결과
         </div>
-        <Button variant="outline" size="sm" onClick={() => exportResultPDF(s, byQn, meta)}>
-          🖨️ PDF 내보내기
+        <Button
+          variant="outline"
+          size="sm"
+          icon={<LuFileDown className="size-4" />}
+          onClick={() => exportResultPDF(s, byQn, meta)}
+        >
+          PDF 내보내기
         </Button>
       </header>
 
@@ -57,9 +63,14 @@ export default function Result({ quiz, onHome }: { quiz: QuizController; onHome:
           <div className="mt-1 text-2xl font-semibold" style={{ color: scoreColor }}>
             {pct}%
           </div>
-          <div className="mt-2 text-sm text-[var(--muted)]">
-            소요 {Math.floor(sec / 60)}분 {sec % 60}초
-            {s.exam && (pct >= 75 ? " · 합격선(75%) 통과 🎉" : " · 합격선 75%")}
+          <div className="mt-2 flex items-center justify-center gap-1 text-sm text-[var(--muted)]">
+            <span>
+              소요 {Math.floor(sec / 60)}분 {sec % 60}초
+              {s.exam && (pct >= 75 ? " · 합격선(75%) 통과" : " · 합격선 75%")}
+            </span>
+            {s.exam && pct >= 75 && (
+              <LuPartyPopper className="size-4 text-[var(--good)]" aria-hidden />
+            )}
           </div>
         </div>
       </Card>
@@ -107,7 +118,9 @@ export default function Result({ quiz, onHome }: { quiz: QuizController; onHome:
           틀린 문항 ({wrong.length})
         </h2>
         {wrong.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">없음 — 완벽합니다! 🎉</p>
+          <p className="flex items-center gap-1 text-sm text-[var(--muted)]">
+            없음 — 완벽합니다! <LuPartyPopper className="size-4 text-[var(--good)]" aria-hidden />
+          </p>
         ) : (
           <ul className="space-y-1">
             {wrong.map((qn) => {

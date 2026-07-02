@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { LuSmartphone, LuCheck, LuX } from "react-icons/lu";
 import { detectInApp, buildEscapeTarget, type InAppInfo } from "@/lib/in-app-browser";
 
 const DISMISS_KEY = "quizdeck:inapp-dismissed";
@@ -64,8 +65,9 @@ export default function InAppBrowserBanner() {
       <div className="mx-auto flex max-w-3xl items-start gap-3">
         <div className="min-w-0 flex-1">
           {!guide ? (
-            <p className="leading-relaxed text-[var(--fg)]">
-              📱 인앱 브라우저에서는 네이버 앱 인증·패스키 로그인이 제한됩니다. 기본 브라우저에서 열어주세요.
+            <p className="flex gap-2 leading-relaxed text-[var(--fg)]">
+              <LuSmartphone className="mt-0.5 size-4 shrink-0 text-[var(--warn)]" aria-hidden />
+              <span>인앱 브라우저에서는 네이버 앱 인증·패스키 로그인이 제한됩니다. 기본 브라우저에서 열어주세요.</span>
             </p>
           ) : (
             <p className="leading-relaxed text-[var(--fg)]">
@@ -86,9 +88,15 @@ export default function InAppBrowserBanner() {
               <button
                 type="button"
                 onClick={copyLink}
-                className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium hover:border-[var(--accent)]"
+                className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium hover:border-[var(--accent)]"
               >
-                {copied ? "복사됨 ✓" : "링크 복사"}
+                {copied ? (
+                  <>
+                    <LuCheck className="size-3.5 text-[var(--good)]" aria-hidden /> 복사됨
+                  </>
+                ) : (
+                  "링크 복사"
+                )}
               </button>
             )}
           </div>
@@ -97,9 +105,9 @@ export default function InAppBrowserBanner() {
           type="button"
           onClick={dismiss}
           aria-label="닫기"
-          className="-mr-1 shrink-0 px-1 text-lg leading-none text-[var(--muted)] hover:text-[var(--fg)]"
+          className="-mr-1 flex shrink-0 items-center px-1 text-[var(--muted)] hover:text-[var(--fg)]"
         >
-          ✕
+          <LuX className="size-5" aria-hidden />
         </button>
       </div>
     </div>

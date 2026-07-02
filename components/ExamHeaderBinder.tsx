@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
+import { LuSquarePen, LuSearch, LuTimer } from "react-icons/lu";
 import { useExam } from "@/lib/exam-context";
 import { useQuizFlow } from "@/lib/quiz-flow-context";
 import { useSession } from "@/lib/auth-client";
@@ -46,11 +47,11 @@ export default function ExamHeaderBinder() {
           <div className="flex shrink-0 items-center gap-3">
             {exam && timeLeft !== null && (
               <span
-                className={`rounded-md px-2 py-0.5 font-mono text-xs ${
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-xs ${
                   timeLeft < 300 ? "bg-[var(--bad)] text-white" : "bg-[var(--panel-2)]"
                 }`}
               >
-                ⏱ {fmtTime(Math.max(0, timeLeft))}
+                <LuTimer className="size-3.5" aria-hidden /> {fmtTime(Math.max(0, timeLeft))}
               </span>
             )}
             <button
@@ -91,7 +92,7 @@ export default function ExamHeaderBinder() {
               aria-label="이 시험 편집"
               className="flex min-h-[44px] min-w-[44px] items-center justify-center text-[var(--muted)] hover:text-[var(--accent)]"
             >
-              ✏️
+              <LuSquarePen className="size-4" aria-hidden />
             </Link>
           )}
           <Link
@@ -99,7 +100,7 @@ export default function ExamHeaderBinder() {
             aria-label="검색"
             className="flex min-h-[44px] min-w-[44px] items-center justify-center text-[var(--muted)] hover:text-[var(--fg)]"
           >
-            🔎
+            <LuSearch className="size-[18px]" aria-hidden />
           </Link>
           <AccountChip />
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { LuSearch } from "react-icons/lu";
+import { LuSearch, LuLink } from "react-icons/lu";
 import { Card } from "@astryxdesign/core/Card";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
@@ -168,8 +168,8 @@ function ConceptCard({
       <div className="mt-4 border-t border-[var(--border)] pt-3 text-sm">
         {rel.length > 0 ? (
           <details>
-            <summary className="cursor-pointer text-[var(--muted)] select-none">
-              🔗 관련 문제 {reln}개 (클릭해서 펼치기)
+            <summary className="flex cursor-pointer items-center gap-1.5 text-[var(--muted)] select-none">
+              <LuLink className="size-3.5" aria-hidden /> 관련 문제 {reln}개 (클릭해서 펼치기)
             </summary>
             <div className="mt-2 flex flex-wrap gap-2">
               {rel.map((qn) => (
@@ -184,13 +184,15 @@ function ConceptCard({
               ))}
             </div>
             {reln > rel.length && (
-              <p className="mt-2 text-xs text-[var(--muted)]">
-                …외 {reln - rel.length}개는 🔎검색 활용
+              <p className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--muted)]">
+                …외 {reln - rel.length}개는 <LuSearch className="size-3" aria-hidden />검색 활용
               </p>
             )}
           </details>
         ) : (
-          <span className="text-[var(--muted)]">🔗 관련 문제 없음 (개념 참고용)</span>
+          <span className="inline-flex items-center gap-1.5 text-[var(--muted)]">
+            <LuLink className="size-3.5" aria-hidden /> 관련 문제 없음 (개념 참고용)
+          </span>
         )}
       </div>
     </Card>

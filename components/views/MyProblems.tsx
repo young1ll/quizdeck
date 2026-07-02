@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { LuFolderOpen, LuPlay, LuStar, LuStickyNote } from "react-icons/lu";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { useExam } from "@/lib/exam-context";
@@ -63,10 +64,17 @@ export default function MyProblems() {
   return (
     <div className="space-y-4">
       <header className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-bold">🗂️ 내 문제함</h1>
+        <h1 className="flex items-center gap-2 text-xl font-bold">
+          <LuFolderOpen className="size-5 text-[var(--accent)]" aria-hidden /> 내 문제함
+        </h1>
         {qns.length > 0 && (
-          <Button variant="primary" size="sm" onClick={() => startMode(batchMode)}>
-            ▶ 이 묶음 풀기
+          <Button
+            variant="primary"
+            size="sm"
+            icon={<LuPlay className="size-3.5" />}
+            onClick={() => startMode(batchMode)}
+          >
+            이 묶음 풀기
           </Button>
         )}
       </header>
@@ -113,7 +121,9 @@ export default function MyProblems() {
                 >
                   <div className="flex items-center gap-2 text-sm">
                     <span className="font-mono text-xs text-[var(--muted)]">#{qn}</span>
-                    {starred && <span title="즐겨찾기">⭐</span>}
+                    {starred && (
+                      <LuStar className="size-3.5 fill-[var(--warn)] text-[var(--warn)]" aria-label="즐겨찾기" />
+                    )}
                     {h && h.wrong > 0 && (
                       <span className="text-xs text-[var(--bad)]">틀림 {h.wrong}회</span>
                     )}
@@ -123,7 +133,9 @@ export default function MyProblems() {
                   </div>
                   {q && <p className="mt-1 truncate text-sm">{firstLine(q.q)}</p>}
                   {memo && (
-                    <p className="mt-1 truncate text-xs text-[var(--accent)]">📝 {memo}</p>
+                    <p className="mt-1 flex items-center gap-1 truncate text-xs text-[var(--accent)]">
+                      <LuStickyNote className="size-3 shrink-0" aria-hidden /> {memo}
+                    </p>
                   )}
                 </button>
               </li>

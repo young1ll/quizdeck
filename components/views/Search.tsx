@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LuSearch } from "react-icons/lu";
+import { LuSearch, LuCircleCheck, LuCircleX } from "react-icons/lu";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { useExam } from "@/lib/exam-context";
 import { useStore } from "@/lib/store";
@@ -63,7 +63,13 @@ export default function Search() {
       <ul className="mt-3 space-y-2">
         {results.map((d) => {
           const h = store.hist[d.qn];
-          const mark = h ? (h.last === "O" ? "✅" : "❌") : "";
+          const mark = h ? (
+            h.last === "O" ? (
+              <LuCircleCheck className="size-3.5 text-[var(--good)]" aria-label="정답" />
+            ) : (
+              <LuCircleX className="size-3.5 text-[var(--bad)]" aria-label="오답" />
+            )
+          ) : null;
           const preview =
             d.q.length > 120 ? d.q.slice(0, 120) + "…" : d.q;
           return (

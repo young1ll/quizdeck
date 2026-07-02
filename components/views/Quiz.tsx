@@ -1,6 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  LuStar,
+  LuCheck,
+  LuX,
+  LuCircleCheck,
+  LuCircleX,
+  LuLightbulb,
+  LuBookOpen,
+  LuFileText,
+  LuFlag,
+  LuLayoutGrid,
+  LuStickyNote,
+} from "react-icons/lu";
 import { Card } from "@astryxdesign/core/Card";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { TextArea } from "@astryxdesign/core/TextArea";
@@ -105,9 +118,10 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
             type="button"
             onClick={() => toggleStar(qn)}
             title="즐겨찾기 (S)"
-            className={`text-lg leading-none ${starred ? "text-[var(--warn)]" : "text-[var(--muted)]"}`}
+            aria-label="즐겨찾기"
+            className={`leading-none ${starred ? "text-[var(--warn)]" : "text-[var(--muted)]"}`}
           >
-            {starred ? "★" : "☆"}
+            <LuStar className={`size-5 ${starred ? "fill-[var(--warn)]" : ""}`} aria-hidden />
           </button>
         </div>
       </div>
@@ -136,14 +150,24 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
             const isAns = d.answer.includes(letter);
             let cls =
               "border-[var(--border)] bg-[var(--panel-2)] hover:border-[var(--accent)]";
-            let mark = "";
+            let mark: React.ReactNode = null;
             if (graded) {
               if (isAns) {
                 cls = "border-[var(--good)] bg-[color-mix(in_srgb,var(--good)_15%,transparent)]";
-                mark = chosen ? "✓ 내 선택" : "✓ 정답";
+                mark = (
+                  <>
+                    <LuCheck className="size-3.5 text-[var(--good)]" aria-hidden />
+                    {chosen ? "내 선택" : "정답"}
+                  </>
+                );
               } else if (chosen) {
                 cls = "border-[var(--bad)] bg-[color-mix(in_srgb,var(--bad)_15%,transparent)]";
-                mark = "✗ 내 선택";
+                mark = (
+                  <>
+                    <LuX className="size-3.5 text-[var(--bad)]" aria-hidden />
+                    내 선택
+                  </>
+                );
               } else {
                 cls = "border-[var(--border)] bg-[var(--panel-2)] opacity-70";
               }
@@ -165,7 +189,9 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
                     <AnnotatableText qn={qn} field={`opt:${letter}`} text={d.options[letter]} />
                   </span>
                   {mark && (
-                    <span className="shrink-0 text-xs text-[var(--muted)]">{mark}</span>
+                    <span className="flex shrink-0 items-center gap-1 text-xs text-[var(--muted)]">
+                      {mark}
+                    </span>
                   )}
                 </button>
               </li>
@@ -177,8 +203,18 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
         {graded && (
           <div className="mt-5 space-y-3 border-t border-[var(--border)] pt-4">
             <div className="flex items-center gap-2 text-sm font-semibold">
-              <span className={ok ? "text-[var(--good)]" : "text-[var(--bad)]"}>
-                {ok ? "✅ 정답!" : "❌ 오답"}
+              <span
+                className={`inline-flex items-center gap-1 ${ok ? "text-[var(--good)]" : "text-[var(--bad)]"}`}
+              >
+                {ok ? (
+                  <>
+                    <LuCircleCheck className="size-4" aria-hidden /> 정답!
+                  </>
+                ) : (
+                  <>
+                    <LuCircleX className="size-4" aria-hidden /> 오답
+                  </>
+                )}
               </span>
               <span className="text-[var(--muted)]">
                 · 정답 {d.answer.join(", ")} · 내 선택 {sel.join(", ") || "-"}
@@ -192,12 +228,17 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
             )}
             {d.tip && (
               <p className="rounded-lg bg-[var(--panel-2)] p-3 text-sm leading-relaxed text-[var(--muted)]">
-                <b>💡 풀이 팁</b> <AnnotatableText qn={qn} field="tip" text={d.tip} />
+                <b className="inline-flex items-center gap-1">
+                  <LuLightbulb className="size-4" aria-hidden /> 풀이 팁
+                </b>{" "}
+                <AnnotatableText qn={qn} field="tip" text={d.tip} />
               </p>
             )}
             {rel.length > 0 && (
               <div className="text-sm">
-                <b className="text-[var(--accent)]">📚 관련 핵심 서비스 개념</b>
+                <b className="inline-flex items-center gap-1 text-[var(--accent)]">
+                  <LuBookOpen className="size-4" aria-hidden /> 관련 핵심 서비스 개념
+                </b>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {rel.map((svc) => (
                     <button
@@ -214,7 +255,8 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
               </div>
             )}
             {d.page != null && (
-              <div className="text-xs text-[var(--muted)]">📄 원문 p{d.page}</div>
+              <div className="flex items-center gap-1 text-xs text-[var(--muted)]">
+                <LuFileText className="size-3.5" aria-hidden /> 원문 p{d.page}</div>
             )}
           </div>
         )}
@@ -238,11 +280,21 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
       {/* 시험 모드: 검토 표시 + 네비 토글 */}
       {s.exam && (
         <div className="mt-3 flex items-center gap-2 text-sm">
-          <Button variant="outline" size="sm" onClick={quiz.toggleFlag}>
-            {flagged ? "🚩 표시됨" : "🚩 검토 표시"}
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<LuFlag className={`size-3.5 ${flagged ? "fill-[var(--warn)] text-[var(--warn)]" : ""}`} />}
+            onClick={quiz.toggleFlag}
+          >
+            {flagged ? "표시됨" : "검토 표시"}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowNav((v) => !v)}>
-            🧭 문항 네비
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<LuLayoutGrid className="size-3.5" />}
+            onClick={() => setShowNav((v) => !v)}
+          >
+            문항 네비
           </Button>
         </div>
       )}
@@ -281,9 +333,9 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
           <button
             type="button"
             onClick={() => setShowMemo((v) => !v)}
-            className="hover:text-[var(--fg)]"
+            className="inline-flex items-center gap-1 hover:text-[var(--fg)]"
           >
-            📝 메모
+            <LuStickyNote className="size-4" aria-hidden /> 메모
           </button>
         </div>
 

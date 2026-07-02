@@ -9,7 +9,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { createPortal } from "react-dom";
-import { LuX } from "react-icons/lu";
+import { LuX, LuStickyNote, LuTriangleAlert, LuHighlighter, LuUnderline, LuTrash2 } from "react-icons/lu";
 import { useLang } from "@/lib/lang-context";
 import { useAnnotations } from "@/lib/annotation-context";
 import {
@@ -166,11 +166,11 @@ export default function AnnotatableText({
               </span>
               {memoAnn && (
                 <sup
-                  className="ml-0.5 cursor-pointer text-[10px]"
+                  className="ml-0.5 cursor-pointer"
                   style={{ userSelect: "none" }}
                   onClick={openEditor}
                 >
-                  📝
+                  <LuStickyNote className="inline size-2.5 text-[var(--accent)]" aria-label="메모" />
                 </sup>
               )}
             </span>
@@ -181,7 +181,7 @@ export default function AnnotatableText({
       {/* 위치를 잃은 주석(본문 변경) — 메모를 보존하고 삭제만 가능 (AC: graceful orphan) */}
       {orphans.length > 0 && (
         <span className="mt-1 block rounded-md bg-[var(--panel-2)] px-2 py-1 text-xs text-[var(--muted)]">
-          ⚠ 본문이 바뀌어 위치를 잃은 메모
+          <LuTriangleAlert className="inline size-3.5 text-[var(--warn)] align-[-2px]" aria-hidden /> 본문이 바뀌어 위치를 잃은 메모
           {orphans.map((o) => (
             <span key={o.id} className="ml-2 inline-flex items-center gap-1">
               <span className="italic">“{o.anchor.quote}”{o.memo ? `: ${o.memo}` : ""}</span>
@@ -216,14 +216,14 @@ export default function AnnotatableText({
             ev.stopPropagation(); // 바깥-클릭 닫힘 방지
           }}
         >
-          <button type="button" onClick={() => create("highlight", false)} className="rounded px-2 py-1 hover:bg-[var(--panel-2)]">
-            🖍 형광펜
+          <button type="button" onClick={() => create("highlight", false)} className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-[var(--panel-2)]">
+            <LuHighlighter className="size-3.5" aria-hidden /> 형광펜
           </button>
-          <button type="button" onClick={() => create("underline", false)} className="rounded px-2 py-1 hover:bg-[var(--panel-2)]">
-            <u>밑줄</u>
+          <button type="button" onClick={() => create("underline", false)} className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-[var(--panel-2)]">
+            <LuUnderline className="size-3.5" aria-hidden /> 밑줄
           </button>
-          <button type="button" onClick={() => create("highlight", true)} className="rounded px-2 py-1 hover:bg-[var(--panel-2)]">
-            📝 메모
+          <button type="button" onClick={() => create("highlight", true)} className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-[var(--panel-2)]">
+            <LuStickyNote className="size-3.5" aria-hidden /> 메모
           </button>
         </div>,
           document.body,
@@ -242,16 +242,16 @@ export default function AnnotatableText({
             <button
               type="button"
               onClick={() => update(editingAnn.id, { kind: "highlight" })}
-              className={`rounded px-2 py-1 ${editingAnn.kind === "highlight" ? "bg-[var(--panel-2)] font-semibold" : "hover:bg-[var(--panel-2)]"}`}
+              className={`inline-flex items-center gap-1 rounded px-2 py-1 ${editingAnn.kind === "highlight" ? "bg-[var(--panel-2)] font-semibold" : "hover:bg-[var(--panel-2)]"}`}
             >
-              🖍 형광펜
+              <LuHighlighter className="size-3.5" aria-hidden /> 형광펜
             </button>
             <button
               type="button"
               onClick={() => update(editingAnn.id, { kind: "underline" })}
-              className={`rounded px-2 py-1 ${editingAnn.kind === "underline" ? "bg-[var(--panel-2)] font-semibold" : "hover:bg-[var(--panel-2)]"}`}
+              className={`inline-flex items-center gap-1 rounded px-2 py-1 ${editingAnn.kind === "underline" ? "bg-[var(--panel-2)] font-semibold" : "hover:bg-[var(--panel-2)]"}`}
             >
-              <u>밑줄</u>
+              <LuUnderline className="size-3.5" aria-hidden /> 밑줄
             </button>
             <button
               type="button"
@@ -259,10 +259,11 @@ export default function AnnotatableText({
                 remove(editingAnn.id);
                 setEditing(null);
               }}
-              className="ml-auto rounded px-2 py-1 text-[var(--muted)] hover:text-[var(--bad)]"
+              className="ml-auto flex items-center rounded px-2 py-1 text-[var(--muted)] hover:text-[var(--bad)]"
+              aria-label="삭제"
               title="삭제"
             >
-              🗑
+              <LuTrash2 className="size-3.5" aria-hidden />
             </button>
           </div>
           <textarea

@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import Link from "next/link";
+import { LuFolderOpen } from "react-icons/lu";
 import { Card } from "@astryxdesign/core/Card";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
@@ -95,7 +96,9 @@ export default async function Home() {
                       href={`/${exam.provider}/${exam.slug}/my-problems`}
                       className="flex min-h-[44px] items-center justify-between border-t border-[var(--border)] px-4 text-xs text-[var(--muted)] hover:text-[var(--fg)]"
                     >
-                      <span>🗂️ 내 문제함</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <LuFolderOpen className="size-3.5" aria-hidden /> 내 문제함
+                      </span>
                       <span className="font-semibold text-[var(--fg)]">{mine} →</span>
                     </Link>
                   )}

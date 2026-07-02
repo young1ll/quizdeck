@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { LuSettings } from "react-icons/lu";
 import { useSession } from "@/lib/auth-client";
 import { isAdminSession } from "@/lib/admin-role";
 
@@ -13,9 +14,9 @@ export default function AdminLink() {
   return (
     <Link
       href="/admin"
-      className="flex min-h-[44px] items-center text-sm text-[var(--muted)] hover:text-[var(--fg)]"
+      className="flex min-h-[44px] items-center gap-1.5 text-sm text-[var(--muted)] hover:text-[var(--fg)]"
     >
-      ⚙ 어드민
+      <LuSettings className="size-4" aria-hidden /> 어드민
     </Link>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef } from "react";
+import { LuFlame, LuSettings2, LuHistory, LuFileText, LuDownload, LuUpload, LuTrash2 } from "react-icons/lu";
 import { Card } from "@astryxdesign/core/Card";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
@@ -116,7 +117,15 @@ export default function Stats() {
             <StatTile b={`${stats.seen}/${total}`} s="학습 문항" />
             <StatTile b={`${stats.acc}%`} s="정답률" />
             <StatTile b={store.wrong.length} s="오답" />
-            <StatTile b={`🔥${st}`} s="연속일" />
+            <StatTile
+              b={
+                <span className="inline-flex items-center justify-center gap-0.5">
+                  <LuFlame className="size-4 text-[var(--warn)]" aria-hidden />
+                  {st}
+                </span>
+              }
+              s="연속일"
+            />
             <StatTile b={store.stars.length} s="즐겨찾기" />
             <StatTile b={store.sessions.length} s="세션" />
           </div>
@@ -125,8 +134,12 @@ export default function Stats() {
         <div className="mt-4">
           <div className="mb-1 flex items-center justify-between text-xs text-[var(--muted)]">
             <span>오늘 목표</span>
-            <button type="button" onClick={setGoal} className="hover:text-[var(--fg)]">
-              {todayCount} / {goal} 문항 ⚙️
+            <button
+              type="button"
+              onClick={setGoal}
+              className="inline-flex items-center gap-1 hover:text-[var(--fg)]"
+            >
+              {todayCount} / {goal} 문항 <LuSettings2 className="size-3.5" aria-hidden />
             </button>
           </div>
           <ProgressBar
@@ -186,7 +199,9 @@ export default function Stats() {
 
       {/* 세션 히스토리 — 흡수(ADR-0012 결정 7). 별도 라우트 아님(/history → /stats 리다이렉트). */}
       <Card padding={5}>
-        <h2 className="mb-3 text-sm font-semibold text-[var(--muted)]">📜 세션 히스토리</h2>
+        <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-[var(--muted)]">
+          <LuHistory className="size-4" aria-hidden /> 세션 히스토리
+        </h2>
         {sessions.length === 0 ? (
           <EmptyState isCompact title="아직 완료한 세션이 없습니다" />
         ) : (
@@ -223,24 +238,31 @@ export default function Stats() {
           <Button
             variant="outline"
             size="sm"
+            icon={<LuFileText className="size-4" />}
             onClick={() => exportProgressPDF(questions, store, meta, stats.masteryPct, st)}
           >
-            🖨️ 학습 리포트
+            학습 리포트
           </Button>
-          <Button variant="outline" size="sm" onClick={doBackup}>
-            💾 백업
+          <Button variant="outline" size="sm" icon={<LuDownload className="size-4" />} onClick={doBackup}>
+            백업
           </Button>
-          <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
-            📥 복원
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<LuUpload className="size-4" />}
+            onClick={() => fileRef.current?.click()}
+          >
+            복원
           </Button>
           <Button
             variant="dangerOutline"
             size="sm"
+            icon={<LuTrash2 className="size-4" />}
             onClick={() => {
               if (confirm("모든 기록(정답률·오답·즐겨찾기·메모·히스토리)을 지울까요?")) resetAll();
             }}
           >
-            🗑️ 초기화
+            초기화
           </Button>
           <input
             ref={fileRef}

@@ -11,6 +11,7 @@ import {
   updateUser,
 } from "@/lib/auth-client";
 import { authErrorMessage } from "@/lib/auth-error";
+import { LuMail, LuKeyRound } from "react-icons/lu";
 import { Card } from "@astryxdesign/core/Card";
 import { Field } from "@/components/ui/Field";
 import { Msg } from "@/components/ui/Msg";
@@ -151,10 +152,13 @@ function EmailSection() {
     <Section title="이메일 변경">
       {sent ? (
         <div className="space-y-2">
-          <p className="text-sm text-[var(--muted)]" role="status">
-            ✉️ <b className="text-[var(--fg)]">{sent}</b> 로 인증 메일을 보냈습니다. 메일의 링크를
-            눌러 변경을 완료하세요. <b className="text-[var(--fg)]">완료 전까지 기존 이메일이 유지</b>
-            됩니다.
+          <p className="flex gap-2 text-sm text-[var(--muted)]" role="status">
+            <LuMail className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <span>
+              <b className="text-[var(--fg)]">{sent}</b> 로 인증 메일을 보냈습니다. 메일의 링크를
+              눌러 변경을 완료하세요. <b className="text-[var(--fg)]">완료 전까지 기존 이메일이 유지</b>
+              됩니다.
+            </span>
           </p>
           <button
             type="button"
@@ -312,8 +316,8 @@ function PasskeySection() {
               key={pk.id}
               className="flex items-center justify-between rounded-control border border-[var(--border)] px-3 py-2 text-sm"
             >
-              <span>
-                🔑 {pk.name || "패스키"}{" "}
+              <span className="inline-flex items-center gap-1.5">
+                <LuKeyRound className="size-3.5 shrink-0" aria-hidden /> {pk.name || "패스키"}{" "}
                 <span className="text-xs text-[var(--muted)]">
                   · {new Date(pk.createdAt).toLocaleDateString("ko-KR")}
                 </span>

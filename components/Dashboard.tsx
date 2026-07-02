@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LuFlame, LuFolderOpen } from "react-icons/lu";
 import { Card } from "@astryxdesign/core/Card";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import type { DashboardData } from "@/lib/dashboard";
@@ -32,7 +33,16 @@ export default function Dashboard({
         <>
           <div className="grid grid-cols-4 gap-2 text-center">
             <StatTile b={data.totalExams} s="학습 시험" className="py-2" />
-            <StatTile b={`🔥${data.streak}`} s="연속일" className="py-2" />
+            <StatTile
+              b={
+                <span className="inline-flex items-center justify-center gap-0.5">
+                  <LuFlame className="size-4 text-[var(--warn)]" aria-hidden />
+                  {data.streak}
+                </span>
+              }
+              s="연속일"
+              className="py-2"
+            />
             <StatTile b={data.totalSeen} s="학습 문항" className="py-2" />
             <StatTile b={data.totalMine} s="내 문제함" className="py-2" />
           </div>
@@ -64,7 +74,9 @@ export default function Dashboard({
                           학습 {e.seen}/{e.total}
                         </span>
                         <span>정답률 {e.accuracy}%</span>
-                        <span>🗂️ 내 문제함 {e.mine}</span>
+                        <span className="inline-flex items-center gap-1">
+                          <LuFolderOpen className="size-3.5" aria-hidden /> 내 문제함 {e.mine}
+                        </span>
                         <span>오답 {e.wrong}</span>
                         <span>즐겨찾기 {e.stars}</span>
                         {e.lastActiveDay && <span>최근 {e.lastActiveDay}</span>}

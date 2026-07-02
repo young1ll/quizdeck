@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type SubmitEvent } from "react";
 import Link from "next/link";
+import { LuCircleCheck } from "react-icons/lu";
 import { resetPassword } from "@/lib/auth-client";
 import { authErrorMessage } from "@/lib/auth-error";
 import { Field } from "@/components/ui/Field";
@@ -58,8 +59,9 @@ export default function ResetPasswordPage() {
           </>
         ) : done ? (
           <>
-            <p className="mt-3 text-sm" role="status">
-              ✅ 비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요.
+            <p className="mt-3 flex items-center gap-1.5 text-sm" role="status">
+              <LuCircleCheck className="size-4 shrink-0 text-[var(--good)]" aria-hidden />
+              비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요.
             </p>
             <HomeLink label="로그인하러 가기" />
           </>

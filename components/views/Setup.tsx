@@ -9,19 +9,10 @@ import { Selector } from "@astryxdesign/core/Selector";
 import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { useExam } from "@/lib/exam-context";
 import { MODE_LABEL, useStore, type Mode } from "@/lib/store";
+import { MODE_ICON } from "@/lib/mode-icons";
 import type { StartOpts } from "@/lib/use-quiz";
 import { myProblems } from "@/lib/progress";
 import { Button } from "@/components/ui/Button";
-
-const MODE_ICON: Record<Mode, string> = {
-  study: "📚",
-  smart: "🧠",
-  exam: "⏱️",
-  wrong: "🔁",
-  star: "⭐",
-  mine: "🗂️",
-  memo: "📝",
-};
 
 export default function Setup({
   mode,
@@ -74,11 +65,13 @@ export default function Setup({
     return "";
   }, [mode, store.wrong.length, store.stars.length, mineCount, memoCount]);
 
+  const ModeIcon = MODE_ICON[mode];
+
   return (
     <div>
       <header className="mb-5 flex items-center justify-between">
-        <h1 className="text-xl font-bold">
-          {MODE_ICON[mode]} {MODE_LABEL[mode]}
+        <h1 className="flex items-center gap-2 text-xl font-bold">
+          <ModeIcon className="size-5 text-[var(--accent)]" aria-hidden /> {MODE_LABEL[mode]}
         </h1>
         <button
           type="button"

@@ -2,9 +2,12 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import type { IconType } from "react-icons";
+import { LuFlame, LuPause, LuBookOpen, LuMap, LuNetwork, LuFolderOpen } from "react-icons/lu";
 import { Card } from "@astryxdesign/core/Card";
 import { useExam } from "@/lib/exam-context";
 import { MODE_LABEL, useStore, type Mode } from "@/lib/store";
+import { MODE_ICON } from "@/lib/mode-icons";
 import { streak, today } from "@/lib/dates";
 import { myProblems } from "@/lib/progress";
 import { Button } from "@/components/ui/Button";
@@ -14,15 +17,6 @@ import { Button } from "@/components/ui/Button";
 // 빠져 /stats(슬라이스 D)로 이주한다 — 허브의 1급 시민은 "연습 시작·섹션 이동"이라 첫 화면을 스캔
 // 가능하게 유지. 검색은 섹션이 아니라 도구라 맥락 헤더(슬라이스 C)로 승격 — 허브 카드에서 제거.
 const MODES: Mode[] = ["study", "smart", "exam"];
-const MODE_ICON: Record<Mode, string> = {
-  study: "📚",
-  smart: "🧠",
-  exam: "⏱️",
-  wrong: "🔁",
-  star: "⭐",
-  mine: "🗂️",
-  memo: "📝",
-};
 
 export default function Home({
   isLearner,
@@ -65,8 +59,9 @@ export default function Home({
       {active && (
         <Card padding={4} className="border-[var(--warn)]/40">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="text-sm">
-              ⏸️ 진행 중: {MODE_LABEL[active.mode]} {active.idx + 1}/{active.queue.length}
+            <span className="inline-flex items-center gap-1.5 text-sm">
+              <LuPause className="size-4 shrink-0 text-[var(--warn)]" aria-hidden />
+              진행 중: {MODE_LABEL[active.mode]} {active.idx + 1}/{active.queue.length}
             </span>
             <div className="flex gap-2">
               <Button variant="primary" size="sm" onClick={onResume}>
@@ -88,7 +83,9 @@ export default function Home({
             <span>
               숙련도 <b className="text-[var(--accent)]">{masteryPct}%</b>
             </span>
-            <span className="text-[var(--muted)]">🔥 연속 {st}일</span>
+            <span className="inline-flex items-center gap-1 text-[var(--muted)]">
+              <LuFlame className="size-3.5 text-[var(--warn)]" aria-hidden /> 연속 {st}일
+            </span>
             <span className="text-[var(--muted)]">
               오늘 {todayCount}/{goal}
             </span>
@@ -108,13 +105,13 @@ export default function Home({
       {/* 두 묶음 네비: 학습 자료(참조) / 내 학습(복습) — 참조와 복습은 다른 과업이라 시각 분리(ADR-0012
           결정 5). 검색은 섹션 아님 → 맥락 헤더(슬라이스 C). */}
       <NavGroup title="학습 자료">
-        <NavLink href={`${base}/concepts`} label="📖 개념" />
-        <NavLink href={`${base}/map`} label="🗺️ 서비스맵" />
-        <NavLink href={`${base}/diagrams`} label="📐 다이어그램" />
+        <NavLink href={`${base}/concepts`} icon={LuBookOpen} label="개념" />
+        <NavLink href={`${base}/map`} icon={LuMap} label="서비스맵" />
+        <NavLink href={`${base}/diagrams`} icon={LuNetwork} label="다이어그램" />
       </NavGroup>
 
       <NavGroup title="내 학습">
-        <NavLink href={`${base}/my-problems`} label="🗂️ 내 문제함" badge={mineCount} />
+        <NavLink href={`${base}/my-problems`} icon={LuFolderOpen} label="내 문제함" badge={mineCount} />
       </NavGroup>
     </div>
   );
@@ -145,9 +142,9 @@ function AnonymousHome({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
 
       {/* 학습 자료(익명 허용) — 내 학습은 Progress 의존이라 제외 */}
       <NavGroup title="학습 자료">
-        <NavLink href={`${base}/concepts`} label="📖 개념" />
-        <NavLink href={`${base}/map`} label="🗺️ 서비스맵" />
-        <NavLink href={`${base}/diagrams`} label="📐 다이어그램" />
+        <NavLink href={`${base}/concepts`} icon={LuBookOpen} label="개념" />
+        <NavLink href={`${base}/map`} icon={LuMap} label="서비스맵" />
+        <NavLink href={`${base}/diagrams`} icon={LuNetwork} label="다이어그램" />
       </NavGroup>
     </div>
   );
@@ -158,11 +155,20 @@ function AnonymousHome({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
 function ModeGrid({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-      {MODES.map((m) => (
-        <Button key={m} variant="outline" fullWidth onClick={() => onStartMode(m)}>
-          {MODE_ICON[m]} {MODE_LABEL[m]}
-        </Button>
-      ))}
+      {MODES.map((m) => {
+        const Icon = MODE_ICON[m];
+        return (
+          <Button
+            key={m}
+            variant="outline"
+            fullWidth
+            icon={<Icon className="size-4" />}
+            onClick={() => onStartMode(m)}
+          >
+            {MODE_LABEL[m]}
+          </Button>
+        );
+      })}
     </div>
   );
 }
@@ -179,12 +185,23 @@ function NavGroup({ title, children }: { title: string; children: React.ReactNod
   );
 }
 
-// 참조/복습 네비 타일 — Link>astryx Card(muted 서피스, 클라이언트 내비 유지). 뱃지는 카운트 pill(유지).
-function NavLink({ href, label, badge }: { href: string; label: string; badge?: number }) {
+// 참조/복습 네비 타일 — Link>astryx Card(muted 서피스, 클라이언트 내비 유지). 아이콘=Lucide, 뱃지는 카운트 pill.
+function NavLink({
+  href,
+  icon: Icon,
+  label,
+  badge,
+}: {
+  href: string;
+  icon: IconType;
+  label: string;
+  badge?: number;
+}) {
   return (
     <Link href={href} className="block">
       <Card padding={0} variant="muted" className="transition-colors hover:border-[var(--accent)]">
         <div className="flex min-h-[44px] items-center justify-center gap-2 p-3 text-sm">
+          <Icon className="size-4 shrink-0 text-[var(--muted)]" aria-hidden />
           <span>{label}</span>
           {badge != null && badge > 0 && (
             <span className="rounded-full bg-[var(--panel)] px-1.5 py-0.5 text-xs text-[var(--muted)]">
