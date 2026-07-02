@@ -11,6 +11,7 @@ import {
   updateUser,
 } from "@/lib/auth-client";
 import { authErrorMessage } from "@/lib/auth-error";
+import { Card } from "@astryxdesign/core/Card";
 import { Field } from "@/components/ui/Field";
 import { Msg } from "@/components/ui/Msg";
 import { Button } from "@/components/ui/Button";
@@ -57,12 +58,14 @@ function LogoutSection() {
   );
 }
 
+// 계정 섹션 서피스 — astryx Card (ADR-0014 Phase 3). 6개 섹션 공통. 폼(Field·Msg·Button)은 이미 astryx.
+// 섹션 간 간격은 부모(account/page.tsx `space-y-5`)가 제공.
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
+    <Card padding={5}>
       <h2 className="mb-3 text-sm font-semibold">{title}</h2>
       {children}
-    </section>
+    </Card>
   );
 }
 

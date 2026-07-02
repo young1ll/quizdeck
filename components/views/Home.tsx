@@ -2,10 +2,12 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { Card } from "@astryxdesign/core/Card";
 import { useExam } from "@/lib/exam-context";
 import { MODE_LABEL, useStore, type Mode } from "@/lib/store";
 import { streak, today } from "@/lib/dates";
 import { myProblems } from "@/lib/progress";
+import { Button } from "@/components/ui/Button";
 
 // exam 허브 = 슬림 런처 (ADR-0012 결정 4·5). 이어하기 + 모드(1급) + 압축 현황 한 줄("현황 자세히" →
 // /stats) + 두 묶음 네비(학습 자료 / 내 학습). per-exam 심화 통계·주제별 정답률·데이터 도구는 허브에서
@@ -59,50 +61,46 @@ export default function Home({
         <h1 className="mt-1 text-2xl font-bold leading-snug">{meta.name}</h1>
       </header>
 
-      {/* 이어하기 배너 */}
+      {/* 이어하기 배너 — astryx Card(warn 강조) + Button(이어하기 primary / 버리기 outline). ADR-0014 Phase 3. */}
       {active && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--warn)]/40 bg-[var(--panel)] p-4">
-          <span className="text-sm">
-            ⏸️ 진행 중: {MODE_LABEL[active.mode]} {active.idx + 1}/{active.queue.length}
-          </span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onResume}
-              className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--accent-fg)]"
-            >
-              이어하기
-            </button>
-            <button
-              type="button"
-              onClick={onDiscard}
-              className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm hover:border-[var(--bad)]"
-            >
-              버리기
-            </button>
+        <Card padding={4} className="border-[var(--warn)]/40">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-sm">
+              ⏸️ 진행 중: {MODE_LABEL[active.mode]} {active.idx + 1}/{active.queue.length}
+            </span>
+            <div className="flex gap-2">
+              <Button variant="primary" size="sm" onClick={onResume}>
+                이어하기
+              </Button>
+              <Button variant="outline" size="sm" onClick={onDiscard}>
+                버리기
+              </Button>
+            </div>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* 압축 현황 한 줄 — 글랜스(숙련도·연속일·오늘 목표) + 심화는 /stats(슬라이스 D). 진도 스코프
-          사다리: 허브=한 줄, /stats=심화. */}
-      <div className="flex items-center justify-between gap-3 rounded-panel border border-[var(--border)] bg-[var(--panel)] px-4 py-3">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-          <span>
-            숙련도 <b className="text-[var(--accent)]">{masteryPct}%</b>
-          </span>
-          <span className="text-[var(--muted)]">🔥 연속 {st}일</span>
-          <span className="text-[var(--muted)]">
-            오늘 {todayCount}/{goal}
-          </span>
+          사다리: 허브=한 줄, /stats=심화. astryx Card 서피스. */}
+      <Card padding={0}>
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            <span>
+              숙련도 <b className="text-[var(--accent)]">{masteryPct}%</b>
+            </span>
+            <span className="text-[var(--muted)]">🔥 연속 {st}일</span>
+            <span className="text-[var(--muted)]">
+              오늘 {todayCount}/{goal}
+            </span>
+          </div>
+          <Link
+            href={`${base}/stats`}
+            className="shrink-0 whitespace-nowrap text-xs text-[var(--muted)] hover:text-[var(--fg)]"
+          >
+            현황 자세히 ›
+          </Link>
         </div>
-        <Link
-          href={`${base}/stats`}
-          className="shrink-0 whitespace-nowrap text-xs text-[var(--muted)] hover:text-[var(--fg)]"
-        >
-          현황 자세히 ›
-        </Link>
-      </div>
+      </Card>
 
       {/* 모드 — 1급 액션 */}
       <ModeGrid onStartMode={onStartMode} />
@@ -135,12 +133,12 @@ function AnonymousHome({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
         <p className="mt-1 text-sm text-[var(--muted)]">문항 {questions.length}개</p>
       </header>
 
-      <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
+      <Card padding={5}>
         <p className="text-sm font-medium">로그인하고 학습을 시작하세요</p>
         <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
           진도·오답노트·즐겨찾기·메모가 기기 간 자동 동기화됩니다. 아래 학습 모드를 누르면 로그인 창이 열립니다.
         </p>
-      </div>
+      </Card>
 
       {/* 학습 모드 — 누르면 로그인 게이트 */}
       <ModeGrid onStartMode={onStartMode} />
@@ -155,19 +153,15 @@ function AnonymousHome({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
   );
 }
 
-// 학습 모드 버튼 그리드 — Learner 허브와 익명 허브가 공유. 누르면 onStartMode(게이트 경유).
+// 학습 모드 버튼 그리드 — Learner 허브와 익명 허브가 공유. 누르면 onStartMode(게이트 경유). 1급 액션이라
+// astryx Button(outline, fullWidth)로 — 참조/복습 네비(NavLink=카드)와 시각 구분(액션 vs 내비). ADR-0014 Phase 3.
 function ModeGrid({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
       {MODES.map((m) => (
-        <button
-          key={m}
-          type="button"
-          onClick={() => onStartMode(m)}
-          className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 text-sm font-medium hover:border-[var(--accent)]"
-        >
+        <Button key={m} variant="outline" fullWidth onClick={() => onStartMode(m)}>
           {MODE_ICON[m]} {MODE_LABEL[m]}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -185,18 +179,20 @@ function NavGroup({ title, children }: { title: string; children: React.ReactNod
   );
 }
 
+// 참조/복습 네비 타일 — Link>astryx Card(muted 서피스, 클라이언트 내비 유지). 뱃지는 카운트 pill(유지).
 function NavLink({ href, label, badge }: { href: string; label: string; badge?: number }) {
   return (
-    <Link
-      href={href}
-      className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--panel-2)] p-3 text-sm hover:border-[var(--accent)]"
-    >
-      <span>{label}</span>
-      {badge != null && badge > 0 && (
-        <span className="rounded-full bg-[var(--panel)] px-1.5 py-0.5 text-xs text-[var(--muted)]">
-          {badge}
-        </span>
-      )}
+    <Link href={href} className="block">
+      <Card padding={0} variant="muted" className="transition-colors hover:border-[var(--accent)]">
+        <div className="flex min-h-[44px] items-center justify-center gap-2 p-3 text-sm">
+          <span>{label}</span>
+          {badge != null && badge > 0 && (
+            <span className="rounded-full bg-[var(--panel)] px-1.5 py-0.5 text-xs text-[var(--muted)]">
+              {badge}
+            </span>
+          )}
+        </div>
+      </Card>
     </Link>
   );
 }

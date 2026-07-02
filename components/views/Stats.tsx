@@ -1,12 +1,20 @@
 "use client";
 
 import { useMemo, useRef } from "react";
+import { Card } from "@astryxdesign/core/Card";
+import { ProgressBar } from "@astryxdesign/core/ProgressBar";
+import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { useExam } from "@/lib/exam-context";
 import { MODE_LABEL, useStore, type Store } from "@/lib/store";
 import { streak, today } from "@/lib/dates";
 import { topicStat } from "@/lib/session";
 import { exportProgressPDF } from "@/lib/pdf";
 import { StatTile } from "@/components/ui/StatTile";
+import { Button } from "@/components/ui/Button";
+
+// 주제 정답률 % → astryx ProgressBar variant(미학습=neutral·<60 error·<80 warning·그외 success).
+const barVariant = (p: number): "neutral" | "error" | "warning" | "success" =>
+  p < 0 ? "neutral" : p < 60 ? "error" : p < 80 ? "warning" : "success";
 
 // per-exam 심화 현황 — /stats (ADR-0012 결정 4·7·8). 진도 스코프 사다리의 "이 시험 심화": 숙련도·통계·
 // 일일목표 · 주제별 정답률 · 세션 히스토리(흡수) · 데이터 도구. 허브 슬림화(슬라이스 B)로 허브에서 빠진
@@ -91,8 +99,8 @@ export default function Stats() {
         <h1 className="mt-1 text-xl font-bold leading-snug">학습 현황</h1>
       </header>
 
-      {/* 숙련도 + 통계 */}
-      <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
+      {/* 숙련도 + 통계 — astryx Card. 도넛(conic-gradient)·StatTile 유지, 일일목표는 ProgressBar. */}
+      <Card padding={5}>
         <div className="flex items-center gap-5">
           <div
             className="grid h-24 w-24 shrink-0 place-items-center rounded-full"
@@ -113,7 +121,7 @@ export default function Stats() {
             <StatTile b={store.sessions.length} s="세션" />
           </div>
         </div>
-        {/* 일일 목표 */}
+        {/* 일일 목표 — astryx ProgressBar(success). 목표 설정은 버튼(prompt). */}
         <div className="mt-4">
           <div className="mb-1 flex items-center justify-between text-xs text-[var(--muted)]">
             <span>오늘 목표</span>
@@ -121,17 +129,18 @@ export default function Stats() {
               {todayCount} / {goal} 문항 ⚙️
             </button>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-[var(--panel-2)]">
-            <div
-              className="h-full bg-[var(--good)]"
-              style={{ width: `${Math.min(100, goal ? (todayCount / goal) * 100 : 0)}%` }}
-            />
-          </div>
+          <ProgressBar
+            value={Math.min(goal, todayCount)}
+            max={goal || 1}
+            label="오늘 목표 진행"
+            isLabelHidden
+            variant="success"
+          />
         </div>
-      </div>
+      </Card>
 
-      {/* 주제별 정답률 */}
-      <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
+      {/* 주제별 정답률 — astryx Card + ProgressBar(정답률 임계값→variant). */}
+      <Card padding={5}>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[var(--muted)]">주제별 정답률</h2>
           {weak.length > 0 && (
@@ -141,37 +150,45 @@ export default function Stats() {
         <div className="space-y-2">
           {sortedTopics.map(([topic, m]) => {
             const p = m.seen ? Math.round((m.ok / m.seen) * 100) : -1;
-            const col =
-              p < 0
-                ? "var(--border)"
-                : p < 60
-                  ? "var(--bad)"
-                  : p < 80
-                    ? "var(--warn)"
-                    : "var(--good)";
+            const variant = barVariant(p);
             return (
               <div key={topic} className="flex items-center gap-3 text-sm">
                 <span className="w-32 shrink-0 truncate">{topic}</span>
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--panel-2)]">
-                  <div className="h-full" style={{ width: `${p < 0 ? 0 : p}%`, background: col }} />
-                </div>
+                <ProgressBar
+                  value={p < 0 ? 0 : p}
+                  max={100}
+                  label={`${topic} 정답률`}
+                  isLabelHidden
+                  variant={variant}
+                  className="flex-1"
+                />
                 <span className="w-12 shrink-0 text-right text-[var(--muted)]">
                   {m.seen}/{m.n}
                 </span>
-                <span className="w-10 shrink-0 text-right" style={{ color: col }}>
+                <span
+                  className={`w-10 shrink-0 text-right ${
+                    p < 0
+                      ? "text-[var(--muted)]"
+                      : p < 60
+                        ? "text-[var(--bad)]"
+                        : p < 80
+                          ? "text-[var(--warn)]"
+                          : "text-[var(--good)]"
+                  }`}
+                >
                   {p < 0 ? "–" : p + "%"}
                 </span>
               </div>
             );
           })}
         </div>
-      </div>
+      </Card>
 
       {/* 세션 히스토리 — 흡수(ADR-0012 결정 7). 별도 라우트 아님(/history → /stats 리다이렉트). */}
-      <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
+      <Card padding={5}>
         <h2 className="mb-3 text-sm font-semibold text-[var(--muted)]">📜 세션 히스토리</h2>
         {sessions.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">아직 완료한 세션이 없습니다.</p>
+          <EmptyState isCompact title="아직 완료한 세션이 없습니다" />
         ) : (
           <ul className="space-y-2">
             {sessions.map((x, i) => {
@@ -196,24 +213,35 @@ export default function Stats() {
             })}
           </ul>
         )}
-      </div>
+      </Card>
 
-      {/* 이 시험 데이터 — 리포트·백업·복원·초기화(파괴적). 허브 첫 화면에서 강등돼 여기로(ADR-0012 결정 8). */}
-      <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
+      {/* 이 시험 데이터 — 리포트·백업·복원·초기화(파괴적). 허브 첫 화면에서 강등돼 여기로(ADR-0012 결정 8).
+          도구는 astryx Button(outline; 초기화=dangerOutline 파괴적 강조). */}
+      <Card padding={5}>
         <h2 className="mb-3 text-sm font-semibold text-[var(--muted)]">이 시험 데이터</h2>
         <div className="flex flex-wrap gap-2 text-sm">
-          <Tool
-            label="🖨️ 학습 리포트"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => exportProgressPDF(questions, store, meta, stats.masteryPct, st)}
-          />
-          <Tool label="💾 백업" onClick={doBackup} />
-          <Tool label="📥 복원" onClick={() => fileRef.current?.click()} />
-          <Tool
-            label="🗑️ 초기화"
+          >
+            🖨️ 학습 리포트
+          </Button>
+          <Button variant="outline" size="sm" onClick={doBackup}>
+            💾 백업
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+            📥 복원
+          </Button>
+          <Button
+            variant="dangerOutline"
+            size="sm"
             onClick={() => {
               if (confirm("모든 기록(정답률·오답·즐겨찾기·메모·히스토리)을 지울까요?")) resetAll();
             }}
-          />
+          >
+            🗑️ 초기화
+          </Button>
           <input
             ref={fileRef}
             type="file"
@@ -222,19 +250,7 @@ export default function Stats() {
             className="hidden"
           />
         </div>
-      </div>
+      </Card>
     </div>
-  );
-}
-
-function Tool({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-lg border border-[var(--border)] px-3 py-1.5 hover:border-[var(--accent)]"
-    >
-      {label}
-    </button>
   );
 }

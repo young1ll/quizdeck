@@ -1,5 +1,8 @@
 import { headers } from "next/headers";
 import Link from "next/link";
+import { Card } from "@astryxdesign/core/Card";
+import { ProgressBar } from "@astryxdesign/core/ProgressBar";
+import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { listExams } from "@/lib/content";
 import { Container } from "@/components/ui/Container";
 import { getLearnerSession } from "@/lib/learner-server";
@@ -61,8 +64,9 @@ export default async function Home() {
           <ul className="grid gap-3 sm:grid-cols-2">
             {cont.map(({ exam, mastery, mine }) => (
               <li key={`${exam.provider}/${exam.slug}`}>
-                <div className="rounded-card border border-[var(--accent)]/40 bg-[var(--panel)] transition-colors hover:border-[var(--accent)]">
-                  {/* 재개(primary) — 카드 본문 → 허브. */}
+                {/* 재개 카드 — astryx Card 서피스(accent 강조 border). 본문 Link→허브 + 내 문제함 하위 Link
+                    (중첩 anchor 회피 위해 ClickableCard 아님 Card+Link 구성). ADR-0014 Phase 3. */}
+                <Card padding={0} className="border-[var(--accent)]/40">
                   <Link href={`/${exam.provider}/${exam.slug}/`} className="block p-4">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
@@ -74,12 +78,14 @@ export default async function Home() {
                       </span>
                     </div>
                     <div className="mt-3 flex items-center gap-2">
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--panel-2)]">
-                        <div
-                          className="h-full bg-[var(--accent)]"
-                          style={{ width: `${mastery}%` }}
-                        />
-                      </div>
+                      <ProgressBar
+                        value={mastery}
+                        max={100}
+                        label={`숙련도 ${mastery}%`}
+                        isLabelHidden
+                        variant="accent"
+                        className="flex-1"
+                      />
                       <span className="shrink-0 text-xs text-[var(--muted)]">숙련도 {mastery}%</span>
                     </div>
                   </Link>
@@ -93,7 +99,7 @@ export default async function Home() {
                       <span className="font-semibold text-[var(--fg)]">{mine} →</span>
                     </Link>
                   )}
-                </div>
+                </Card>
               </li>
             ))}
           </ul>
@@ -101,7 +107,7 @@ export default async function Home() {
       )}
 
       {exams.length === 0 ? (
-        <p className="text-[var(--muted)]">등록된 시험이 없습니다.</p>
+        <EmptyState title="등록된 시험이 없습니다" isCompact />
       ) : (
         <div className="space-y-8">
           {[...byProvider.entries()].map(([providerName, list]) => (
@@ -112,19 +118,14 @@ export default async function Home() {
               <ul className="grid gap-3 sm:grid-cols-2">
                 {list.map((e) => (
                   <li key={`${e.provider}/${e.slug}`}>
-                    <Link
-                      href={`/${e.provider}/${e.slug}/`}
-                      className="block rounded-card border border-[var(--border)] bg-[var(--panel)] p-4 transition-colors hover:border-[var(--accent)]"
-                    >
-                      <div className="font-mono text-xs text-[var(--accent)]">
-                        {e.code}
-                      </div>
-                      <div className="mt-1 font-medium leading-snug">
-                        {e.name}
-                      </div>
-                      <div className="mt-2 text-xs text-[var(--muted)]">
-                        문항 {e.questionCount}개
-                      </div>
+                    {/* 카탈로그 카드 — astryx Card 서피스 + Next Link(클라이언트 내비·prefetch 유지, ADR
+                        라우팅 보존). ClickableCard 은 plain <a>(풀 리로드)라 미채택. ADR-0014 Phase 3. */}
+                    <Link href={`/${e.provider}/${e.slug}/`} className="block">
+                      <Card padding={4} className="transition-colors hover:border-[var(--accent)]">
+                        <div className="font-mono text-xs text-[var(--accent)]">{e.code}</div>
+                        <div className="mt-1 font-medium leading-snug">{e.name}</div>
+                        <div className="mt-2 text-xs text-[var(--muted)]">문항 {e.questionCount}개</div>
+                      </Card>
                     </Link>
                   </li>
                 ))}
