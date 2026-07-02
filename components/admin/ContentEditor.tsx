@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { LuX } from "react-icons/lu";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { TextArea } from "@astryxdesign/core/TextArea";
+import { NumberInput } from "@astryxdesign/core/NumberInput";
+import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import type { Concept, Question } from "@/lib/types";
 import {
   conceptForLang,
@@ -10,6 +14,8 @@ import {
   type LocalizedConcept,
   type LocalizedQuestion,
 } from "@/lib/content-localize";
+import { Button } from "@/components/ui/Button";
+import { Msg } from "@/components/ui/Msg";
 
 // 어드민 콘텐츠 편집기 (이슈 #27·#28 / ADR-0005 B·C). 언어별 편집 — editLang 슬롯만 보고/저장하고,
 // 다른 언어 슬롯은 서버 upsert 가 보존한다(content || excluded). /api/admin/content 로 CRUD,
@@ -56,30 +62,21 @@ export default function ContentEditor({
       <h1 className="text-xl font-bold">
         어드민 · <span className="font-mono text-[var(--accent)]">{examKey}</span>
       </h1>
-      <div className="mt-2 flex items-center gap-2 text-xs">
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
         <span className="text-[var(--muted)]">편집 언어</span>
-        {SUPPORTED_LANGS.map((l) => (
-          <button
-            key={l}
-            type="button"
-            onClick={() => setEditLang(l)}
-            aria-pressed={l === editLang}
-            className={
-              "rounded-lg px-2.5 py-1 font-medium transition-colors " +
-              (l === editLang
-                ? "bg-[var(--accent)] text-[var(--accent-fg)]"
-                : "text-[var(--muted)] hover:text-[var(--fg)]")
-            }
-          >
-            {LANG_LABEL[l] ?? l}
-          </button>
-        ))}
-        <span className="ml-1 text-[var(--muted)]">· 저장 시 시험 페이지에 즉시 반영</span>
+        <SegmentedControl value={editLang} onChange={setEditLang} label="편집 언어" size="sm">
+          {SUPPORTED_LANGS.map((l) => (
+            <SegmentedControlItem key={l} value={l} label={LANG_LABEL[l] ?? l} />
+          ))}
+        </SegmentedControl>
+        <span className="text-[var(--muted)]">· 저장 시 시험 페이지에 즉시 반영</span>
       </div>
 
-      <div className="mt-4 mb-4 flex gap-1 text-sm">
-        <TabBtn active={tab === "q"} onClick={() => setTab("q")}>문항 {questions.length}</TabBtn>
-        <TabBtn active={tab === "c"} onClick={() => setTab("c")}>개념 {concepts.length}</TabBtn>
+      <div className="mt-4 mb-4">
+        <SegmentedControl value={tab} onChange={(v) => setTab(v as "q" | "c")} label="편집 대상" size="sm">
+          <SegmentedControlItem value="q" label={`문항 ${questions.length}`} />
+          <SegmentedControlItem value="c" label={`개념 ${concepts.length}`} />
+        </SegmentedControl>
       </div>
 
       {tab === "q" ? (
@@ -160,17 +157,20 @@ function QuestionsPanel({
   if (draft) {
     return (
       <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <label className="text-xs text-[var(--muted)]">qn</label>
-          <input
-            type="number"
-            value={draft.qn}
-            disabled={!isNew}
-            title={isNew ? undefined : "기존 문항 번호는 식별자라 변경 불가"}
-            onChange={(e) => setField({ qn: Number(e.target.value) })}
-            className="w-20 rounded border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-sm disabled:opacity-60"
-          />
-          <Input label="주제(topic)" value={draft.topic} onChange={(v) => setField({ topic: v })} />
+        <div className="flex items-start gap-3">
+          <div className="w-24 shrink-0">
+            <NumberInput
+              label="qn"
+              value={draft.qn}
+              isDisabled={!isNew}
+              isIntegerOnly
+              labelTooltip={isNew ? undefined : "기존 문항 번호는 식별자라 변경 불가"}
+              onChange={(v) => setField({ qn: v ?? draft.qn })}
+            />
+          </div>
+          <div className="flex-1">
+            <Input label="주제(topic)" value={draft.topic} onChange={(v) => setField({ topic: v })} />
+          </div>
         </div>
         <Area label="문제(q, 마크다운)" value={draft.q} onChange={(v) => setField({ q: v })} rows={4} />
 
@@ -205,12 +205,14 @@ function QuestionsPanel({
         <Area label="해설(explanation)" value={draft.explanation ?? ""} onChange={(v) => setField({ explanation: v || undefined })} rows={3} />
         <Input label="팁(tip)" value={draft.tip ?? ""} onChange={(v) => setField({ tip: v || undefined })} />
 
-        {err && <p className="text-xs text-[var(--bad)]" role="alert">{err}</p>}
+        {err && <Msg kind="bad">{err}</Msg>}
         <div className="flex gap-2">
-          <button type="button" disabled={busy} onClick={save} className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-fg)] disabled:opacity-50">
-            {busy ? "저장 중…" : `저장 (${editLang})`}
-          </button>
-          <button type="button" onClick={() => { setDraft(null); setErr(null); }} className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm">취소</button>
+          <Button variant="primary" loading={busy} onClick={save}>
+            저장 ({editLang})
+          </Button>
+          <Button variant="outline" onClick={() => { setDraft(null); setErr(null); }}>
+            취소
+          </Button>
         </div>
       </div>
     );
@@ -218,16 +220,17 @@ function QuestionsPanel({
 
   return (
     <div>
-      <button
-        type="button"
+      <Button
+        variant="outline"
+        size="sm"
+        className="mb-3"
         onClick={() => {
           setIsNew(true);
           setDraft({ qn: nextQn(), topic: "", q: "", options: { A: "" }, answer: [] });
         }}
-        className="mb-3 rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm hover:border-[var(--accent)]"
       >
         + 새 문항
-      </button>
+      </Button>
       <ul className="space-y-1">
         {items.map((i) => {
           const translated = Boolean(i.content[editLang]);
@@ -307,12 +310,14 @@ function ConceptsPanel({
         <Input label="함정(trap)" value={draft.trap} onChange={(v) => setField({ trap: v })} />
         <Input label="비교(vs)" value={draft.vs} onChange={(v) => setField({ vs: v })} />
 
-        {err && <p className="text-xs text-[var(--bad)]" role="alert">{err}</p>}
+        {err && <Msg kind="bad">{err}</Msg>}
         <div className="flex gap-2">
-          <button type="button" disabled={busy} onClick={save} className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-fg)] disabled:opacity-50">
-            {busy ? "저장 중…" : `저장 (${editLang})`}
-          </button>
-          <button type="button" onClick={() => { setDraft(null); setErr(null); }} className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm">취소</button>
+          <Button variant="primary" loading={busy} onClick={save}>
+            저장 ({editLang})
+          </Button>
+          <Button variant="outline" onClick={() => { setDraft(null); setErr(null); }}>
+            취소
+          </Button>
         </div>
       </div>
     );
@@ -320,16 +325,17 @@ function ConceptsPanel({
 
   return (
     <div>
-      <button
-        type="button"
+      <Button
+        variant="outline"
+        size="sm"
+        className="mb-3"
         onClick={() => {
           setIsNew(true);
           setDraft({ svc: "", cat: "", deff: "", key: "", when: "", trap: "", vs: "" });
         }}
-        className="mb-3 rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm hover:border-[var(--accent)]"
       >
         + 새 개념
-      </button>
+      </Button>
       <ul className="space-y-1">
         {items.map((i) => {
           const translated = Boolean(i.content[editLang]);
@@ -347,21 +353,7 @@ function ConceptsPanel({
   );
 }
 
-function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        "rounded-lg px-3 py-1 font-medium transition-colors " +
-        (active ? "bg-[var(--accent)] text-[var(--accent-fg)]" : "text-[var(--muted)] hover:text-[var(--fg)]")
-      }
-    >
-      {children}
-    </button>
-  );
-}
-
+// 어드민 폼 필드 — astryx 래퍼 (ADR-0014 Phase 5). Input→TextInput, Area→TextArea. 호출부 시그니처 유지.
 function Input({
   label,
   value,
@@ -373,29 +365,9 @@ function Input({
   onChange: (v: string) => void;
   disabled?: boolean;
 }) {
-  return (
-    <label className="block">
-      <span className="mb-0.5 block text-xs text-[var(--muted)]">{label}</span>
-      <input
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-sm outline-none focus:border-[var(--accent)] disabled:opacity-60"
-      />
-    </label>
-  );
+  return <TextInput label={label} value={value} onChange={(v) => onChange(v)} isDisabled={disabled} />;
 }
 
 function Area({ label, value, onChange, rows }: { label: string; value: string; onChange: (v: string) => void; rows: number }) {
-  return (
-    <label className="block">
-      <span className="mb-0.5 block text-xs text-[var(--muted)]">{label}</span>
-      <textarea
-        value={value}
-        rows={rows}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-sm outline-none focus:border-[var(--accent)]"
-      />
-    </label>
-  );
+  return <TextArea label={label} value={value} onChange={(v) => onChange(v)} rows={rows} />;
 }

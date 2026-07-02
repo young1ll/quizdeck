@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { Card } from "@astryxdesign/core/Card";
 import { getAdminSession } from "@/lib/admin";
 import { listExams } from "@/lib/content";
 
@@ -20,13 +21,12 @@ export default async function AdminHome() {
       <ul className="mt-6 space-y-2">
         {exams.map((e) => (
           <li key={`${e.provider}/${e.slug}`}>
-            <Link
-              href={`/admin/${e.provider}/${e.slug}`}
-              className="block rounded-card border border-[var(--border)] bg-[var(--panel)] p-4 transition-colors hover:border-[var(--accent)]"
-            >
-              <div className="font-mono text-xs text-[var(--accent)]">{e.code}</div>
-              <div className="mt-1 font-medium">{e.name}</div>
-              <div className="mt-1 text-xs text-[var(--muted)]">문항 {e.questionCount}개</div>
+            <Link href={`/admin/${e.provider}/${e.slug}`} className="block">
+              <Card padding={4} className="transition-colors hover:border-[var(--accent)]">
+                <div className="font-mono text-xs text-[var(--accent)]">{e.code}</div>
+                <div className="mt-1 font-medium">{e.name}</div>
+                <div className="mt-1 text-xs text-[var(--muted)]">문항 {e.questionCount}개</div>
+              </Card>
             </Link>
           </li>
         ))}
