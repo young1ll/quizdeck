@@ -1,6 +1,6 @@
 "use client";
 
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { Button as AstryxButton } from "@astryxdesign/core/Button";
 
 // 공통 버튼 — astryx Button 래퍼 (ADR-0014 Phase 1, ADR-0008 결정 2 대체). 호출부 시그니처
@@ -28,12 +28,15 @@ export function Button({
   disabled,
   children,
   title,
+  icon,
   ...rest
 }: {
   variant?: Variant;
   size?: Size;
   fullWidth?: boolean;
   loading?: boolean;
+  // 라벨 앞 선행 아이콘(astryx Button icon) — 아이콘+라벨을 한 그룹으로 배치(소셜/패스키 등).
+  icon?: ReactNode;
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
   const label = typeof children === "string" ? children : "";
   const extraChildren = typeof children === "string" ? undefined : children;
@@ -43,6 +46,7 @@ export function Button({
       variant={VARIANT_MAP[variant]}
       size={size}
       type={type}
+      icon={icon}
       isDisabled={disabled || undefined}
       isLoading={loading}
       className={`${fullWidth ? "w-full " : ""}${className}`.trim() || undefined}

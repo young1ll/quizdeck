@@ -9,6 +9,7 @@ import {
 } from "@/lib/auth-client";
 import { SiGithub, SiGoogle, SiNaver } from "react-icons/si";
 import { LuKeyRound, LuMail, LuCheck, LuArrowLeft } from "react-icons/lu";
+import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { Field } from "@/components/ui/Field";
 import { Msg } from "@/components/ui/Msg";
 import { Button } from "@/components/ui/Button";
@@ -259,13 +260,16 @@ export default function AuthForms({ bare = false }: { bare?: boolean } = {}) {
   // ── 로그인 / 가입 ─────────────────────────────────────────
   return (
     <form onSubmit={submit} className={shell}>
-      <div className="mb-3 flex gap-1 text-xs">
-        <TabButton active={tab === "signin"} onClick={() => setTab("signin")}>
-          로그인
-        </TabButton>
-        <TabButton active={tab === "signup"} onClick={() => setTab("signup")}>
-          가입
-        </TabButton>
+      <div className="mb-4">
+        <SegmentedControl
+          value={tab}
+          onChange={(v) => setTab(v as Tab)}
+          label="로그인 또는 가입"
+          size="sm"
+        >
+          <SegmentedControlItem value="signin" label="로그인" />
+          <SegmentedControlItem value="signup" label="가입" />
+        </SegmentedControl>
       </div>
 
       <div className="space-y-2">
@@ -300,9 +304,9 @@ export default function AuthForms({ bare = false }: { bare?: boolean } = {}) {
       </div>
 
       {error && (
-        <p className="mt-2 text-xs text-[var(--bad)]" role="alert">
+        <Msg kind="bad" className="mt-2">
           {error}
-        </p>
+        </Msg>
       )}
 
       <Button type="submit" variant="primary" fullWidth loading={busy} className="mt-3">
@@ -361,34 +365,8 @@ export default function AuthForms({ bare = false }: { bare?: boolean } = {}) {
   );
 }
 
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        "rounded-lg px-3 py-1 font-medium transition-colors " +
-        (active
-          ? "bg-[var(--accent)] text-[var(--accent-fg)]"
-          : "text-[var(--muted)] hover:text-[var(--fg)]")
-      }
-    >
-      {children}
-    </button>
-  );
-}
-
-// 아이콘 버튼(ADR-0009 파일럿) — 공통 Button(outline) + 왼쪽 고정 아이콘 + 중앙 라벨.
-// 아이콘은 absolute left 라 세 버튼 라벨 정렬이 흐트러지지 않는다. 소셜·패스키 버튼이 공유.
-// 아이콘은 장식이라 호출부에서 aria-hidden 없이도 라벨이 의미를 전한다(여기선 텍스트 라벨 동반).
+// 소셜·패스키 버튼 — 공통 Button(outline) + astryx 네이티브 icon(라벨 앞 선행 아이콘, 한 그룹으로
+// 배치). 아이콘은 장식이라 라벨이 의미를 전한다(텍스트 라벨 동반). — ADR-0014 시각 보정.
 function IconButton({
   icon,
   label,
@@ -407,13 +385,11 @@ function IconButton({
       type="button"
       variant="outline"
       fullWidth
+      icon={<span aria-hidden className="flex items-center">{icon}</span>}
       disabled={disabled}
       onClick={onClick}
-      className={`relative${className ? " " + className : ""}`}
+      className={className || undefined}
     >
-      <span aria-hidden className="absolute left-3 flex items-center">
-        {icon}
-      </span>
       {label}
     </Button>
   );
