@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { LuSearch } from "react-icons/lu";
+import { Card } from "@astryxdesign/core/Card";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { EmptyState } from "@astryxdesign/core/EmptyState";
 import type { Concept } from "@/lib/types";
 import { useExam } from "@/lib/exam-context";
 import { useNav } from "@/lib/nav-context";
@@ -81,23 +85,24 @@ export default function Concepts({ initialSeed = "" }: { initialSeed?: string })
         })}
       </div>
 
-      {/* 검색 입력 */}
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="서비스/개념 검색"
-        className="mb-3 w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-4 py-2 text-sm outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
-      />
+      {/* 검색 입력 — astryx TextInput(검색 아이콘, 라벨 숨김) */}
+      <div className="mb-3">
+        <TextInput
+          label="서비스/개념 검색"
+          isLabelHidden
+          value={query}
+          onChange={(v) => setQuery(v)}
+          placeholder="서비스/개념 검색"
+          startIcon={<LuSearch />}
+        />
+      </div>
 
       {/* 개수 */}
       <div className="mb-4 text-xs text-[var(--muted)]">{list.length}개 서비스</div>
 
       {/* 결과 */}
       {list.length === 0 ? (
-        <div className="py-16 text-center text-sm text-[var(--muted)]">
-          검색 결과가 없습니다.
-        </div>
+        <EmptyState title="검색 결과가 없습니다" />
       ) : (
         <div className="space-y-4">
           {list.map((c, i) => (
@@ -121,7 +126,7 @@ function ConceptCard({
   const showAbbr = !!c.abbr && c.abbr !== c.svc;
 
   return (
-    <article className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
+    <Card padding={5}>
       {/* 헤더 */}
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
@@ -188,7 +193,7 @@ function ConceptCard({
           <span className="text-[var(--muted)]">🔗 관련 문제 없음 (개념 참고용)</span>
         )}
       </div>
-    </article>
+    </Card>
   );
 }
 

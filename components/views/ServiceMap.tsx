@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { LuSearch } from "react-icons/lu";
+import { TextInput } from "@astryxdesign/core/TextInput";
 import type { Concept } from "@/lib/types";
 import { useExam } from "@/lib/exam-context";
 import { useNav } from "@/lib/nav-context";
@@ -48,14 +50,17 @@ export default function ServiceMap() {
 
   return (
     <div>
-      {/* 검색 입력 */}
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="서비스 검색"
-        className="mb-4 w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-4 py-2 text-sm outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
-      />
+      {/* 검색 입력 — astryx TextInput(검색 아이콘, 라벨 숨김) */}
+      <div className="mb-4">
+        <TextInput
+          label="서비스 검색"
+          isLabelHidden
+          value={query}
+          onChange={(v) => setQuery(v)}
+          placeholder="서비스 검색"
+          startIcon={<LuSearch />}
+        />
+      </div>
 
       <div className="space-y-6">
         {groups.map((group) => (

@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { LuSearch } from "react-icons/lu";
+import { TextInput } from "@astryxdesign/core/TextInput";
 import { useExam } from "@/lib/exam-context";
 import { useStore } from "@/lib/store";
 import { useNav } from "@/lib/nav-context";
@@ -14,11 +16,6 @@ export default function Search() {
   const { studyOne } = useNav();
 
   const [query, setQuery] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   const results = useMemo<Question[]>(() => {
     const q = query.trim().toLowerCase();
@@ -47,13 +44,14 @@ export default function Search() {
 
   return (
     <div>
-      <input
-        ref={inputRef}
-        type="text"
+      <TextInput
+        label="문항 번호 또는 키워드 검색"
+        isLabelHidden
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(v) => setQuery(v)}
         placeholder="문항 번호 또는 키워드 검색"
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] px-4 py-3 text-sm outline-none focus:border-[var(--accent)]"
+        startIcon={<LuSearch />}
+        hasAutoFocus
       />
 
       <p className="mt-3 text-sm text-[var(--muted)]">

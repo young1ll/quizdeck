@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Card } from "@astryxdesign/core/Card";
 import { useExam } from "@/lib/exam-context";
 
 export default function Diagrams() {
@@ -45,10 +46,7 @@ export default function Diagrams() {
       {/* 카드 목록 */}
       <div className="space-y-5">
         {list.map((d) => (
-          <article
-            key={d.id}
-            className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5"
-          >
+          <Card key={d.id} padding={5}>
             <div className="mb-2 flex items-start justify-between gap-3">
               <h3 className="text-[15px] font-bold text-[var(--accent)]">
                 {d.title}
@@ -68,7 +66,7 @@ export default function Diagrams() {
               className="diagbox overflow-x-auto rounded-xl bg-white p-3 [&_svg]:h-auto [&_svg]:max-w-full"
               dangerouslySetInnerHTML={{ __html: d.svg }}
             />
-          </article>
+          </Card>
         ))}
       </div>
     </div>

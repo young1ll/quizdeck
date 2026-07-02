@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Card } from "@astryxdesign/core/Card";
+import { ProgressBar } from "@astryxdesign/core/ProgressBar";
+import { TextArea } from "@astryxdesign/core/TextArea";
 import { useExam } from "@/lib/exam-context";
 import { useNav } from "@/lib/nav-context";
 import { useStore } from "@/lib/store";
@@ -8,6 +11,7 @@ import { setsEqual, shuffle } from "@/lib/session";
 import type { QuizController } from "@/lib/use-quiz";
 import Icon from "@/components/Icon";
 import AnnotatableText from "@/components/AnnotatableText";
+import { Button } from "@/components/ui/Button";
 
 export default function Quiz({ quiz }: { quiz: QuizController }) {
   const { byQn, q2svc } = useExam();
@@ -107,15 +111,18 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
           </button>
         </div>
       </div>
-      <div className="mb-5 h-1 w-full overflow-hidden rounded-full bg-[var(--panel-2)]">
-        <div
-          className="h-full bg-[var(--accent)] transition-all"
-          style={{ width: `${((s.idx + 1) / s.queue.length) * 100}%` }}
+      <div className="mb-5">
+        <ProgressBar
+          value={s.idx + 1}
+          max={s.queue.length}
+          label="퀴즈 진행"
+          isLabelHidden
+          variant="accent"
         />
       </div>
 
-      {/* 문항 카드 */}
-      <article className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-5">
+      {/* 문항 카드 — astryx Card. 채점 옵션 버튼·피드백은 도메인 상태(정답/오답 색)라 유지. */}
+      <Card padding={5}>
         <div className="mb-2 flex items-center gap-2 text-xs text-[var(--muted)]">
           <span>{multi ? `정답 ${d.answer.length}개 선택` : "정답 1개"}</span>
         </div>
@@ -212,37 +219,31 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
           </div>
         )}
 
-        {/* 메모 */}
+        {/* 메모 — astryx TextArea(라벨 숨김) */}
         {showMemo && (
           <div className="mt-4 border-t border-[var(--border)] pt-3">
-            <textarea
+            <TextArea
+              label="문항 메모"
+              isLabelHidden
               value={memoDraft}
-              onChange={(e) => setMemoDraft(e.target.value)}
+              onChange={(v) => setMemoDraft(v)}
               onBlur={() => setMemo(qn, memoDraft)}
               placeholder="이 문항에 대한 메모…"
-              className="h-20 w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--panel-2)] p-2 text-sm outline-none focus:border-[var(--accent)]"
+              rows={3}
             />
           </div>
         )}
-      </article>
+      </Card>
 
       {/* 시험 모드: 검토 표시 + 네비 토글 */}
       {s.exam && (
         <div className="mt-3 flex items-center gap-2 text-sm">
-          <button
-            type="button"
-            onClick={quiz.toggleFlag}
-            className="rounded-lg border border-[var(--border)] px-3 py-1.5 hover:border-[var(--warn)]"
-          >
+          <Button variant="outline" size="sm" onClick={quiz.toggleFlag}>
             {flagged ? "🚩 표시됨" : "🚩 검토 표시"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowNav((v) => !v)}
-            className="rounded-lg border border-[var(--border)] px-3 py-1.5 hover:border-[var(--accent)]"
-          >
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowNav((v) => !v)}>
             🧭 문항 네비
-          </button>
+          </Button>
         </div>
       )}
       {s.exam && showNav && (
@@ -288,57 +289,32 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
 
         <div className="flex gap-2">
           {s.idx > 0 && (
-            <button
-              type="button"
-              onClick={quiz.prev}
-              className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm hover:border-[var(--accent)]"
-            >
+            <Button variant="outline" onClick={quiz.prev}>
               이전
-            </button>
+            </Button>
           )}
           {s.exam ? (
             isLast ? (
-              <button
-                type="button"
-                onClick={quiz.finishExam}
-                className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-[var(--accent-fg)]"
-              >
+              <Button variant="primary" onClick={quiz.finishExam}>
                 제출·채점
-              </button>
+              </Button>
             ) : (
-              <button
-                type="button"
-                onClick={quiz.next}
-                className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-[var(--accent-fg)]"
-              >
+              <Button variant="primary" onClick={quiz.next}>
                 다음
-              </button>
+              </Button>
             )
           ) : !graded ? (
-            <button
-              type="button"
-              onClick={quiz.submit}
-              disabled={sel.length === 0}
-              className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-[var(--accent-fg)] disabled:opacity-40"
-            >
+            <Button variant="primary" onClick={quiz.submit} disabled={sel.length === 0}>
               확인
-            </button>
+            </Button>
           ) : isLast ? (
-            <button
-              type="button"
-              onClick={quiz.finish}
-              className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-[var(--accent-fg)]"
-            >
+            <Button variant="primary" onClick={quiz.finish}>
               결과 보기
-            </button>
+            </Button>
           ) : (
-            <button
-              type="button"
-              onClick={quiz.next}
-              className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-[var(--accent-fg)]"
-            >
+            <Button variant="primary" onClick={quiz.next}>
               다음
-            </button>
+            </Button>
           )}
         </div>
       </div>

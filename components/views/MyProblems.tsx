@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { EmptyState } from "@astryxdesign/core/EmptyState";
+import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { useExam } from "@/lib/exam-context";
 import { useStore, type Mode } from "@/lib/store";
 import { useQuizFlow } from "@/lib/quiz-flow-context";
 import { useNav } from "@/lib/nav-context";
 import { myProblems } from "@/lib/progress";
+import { Button } from "@/components/ui/Button";
 
 // 내 문제함 뷰 (ADR-0011). 오답∪별표∪메모의 파생 union 을 필터 탭으로 브라우즈하고, 묶음 풀기(세션) 또는
 // 개별 학습(studyOne)으로 진입한다. 컨텍스트(store·exam·quizFlow·nav)는 exam layout 이 이미 제공한다.
@@ -62,40 +65,38 @@ export default function MyProblems() {
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold">🗂️ 내 문제함</h1>
         {qns.length > 0 && (
-          <button
-            type="button"
-            onClick={() => startMode(batchMode)}
-            className="shrink-0 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--accent-fg)]"
-          >
+          <Button variant="primary" size="sm" onClick={() => startMode(batchMode)}>
             ▶ 이 묶음 풀기
-          </button>
+          </Button>
         )}
       </header>
 
-      {/* 필터 탭 — 오답·별표·메모는 내 문제함의 축(ADR-0011) */}
-      <div className="flex flex-wrap gap-2">
+      {/* 필터 탭 — 오답·별표·메모는 내 문제함의 축(ADR-0011). astryx SegmentedControl(단일선택 탭). */}
+      <SegmentedControl
+        value={filter}
+        onChange={(v) => setFilter(v as Filter)}
+        label="내 문제함 필터"
+        size="sm"
+      >
         {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            onClick={() => setFilter(f.key)}
-            className={`min-h-[44px] rounded-lg border px-3 py-1.5 text-sm transition-colors ${
-              filter === f.key
-                ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_15%,transparent)]"
-                : "border-[var(--border)] hover:border-[var(--accent)]"
-            }`}
-          >
-            {f.label} {counts[f.key]}
-          </button>
+          <SegmentedControlItem key={f.key} value={f.key} label={`${f.label} ${counts[f.key]}`} />
         ))}
-      </div>
+      </SegmentedControl>
 
       {qns.length === 0 ? (
-        <div className="rounded-panel border border-[var(--border)] bg-[var(--panel)] p-6 text-center text-sm text-[var(--muted)]">
-          {filter === "all"
-            ? "내 문제함이 비어 있습니다. 오답·즐겨찾기·메모가 쌓이면 여기 모입니다."
-            : "해당하는 문항이 없습니다."}
-        </div>
+        <EmptyState
+          isCompact
+          title={
+            filter === "all"
+              ? "내 문제함이 비어 있습니다"
+              : "해당하는 문항이 없습니다"
+          }
+          description={
+            filter === "all"
+              ? "오답·즐겨찾기·메모가 쌓이면 여기 모입니다."
+              : undefined
+          }
+        />
       ) : (
         <ul className="space-y-2">
           {qns.map((qn) => {
