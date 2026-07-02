@@ -88,7 +88,8 @@ export default function Setup({
         </Card>
       ) : (
         <Card padding={5}>
-          <div className="space-y-4">
+          {/* astryx Button(시작)은 StyleX margin:0 → space-y 무력. 컨테이너 gap 으로 균일 배치. */}
+          <div className="flex flex-col gap-4">
             {/* 주제 — astryx Selector */}
             <Selector
               label="주제"

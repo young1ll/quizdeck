@@ -220,17 +220,19 @@ function QuestionsPanel({
 
   return (
     <div>
-      <Button
-        variant="outline"
-        size="sm"
-        className="mb-3"
-        onClick={() => {
-          setIsNew(true);
-          setDraft({ qn: nextQn(), topic: "", q: "", options: { A: "" }, answer: [] });
-        }}
-      >
-        + 새 문항
-      </Button>
+      {/* astryx Button 은 StyleX 로 margin:0 고정 → mb-* 무력. 간격은 plain wrapper 에 준다. */}
+      <div className="mb-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setIsNew(true);
+            setDraft({ qn: nextQn(), topic: "", q: "", options: { A: "" }, answer: [] });
+          }}
+        >
+          + 새 문항
+        </Button>
+      </div>
       <ul className="space-y-1">
         {items.map((i) => {
           const translated = Boolean(i.content[editLang]);
@@ -325,17 +327,19 @@ function ConceptsPanel({
 
   return (
     <div>
-      <Button
-        variant="outline"
-        size="sm"
-        className="mb-3"
-        onClick={() => {
-          setIsNew(true);
-          setDraft({ svc: "", cat: "", deff: "", key: "", when: "", trap: "", vs: "" });
-        }}
-      >
-        + 새 개념
-      </Button>
+      {/* astryx Button 은 StyleX 로 margin:0 고정 → mb-* 무력. 간격은 plain wrapper 에 준다. */}
+      <div className="mb-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setIsNew(true);
+            setDraft({ svc: "", cat: "", deff: "", key: "", when: "", trap: "", vs: "" });
+          }}
+        >
+          + 새 개념
+        </Button>
+      </div>
       <ul className="space-y-1">
         {items.map((i) => {
           const translated = Boolean(i.content[editLang]);

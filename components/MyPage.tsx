@@ -337,9 +337,12 @@ function PasskeySection() {
         <p className="mt-3 text-xs text-[var(--muted)]">등록된 패스키가 없습니다.</p>
       )}
       {error && <Msg kind="bad" className="mt-2">{error}</Msg>}
-      <Button type="button" variant="outline" loading={busy} onClick={add} className="mt-3">
-        패스키 등록
-      </Button>
+      {/* astryx Button 은 StyleX 로 margin:0 고정 → mt-* 무력. 간격은 plain wrapper 에 준다. */}
+      <div className="mt-3">
+        <Button type="button" variant="outline" loading={busy} onClick={add}>
+          패스키 등록
+        </Button>
+      </div>
     </Section>
   );
 }
@@ -380,9 +383,12 @@ function DangerSection({ email }: { email: string }) {
         삭제됩니다. 되돌릴 수 없습니다.
       </p>
       {!open ? (
-        <Button type="button" variant="dangerOutline" className="mt-3" onClick={() => setOpen(true)}>
-          회원 탈퇴
-        </Button>
+        // astryx Button 은 StyleX 로 margin:0 고정 → mt-* 무력. 간격은 plain wrapper 에 준다.
+        <div className="mt-3">
+          <Button type="button" variant="dangerOutline" onClick={() => setOpen(true)}>
+            회원 탈퇴
+          </Button>
+        </div>
       ) : (
         <form onSubmit={remove} className="mt-3 space-y-3 border-t border-[var(--border)] pt-3">
           <Field

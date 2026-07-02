@@ -66,7 +66,8 @@ export default function ResetPasswordPage() {
             <HomeLink label="로그인하러 가기" />
           </>
         ) : (
-          <form onSubmit={submit} className="mt-4 space-y-3">
+          <form onSubmit={submit} className="mt-4 flex flex-col gap-3">
+            {/* astryx Button 은 StyleX margin:0 → space-y 무력. 컨테이너 gap 으로 균일 배치. */}
             <Field
               label="새 비밀번호"
               type="password"

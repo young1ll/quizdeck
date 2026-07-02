@@ -243,9 +243,12 @@ export default function AuthForms({ bare = false }: { bare?: boolean } = {}) {
             {error}
           </Msg>
         )}
-        <Button type="submit" variant="primary" fullWidth loading={busy} className="mt-3">
-          재설정 메일 보내기
-        </Button>
+        {/* astryx Button 은 StyleX 로 margin:0 고정 → mt-* 무력. 간격은 plain wrapper 에 준다. */}
+        <div className="mt-3">
+          <Button type="submit" variant="primary" fullWidth loading={busy}>
+            재설정 메일 보내기
+          </Button>
+        </div>
         <button
           type="button"
           onClick={reset}
@@ -309,9 +312,12 @@ export default function AuthForms({ bare = false }: { bare?: boolean } = {}) {
         </Msg>
       )}
 
-      <Button type="submit" variant="primary" fullWidth loading={busy} className="mt-3">
-        {tab === "signup" ? "가입하기" : "로그인"}
-      </Button>
+      {/* astryx Button 은 StyleX 로 margin:0 고정 → mt-* 무력. 간격은 plain wrapper 에 준다. */}
+      <div className="mt-3">
+        <Button type="submit" variant="primary" fullWidth loading={busy}>
+          {tab === "signup" ? "가입하기" : "로그인"}
+        </Button>
+      </div>
 
       {/* 소셜 로그인(#9) — 양 탭 공통(소셜은 가입도 겸함). 미등록 provider 는 클릭 시 한국어 안내. */}
       <div className="my-3 flex items-center gap-2 text-[10px] text-[var(--muted)]">
@@ -319,7 +325,8 @@ export default function AuthForms({ bare = false }: { bare?: boolean } = {}) {
         또는
         <span className="h-px flex-1 bg-[var(--border)]" />
       </div>
-      <div className="space-y-2">
+      {/* astryx Button margin:0 → space-y/mt 무력. 소셜·패스키·찾기링크를 컨테이너 gap 으로 균일 배치. */}
+      <div className="flex flex-col gap-2">
         <IconButton
           icon={<SiGithub className="size-[18px]" />}
           label="GitHub 계정으로 계속"
@@ -338,29 +345,27 @@ export default function AuthForms({ bare = false }: { bare?: boolean } = {}) {
           disabled={busy}
           onClick={naverSignIn}
         />
+        {tab === "signin" && (
+          <>
+            <IconButton
+              icon={<LuKeyRound className="size-4" />}
+              label="패스키로 로그인"
+              disabled={busy}
+              onClick={signInPasskey}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setForgot(true);
+                setError(null);
+              }}
+              className="w-full text-xs text-[var(--muted)] hover:text-[var(--fg)]"
+            >
+              비밀번호를 잊으셨나요?
+            </button>
+          </>
+        )}
       </div>
-
-      {tab === "signin" && (
-        <>
-          <IconButton
-            icon={<LuKeyRound className="size-4" />}
-            label="패스키로 로그인"
-            disabled={busy}
-            onClick={signInPasskey}
-            className="mt-2"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              setForgot(true);
-              setError(null);
-            }}
-            className="mt-2 w-full text-xs text-[var(--muted)] hover:text-[var(--fg)]"
-          >
-            비밀번호를 잊으셨나요?
-          </button>
-        </>
-      )}
     </form>
   );
 }
