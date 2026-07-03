@@ -4,12 +4,24 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Question } from "./types";
 import {
   basePool,
+  computeResult,
+  currentView,
   setsEqual,
   shuffle,
   smartOrder,
+  type CurrentView,
+  type QuizResult,
 } from "./session";
 import type { Mode, SessionState, StoreContext as _ } from "./store";
 import { useStore } from "./store";
+
+// 결과 뷰모델 — 세션 결과 집계(computeResult, 순수)에 mode·exam·소요시간을 얹은 것. 컨트롤러가 finish 시
+// 1회 계산해 노출하고, Result 뷰·PDF 는 재채점 대신 이걸 읽는다(옛날엔 okCount·wrong·주제별을 뷰마다 재계산).
+export interface ResultView extends QuizResult {
+  mode: Mode;
+  exam: boolean;
+  sec: number; // 소요 초(finish 시점 고정 — 결과 화면에서 안 늘어남)
+}
 
 export interface StartOpts {
   topic: string;
@@ -20,7 +32,8 @@ export interface StartOpts {
 }
 
 export interface QuizController {
-  session: SessionState | null;
+  current: CurrentView | null; // 현재 문항 파생 읽기(Quiz 화면이 raw session 대신 읽음)
+  result: ResultView | null; // finish 시 1회 계산된 결과(Result·PDF·retryWrong 이 읽음)
   timeLeft: number | null; // 시험 모드 남은 초
   start: (mode: Mode, opts: StartOpts) => boolean;
   studyOne: (qn: number) => void;
@@ -47,9 +60,12 @@ export function useQuizController(
 ): QuizController {
   const { store, recordResult, setActive, pushSession } = useStore();
   const [session, setSession] = useState<SessionState | null>(null);
+  const [result, setResult] = useState<ResultView | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const sessRef = useRef<SessionState | null>(null);
   sessRef.current = session;
+  const resultRef = useRef<ResultView | null>(null);
+  resultRef.current = result;
 
   // store가 늦게 로드돼도 active를 메모리 세션과 동기화하진 않음(명시적 resume만)
   const persist = useCallback(
@@ -78,7 +94,6 @@ export function useQuizController(
         exam,
         answers: {},
         flags: [],
-        order: {},
         start: Date.now(),
         elapsed: 0,
         ...(exam ? { limit: (opts.examMin || 180) * 60 } : {}),
@@ -100,7 +115,6 @@ export function useQuizController(
         exam: false,
         answers: {},
         flags: [],
-        order: {},
         start: Date.now(),
         elapsed: 0,
       };
@@ -178,27 +192,24 @@ export function useQuizController(
   );
 
   // ── 결과 집계 ──────────────────────────────────────────────
+  // 결과를 **한 번** 계산(computeResult, 순수)해 result 모델로 노출한다 — Result 뷰·PDF·retryWrong 이
+  // 재채점 대신 이걸 읽는다. 소요 시간만 시간 의존이라 여기서 얹는다(finish 시점 고정).
   const doFinish = useCallback(() => {
     const s = sessRef.current;
     if (!s) return;
-    const okCount = s.queue.filter((qn) => {
-      const a = s.answers[qn];
-      return a && (a.ok !== undefined ? a.ok : setsEqual(a.sel, byQn.get(qn)!.answer));
-    }).length;
-    const wrong = s.queue.filter((qn) => {
-      const a = s.answers[qn];
-      return !(a && (a.ok !== undefined ? a.ok : setsEqual(a.sel, byQn.get(qn)!.answer)));
-    });
+    const r = computeResult(s, byQn);
+    const sec = Math.round((Date.now() - s.start) / 1000);
     pushSession({
       date: new Date().toISOString(),
       mode: s.mode,
-      n: s.queue.length,
-      ok: okCount,
-      sec: Math.round((Date.now() - s.start) / 1000),
+      n: r.total,
+      ok: r.okCount,
+      sec,
     });
     setActive(null);
     setTimeLeft(null);
-    setSession({ ...s, _wrong: wrong });
+    setResult({ ...r, mode: s.mode, exam: s.exam, sec });
+    setSession({ ...s });
     onResult();
   }, [byQn, pushSession, setActive, onResult]);
 
@@ -231,8 +242,7 @@ export function useQuizController(
   }, [goIdx]);
 
   const retryWrong = useCallback(() => {
-    const s = sessRef.current;
-    const w = s?._wrong ?? [];
+    const w = resultRef.current?.wrong.map((x) => x.qn) ?? [];
     if (!w.length) return;
     const ns: SessionState = {
       queue: shuffle(w),
@@ -241,7 +251,6 @@ export function useQuizController(
       exam: false,
       answers: {},
       flags: [],
-      order: {},
       start: Date.now(),
       elapsed: 0,
     };
@@ -277,8 +286,11 @@ export function useQuizController(
     return () => clearInterval(id);
   }, [session?.exam, session?.limit, finishExam]);
 
+  const current = session ? currentView(session, byQn) : null;
+
   return {
-    session,
+    current,
+    result,
     timeLeft,
     start,
     studyOne,

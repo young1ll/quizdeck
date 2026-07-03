@@ -10,6 +10,7 @@ import { MODE_LABEL, useStore, type Mode } from "@/lib/store";
 import { MODE_ICON } from "@/lib/mode-icons";
 import { today } from "@/lib/dates";
 import { examView } from "@/lib/exam-view";
+import { resumeInfo } from "@/lib/session";
 import { Button } from "@/components/ui/Button";
 
 // exam 허브 = 슬림 런처 (ADR-0012 결정 4·5). 이어하기 + 모드(1급) + 압축 현황 한 줄("현황 자세히" →
@@ -44,7 +45,7 @@ export default function Home({
   // 익명 방문자 — Progress 의존 요소(현황·내 학습) 대신 축약 + 로그인 CTA. 학습 자료 열람은 허용. (ADR-0004)
   if (!isLearner) return <AnonymousHome onStartMode={onStartMode} />;
 
-  const active = store.active;
+  const resume = resumeInfo(store.active);
 
   return (
     <div className="space-y-6">
@@ -54,12 +55,12 @@ export default function Home({
       </header>
 
       {/* 이어하기 배너 — astryx Card(warn 강조) + Button(이어하기 primary / 버리기 outline). ADR-0014 Phase 3. */}
-      {active && (
+      {resume && (
         <Card padding={4} emphasis="warn">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="inline-flex items-center gap-1.5 text-sm">
               <LuPause className="size-4 shrink-0 text-[var(--warn)]" aria-hidden />
-              진행 중: {MODE_LABEL[active.mode]} {active.idx + 1}/{active.queue.length}
+              진행 중: {MODE_LABEL[resume.mode]} {resume.position}/{resume.total}
             </span>
             <div className="flex gap-2">
               <Button variant="primary" size="sm" onClick={onResume}>
