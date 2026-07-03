@@ -106,6 +106,24 @@ body {
   }
 }
 
+/* Card 강조 테두리 (A3) — astryx Card 기본 테두리는 astryx 레이어/StyleX 라, Tailwind utilities
+   (@layer utilities, 캐스케이드에서 astryx 뒤 레이어보다 약함)로는 못 이긴다 — 라이브에서
+   border-[var(--accent)]/40·hover:border-accent 강조가 **죽어 있던**(회색으로 렌더) 원인.
+   unlayered(모든 @layer 보다 강함) + `.astryx-card` 결합 특이도로 확실히 이긴다. ui/Card 어댑터의
+   emphasis/interactive intent 가 이 클래스를 건다(Tailwind arbitrary override 제거 → 룩이 우리 CSS 로 흐름). */
+.astryx-card.card-emph-accent {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.astryx-card.card-emph-warn {
+  border-color: color-mix(in srgb, var(--warn) 40%, transparent);
+}
+.astryx-card.card-interactive {
+  transition: border-color var(--default-transition-duration) var(--default-transition-timing-function);
+}
+.astryx-card.card-interactive:hover {
+  border-color: var(--accent);
+}
+
 /* PDF 인쇄 영역 — 화면 숨김, 인쇄 시 본문 대체 */
 #printarea {
   display: none;

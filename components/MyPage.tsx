@@ -12,7 +12,7 @@ import {
 } from "@/lib/auth-client";
 import { authErrorMessage } from "@/lib/auth-error";
 import { LuMail, LuKeyRound } from "react-icons/lu";
-import { Card } from "@astryxdesign/core/Card";
+import { Card } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
 import { Msg } from "@/components/ui/Msg";
 import { Button } from "@/components/ui/Button";

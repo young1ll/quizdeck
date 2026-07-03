@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { LuSearch, LuLink } from "react-icons/lu";
-import { Card } from "@astryxdesign/core/Card";
+import { Card } from "@/components/ui/Card";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import type { Concept } from "@/lib/types";

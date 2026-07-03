@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LuFlame, LuFolderOpen } from "react-icons/lu";
-import { Card } from "@astryxdesign/core/Card";
+import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import type { DashboardData } from "@/lib/dashboard";
 import { StatTile } from "@/components/ui/StatTile";
@@ -52,11 +52,7 @@ export default function Dashboard({
               return (
                 <li key={e.examKey}>
                   <Link href={m?.href ?? "/"} className="block">
-                    <Card
-                      padding={3}
-                      variant="muted"
-                      className="transition-colors hover:border-[var(--accent)]"
-                    >
+                    <Card padding={3} variant="muted" interactive>
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0">
                           {m && (

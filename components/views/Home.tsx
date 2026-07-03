@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import type { IconType } from "react-icons";
 import { LuFlame, LuPause, LuBookOpen, LuMap, LuNetwork, LuFolderOpen } from "react-icons/lu";
-import { Card } from "@astryxdesign/core/Card";
+import { Card } from "@/components/ui/Card";
 import { useExam } from "@/lib/exam-context";
 import { MODE_LABEL, useStore, type Mode } from "@/lib/store";
 import { MODE_ICON } from "@/lib/mode-icons";
@@ -57,7 +57,7 @@ export default function Home({
 
       {/* 이어하기 배너 — astryx Card(warn 강조) + Button(이어하기 primary / 버리기 outline). ADR-0014 Phase 3. */}
       {active && (
-        <Card padding={4} className="border-[var(--warn)]/40">
+        <Card padding={4} emphasis="warn">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="inline-flex items-center gap-1.5 text-sm">
               <LuPause className="size-4 shrink-0 text-[var(--warn)]" aria-hidden />
@@ -199,7 +199,7 @@ function NavLink({
 }) {
   return (
     <Link href={href} className="block">
-      <Card padding={0} variant="muted" className="transition-colors hover:border-[var(--accent)]">
+      <Card padding={0} variant="muted" interactive>
         <div className="flex min-h-[44px] items-center justify-center gap-2 p-3 text-sm">
           <Icon className="size-4 shrink-0 text-[var(--muted)]" aria-hidden />
           <span>{label}</span>
