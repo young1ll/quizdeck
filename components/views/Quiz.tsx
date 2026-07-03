@@ -14,7 +14,7 @@ import {
   LuLayoutGrid,
   LuStickyNote,
 } from "react-icons/lu";
-import { Card } from "@astryxdesign/core/Card";
+import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { TextArea } from "@astryxdesign/core/TextArea";
 import { useExam } from "@/lib/exam-context";

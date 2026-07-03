@@ -2,7 +2,7 @@
 
 import { useMemo, useRef } from "react";
 import { LuFlame, LuSettings2, LuHistory, LuFileText, LuDownload, LuUpload, LuTrash2 } from "react-icons/lu";
-import { Card } from "@astryxdesign/core/Card";
+import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { useExam } from "@/lib/exam-context";

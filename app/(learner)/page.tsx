@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { LuFolderOpen } from "react-icons/lu";
-import { Card } from "@astryxdesign/core/Card";
+import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { listExams } from "@/lib/content";
@@ -67,7 +67,7 @@ export default async function Home() {
               <li key={`${exam.provider}/${exam.slug}`}>
                 {/* 재개 카드 — astryx Card 서피스(accent 강조 border). 본문 Link→허브 + 내 문제함 하위 Link
                     (중첩 anchor 회피 위해 ClickableCard 아님 Card+Link 구성). ADR-0014 Phase 3. */}
-                <Card padding={0} className="border-[var(--accent)]/40">
+                <Card padding={0} emphasis="accent">
                   <Link href={`/${exam.provider}/${exam.slug}/`} className="block p-4">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
@@ -124,7 +124,7 @@ export default async function Home() {
                     {/* 카탈로그 카드 — astryx Card 서피스 + Next Link(클라이언트 내비·prefetch 유지, ADR
                         라우팅 보존). ClickableCard 은 plain <a>(풀 리로드)라 미채택. ADR-0014 Phase 3. */}
                     <Link href={`/${e.provider}/${e.slug}/`} className="block">
-                      <Card padding={4} className="transition-colors hover:border-[var(--accent)]">
+                      <Card padding={4} interactive>
                         <div className="font-mono text-xs text-[var(--accent)]">{e.code}</div>
                         <div className="mt-1 font-medium leading-snug">{e.name}</div>
                         <div className="mt-2 text-xs text-[var(--muted)]">문항 {e.questionCount}개</div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Card } from "@astryxdesign/core/Card";
+import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { NumberInput } from "@astryxdesign/core/NumberInput";
 import { Switch } from "@astryxdesign/core/Switch";

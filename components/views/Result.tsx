@@ -1,7 +1,7 @@
 "use client";
 
 import { LuFileDown, LuPartyPopper } from "react-icons/lu";
-import { Card } from "@astryxdesign/core/Card";
+import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { useExam } from "@/lib/exam-context";
 import { useNav } from "@/lib/nav-context";
