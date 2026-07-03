@@ -1,6 +1,7 @@
 # 0014 — astryx 디자인 시스템 전면 도입: ADR-0008 무의존 대체, 빅뱅 마이그레이션
 
 Status: accepted — 그릴링 2026-07-01 ([[0008-ui-interaction-and-components.md|ADR-0008]] 결정 2 대체 · 구현은 후속 빅뱅 브랜치)
+> **애던덤 2026-07-03** (astryx UI 아키텍처 리뷰 A1–A4, 브랜치 `feat/ui-adapter-tests`): 아래 **결과**의 미결 항목 — *"전역 `@layer base` affordance 는 astryx `reset`/`astryx-base` 로 대체 검토"* — 을 **기각**하고 [[../../app/globals.css|globals.css]] affordance floor 를 **유지**한다. 근거(증거 기반): astryx `reset.css` 의 `cursor:pointer` 는 `:where(button, [role=button])`(특이도 0)뿐이라 `a[href]`·`summary` 를 안 깔고, `astryx.css` 의 `:focus-visible` 규칙은 **전부 StyleX 클래스 한정**(`.x…:focus-visible` = astryx 컴포넌트)이라 **네이티브 `button`·`a`·`input`·`summary`·`[tabindex]` 의 키보드 focus 링을 전역으로 주지 않는다**. 따라서 globals `@layer base`([[0008-ui-interaction-and-components.md|ADR-0008]] 결정 1)는 비-astryx 요소의 **focus a11y·`a`/`summary` cursor·disabled `not-allowed` 의 유일 출처**로 load-bearing이다 — astryx reset 과 **중복이 아니라 역할 분담**(globals=네이티브 요소, astryx=컴포넌트; 터치 focus 억제는 astryx reset 이 담당해 협력). `<Button>` 채택을 넓혀도 네이티브 링크(`<Link>`→`<a>`)·입력이 남아 floor 는 제거 불가. 재검토 불필요. (같은 리뷰의 다른 산출물: `components/ui/*` 어댑터 seam 테스트 · 브랜드 토큰 SSOT(var 참조) · `dangerOutline` 커스텀 astryx variant · Card 강조 테두리 복원.)
 
 ## 맥락
 
