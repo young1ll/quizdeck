@@ -7,8 +7,8 @@ import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { useExam } from "@/lib/exam-context";
 import { MODE_LABEL, useStore, type Store } from "@/lib/store";
-import { streak, today } from "@/lib/dates";
-import { topicStat } from "@/lib/session";
+import { today } from "@/lib/dates";
+import { examView } from "@/lib/exam-view";
 import { exportProgressPDF } from "@/lib/pdf";
 import { StatTile } from "@/components/ui/StatTile";
 import { Button } from "@/components/ui/Button";
@@ -26,36 +26,22 @@ export default function Stats() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const total = questions.length;
-  const stats = useMemo(() => {
-    const histKeys = Object.keys(store.hist);
-    const mastered = histKeys.filter((q) => store.hist[+q].last === "O").length;
-    const seen = histKeys.length;
-    return {
-      mastered,
-      seen,
-      masteryPct: total ? Math.round((mastered / total) * 100) : 0,
-      acc: seen ? Math.round((mastered / seen) * 100) : 0,
-    };
-  }, [store.hist, total]);
-
-  const ts = useMemo(() => topicStat(questions, store.hist), [questions, store.hist]);
+  // 파생 지표는 per-exam 뷰모델(lib/exam-view)에서 — mastery·정답률(correct/attempts)·카운트·연속일·약한
+  // 주제를 한 곳에서 결정적으로. 정답률은 /me(dashboard)와 같은 단일 정의(옛 mastered/seen 버그 수정).
+  const view = useMemo(
+    () => examView(store, questions, total, today()),
+    [store, questions, total],
+  );
+  // 주제별 목록 표시 순서(약한 주제부터) — 순수 정렬만 뷰에.
   const sortedTopics = useMemo(
     () =>
-      Object.entries(ts).sort((a, b) => {
+      Object.entries(view.topics).sort((a, b) => {
         const pa = a[1].seen ? a[1].ok / a[1].seen : 2;
         const pb = b[1].seen ? b[1].ok / b[1].seen : 2;
         return pa - pb;
       }),
-    [ts],
+    [view.topics],
   );
-  const weak = sortedTopics
-    .filter(([, m]) => m.seen >= 3 && m.ok / m.seen < 0.7)
-    .map(([t]) => t.replace(/^\S+\s/, ""))
-    .slice(0, 3);
-
-  const st = streak(store.days);
-  const goal = store.prefs.goal;
-  const todayCount = store.days[today()] ?? 0;
   const sessions = store.sessions.slice().reverse();
 
   const doBackup = () => {
@@ -89,7 +75,7 @@ export default function Stats() {
     e.target.value = "";
   };
   const setGoal = () => {
-    const v = prompt("하루 목표 문항 수", String(goal));
+    const v = prompt("하루 목표 문항 수", String(view.goal));
     if (v && +v > 0) setPrefs({ goal: +v });
   };
 
@@ -106,27 +92,27 @@ export default function Stats() {
           <div
             className="grid h-24 w-24 shrink-0 place-items-center rounded-full"
             style={{
-              background: `conic-gradient(var(--accent) ${stats.masteryPct}%, var(--panel-2) 0)`,
+              background: `conic-gradient(var(--accent) ${view.mastery}%, var(--panel-2) 0)`,
             }}
           >
             <div className="grid h-[76px] w-[76px] place-items-center rounded-full bg-[var(--panel)] text-xl font-bold">
-              {stats.masteryPct}%
+              {view.mastery}%
             </div>
           </div>
           <div className="grid flex-1 grid-cols-3 gap-3 text-center">
-            <StatTile b={`${stats.seen}/${total}`} s="학습 문항" />
-            <StatTile b={`${stats.acc}%`} s="정답률" />
-            <StatTile b={store.wrong.length} s="오답" />
+            <StatTile b={`${view.seen}/${total}`} s="학습 문항" />
+            <StatTile b={`${view.accuracy}%`} s="정답률" />
+            <StatTile b={view.wrong} s="오답" />
             <StatTile
               b={
                 <span className="inline-flex items-center justify-center gap-0.5">
                   <LuFlame className="size-4 text-[var(--warn)]" aria-hidden />
-                  {st}
+                  {view.streak}
                 </span>
               }
               s="연속일"
             />
-            <StatTile b={store.stars.length} s="즐겨찾기" />
+            <StatTile b={view.stars} s="즐겨찾기" />
             <StatTile b={store.sessions.length} s="세션" />
           </div>
         </div>
@@ -139,12 +125,12 @@ export default function Stats() {
               onClick={setGoal}
               className="inline-flex items-center gap-1 hover:text-[var(--fg)]"
             >
-              {todayCount} / {goal} 문항 <LuSettings2 className="size-3.5" aria-hidden />
+              {view.todayCount} / {view.goal} 문항 <LuSettings2 className="size-3.5" aria-hidden />
             </button>
           </div>
           <ProgressBar
-            value={Math.min(goal, todayCount)}
-            max={goal || 1}
+            value={Math.min(view.goal, view.todayCount)}
+            max={view.goal || 1}
             label="오늘 목표 진행"
             isLabelHidden
             variant="success"
@@ -156,8 +142,8 @@ export default function Stats() {
       <Card padding={5}>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[var(--muted)]">주제별 정답률</h2>
-          {weak.length > 0 && (
-            <span className="text-xs text-[var(--bad)]">약점: {weak.join(", ")}</span>
+          {view.weakTopics.length > 0 && (
+            <span className="text-xs text-[var(--bad)]">약점: {view.weakTopics.join(", ")}</span>
           )}
         </div>
         <div className="space-y-2">
@@ -239,7 +225,7 @@ export default function Stats() {
             variant="outline"
             size="sm"
             icon={<LuFileText className="size-4" />}
-            onClick={() => exportProgressPDF(questions, store, meta, stats.masteryPct, st)}
+            onClick={() => exportProgressPDF(questions, store, meta, view.mastery, view.streak)}
           >
             학습 리포트
           </Button>

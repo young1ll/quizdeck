@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  accuracy,
   emptyProgress,
   mastery,
   myProblems,
@@ -48,6 +49,36 @@ describe("mastery", () => {
 
   it("전체가 0이면 0을 낸다", () => {
     expect(mastery(emptyProgress(), 0)).toBe(0);
+  });
+});
+
+describe("accuracy(정답률)", () => {
+  it("전 시도 중 정답 비율(correct/attempts) — 재시도 포함", () => {
+    let p = emptyProgress();
+    p = recordResult(p, 1, ["A"], true, NOW); // q1 O (seen1 correct1)
+    p = recordResult(p, 2, ["A"], false, NOW); // q2 X (seen1 correct0)
+    p = recordResult(p, 3, ["A"], true, NOW); // q3 O (seen1 correct1)
+    p = recordResult(p, 1, ["A"], true, NOW); // q1 O 재시도 (seen2 correct2)
+    // attempts=4, correct=3 → 75%
+    expect(accuracy(p)).toBe(75);
+  });
+
+  it("Mastery(마지막 정답 문항/총)와 다른 지표 — mastered/seen 과도 다름(리포트 정답률 버그)", () => {
+    let p = emptyProgress();
+    p = recordResult(p, 1, ["A"], true, NOW);
+    p = recordResult(p, 2, ["A"], false, NOW);
+    p = recordResult(p, 3, ["A"], true, NOW);
+    p = recordResult(p, 1, ["A"], true, NOW);
+    // accuracy = 3/4 = 75% · mastered=2(q1,q3 last O)/seen=3 = 67% · mastery=2/10 = 20%
+    const mastered = Object.values(p.hist).filter((h) => h.last === "O").length;
+    const masteredOverSeen = Math.round((mastered / Object.keys(p.hist).length) * 100);
+    expect(accuracy(p)).toBe(75);
+    expect(masteredOverSeen).toBe(67); // 옛 Stats 정의 — accuracy 와 다르다
+    expect(accuracy(p)).not.toBe(masteredOverSeen);
+  });
+
+  it("시도가 없으면 0", () => {
+    expect(accuracy(emptyProgress())).toBe(0);
   });
 });
 

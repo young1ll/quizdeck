@@ -8,8 +8,8 @@ import { Card } from "@/components/ui/Card";
 import { useExam } from "@/lib/exam-context";
 import { MODE_LABEL, useStore, type Mode } from "@/lib/store";
 import { MODE_ICON } from "@/lib/mode-icons";
-import { streak, today } from "@/lib/dates";
-import { myProblems } from "@/lib/progress";
+import { today } from "@/lib/dates";
+import { examView } from "@/lib/exam-view";
 import { Button } from "@/components/ui/Button";
 
 // exam 허브 = 슬림 런처 (ADR-0012 결정 4·5). 이어하기 + 모드(1급) + 압축 현황 한 줄("현황 자세히" →
@@ -34,19 +34,17 @@ export default function Home({
   const base = `/${meta.provider}/${meta.slug}`;
 
   const total = questions.length;
-  const masteryPct = useMemo(() => {
-    const mastered = Object.keys(store.hist).filter((q) => store.hist[+q].last === "O").length;
-    return total ? Math.round((mastered / total) * 100) : 0;
-  }, [store.hist, total]);
+  // per-exam 파생 지표는 뷰모델(lib/exam-view)에서. 조건부 return 위에서 계산해 hook 순서를 보존한다
+  // (익명도 hook 호출, 값은 미사용 — 익명 store 는 빈 Progress).
+  const view = useMemo(
+    () => examView(store, questions, total, today()),
+    [store, questions, total],
+  );
 
   // 익명 방문자 — Progress 의존 요소(현황·내 학습) 대신 축약 + 로그인 CTA. 학습 자료 열람은 허용. (ADR-0004)
   if (!isLearner) return <AnonymousHome onStartMode={onStartMode} />;
 
-  const st = streak(store.days);
-  const goal = store.prefs.goal;
-  const todayCount = store.days[today()] ?? 0;
   const active = store.active;
-  const mineCount = myProblems(store).length;
 
   return (
     <div className="space-y-6">
@@ -81,13 +79,13 @@ export default function Home({
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
             <span>
-              숙련도 <b className="text-[var(--accent)]">{masteryPct}%</b>
+              숙련도 <b className="text-[var(--accent)]">{view.mastery}%</b>
             </span>
             <span className="inline-flex items-center gap-1 text-[var(--muted)]">
-              <LuFlame className="size-3.5 text-[var(--warn)]" aria-hidden /> 연속 {st}일
+              <LuFlame className="size-3.5 text-[var(--warn)]" aria-hidden /> 연속 {view.streak}일
             </span>
             <span className="text-[var(--muted)]">
-              오늘 {todayCount}/{goal}
+              오늘 {view.todayCount}/{view.goal}
             </span>
           </div>
           <Link
@@ -111,7 +109,7 @@ export default function Home({
       </NavGroup>
 
       <NavGroup title="내 학습">
-        <NavLink href={`${base}/my-problems`} icon={LuFolderOpen} label="내 문제함" badge={mineCount} />
+        <NavLink href={`${base}/my-problems`} icon={LuFolderOpen} label="내 문제함" badge={view.mine} />
       </NavGroup>
     </div>
   );

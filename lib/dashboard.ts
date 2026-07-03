@@ -1,4 +1,4 @@
-import { mastery, myProblems, type Progress } from "./progress";
+import { mastery, accuracy, myProblems, type Progress } from "./progress";
 import { streak } from "./dates";
 
 // 학습 대시보드 집계 (이슈 #37 / ADR-0006 결정 5). client-safe(순수, no pg) — /me 서버 컴포넌트가
@@ -31,15 +31,13 @@ export interface DashboardData {
 
 export function examStat(examKey: string, p: Progress, total: number): ExamStat {
   const hist = Object.values(p.hist);
-  const attempts = hist.reduce((s, h) => s + h.seen, 0);
-  const correct = hist.reduce((s, h) => s + h.correct, 0);
   const days = Object.keys(p.days);
   return {
     examKey,
     total,
     seen: hist.length,
     mastery: mastery(p, total),
-    accuracy: attempts ? Math.round((correct / attempts) * 100) : 0,
+    accuracy: accuracy(p),
     wrong: p.wrong.length,
     stars: p.stars.length,
     mine: myProblems(p).length,

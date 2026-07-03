@@ -26,7 +26,11 @@ _Avoid_: run, attempt(시도 기록이 아닌 '진행 중'을 가리킬 때), ac
 
 **Mastery**:
 한 Exam에서 마지막에 정답으로 맞힌 문항의 비율. Progress에서 파생되는 학습도 지표.
-_Avoid_: score(점수는 한 Session의 결과), accuracy
+_Avoid_: score(점수는 한 Session의 결과), [[#정답률 (Accuracy)|정답률]]
+
+**정답률 (Accuracy)**:
+한 [[#Exam|Exam]]에서 **전 시도 중 정답의 비율**(correct/attempts) — 재시도를 포함한 시도 단위 정확도. [[#Progress|Progress]]에서 파생되는 학습도 지표이며 [[#Mastery|Mastery]]와 **다른 지표**다: Mastery는 *마지막에 정답인 문항 / 총 문항*(현재 상태), 정답률은 *정답 시도 / 전체 시도*(누적 정확도). 두 지표는 한 화면에 나란히 설 수 있고(예 /stats·/me), 모든 화면이 **같은 단일 정의**를 공유한다.
+_Avoid_: [[#Mastery|Mastery]]·숙련도(마지막 정답 비율은 Mastery), score(한 Session 결과), 'mastered/seen'(숙련도의 변형일 뿐 정답률 아님)
 
 **Wrong-list (오답노트)**:
 현재 오답으로 추적되는 문항 집합. 틀리면 자동 편입되고, 이후 맞히면 빠진다. [[#Progress|Progress]]의 일부이자 [[#내 문제함|내 문제함]]을 이루는 세 축 중 하나 — 내 문제함에서 '틀린' 필터로 드러난다(더는 독립 학습 모드로 노출하지 않는다).

@@ -11,7 +11,8 @@ import { useExam } from "@/lib/exam-context";
 import { MODE_LABEL, useStore, type Mode } from "@/lib/store";
 import { MODE_ICON } from "@/lib/mode-icons";
 import type { StartOpts } from "@/lib/use-quiz";
-import { myProblems } from "@/lib/progress";
+import { examView } from "@/lib/exam-view";
+import { today } from "@/lib/dates";
 import { Button } from "@/components/ui/Button";
 
 export default function Setup({
@@ -23,20 +24,24 @@ export default function Setup({
   onStart: (opts: StartOpts) => void;
   onCancel: () => void;
 }) {
-  const { topics } = useExam();
+  const { topics, questions } = useExam();
   const { store, setPrefs } = useStore();
 
-  const mineCount = myProblems(store).length;
-  const memoCount = Object.keys(store.memos).length;
+  // per-exam 카운트는 뷰모델(lib/exam-view)에서 — 오답·별표·내 문제함·메모 수. 모드별 avail/기본값/빈-안내는
+  // Setup 고유 로직(아래)이 이 카운트를 참조.
+  const view = useMemo(
+    () => examView(store, questions, questions.length, today()),
+    [store, questions],
+  );
   const avail =
     mode === "wrong"
-      ? store.wrong.length
+      ? view.wrong
       : mode === "star"
-        ? store.stars.length
+        ? view.stars
         : mode === "mine"
-          ? mineCount
+          ? view.mine
           : mode === "memo"
-            ? memoCount
+            ? view.memos
             : Infinity; // study·smart·exam 은 전체 풀에서 뽑으므로 상한 없음
 
   const defaultCount =
@@ -55,15 +60,15 @@ export default function Setup({
   const [examMin, setExamMin] = useState(180);
 
   const emptyHint = useMemo(() => {
-    if (mode === "wrong" && store.wrong.length === 0)
+    if (mode === "wrong" && view.wrong === 0)
       return "오답으로 기록된 문항이 없습니다.";
-    if (mode === "star" && store.stars.length === 0)
+    if (mode === "star" && view.stars === 0)
       return "즐겨찾기한 문항이 없습니다.";
-    if (mode === "mine" && mineCount === 0)
+    if (mode === "mine" && view.mine === 0)
       return "내 문제함이 비어 있습니다. 오답·즐겨찾기·메모가 쌓이면 여기 모입니다.";
-    if (mode === "memo" && memoCount === 0) return "메모한 문항이 없습니다.";
+    if (mode === "memo" && view.memos === 0) return "메모한 문항이 없습니다.";
     return "";
-  }, [mode, store.wrong.length, store.stars.length, mineCount, memoCount]);
+  }, [mode, view.wrong, view.stars, view.mine, view.memos]);
 
   const ModeIcon = MODE_ICON[mode];
 
