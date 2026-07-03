@@ -85,6 +85,18 @@ export function mastery(p: Progress, total: number): number {
   return Math.round((mastered / total) * 100);
 }
 
+/**
+ * Accuracy(정답률) — 전 시도 중 정답 비율(%). 재시도를 포함한 시도 단위 정확도로, **Mastery 와 다른
+ * 지표**다(Mastery=마지막 정답 문항/총 문항). 단일 정의 — dashboard(/me)·exam-view(/stats)가 공유해
+ * 같은 라벨 '정답률'이 화면마다 다른 뜻이던 문제를 없앤다.
+ */
+export function accuracy(p: Progress): number {
+  const hist = Object.values(p.hist);
+  const attempts = hist.reduce((s, h) => s + h.seen, 0);
+  const correct = hist.reduce((s, h) => s + h.correct, 0);
+  return attempts ? Math.round((correct / attempts) * 100) : 0;
+}
+
 /** 내 문제함 — 오답∪별표∪메모가 달린 문항 집합(파생, ADR-0011). '함'은 UI 은유이며 저장하지 않는다. */
 export function myProblems(p: Progress): number[] {
   const s = new Set<number>(p.wrong);
