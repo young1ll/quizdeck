@@ -53,12 +53,9 @@ export interface SessionState {
   exam: boolean;
   answers: Record<number, AnswerRec>;
   flags: number[];
-  order: Record<number, string[]>;
   start: number;
   elapsed: number;
   limit?: number;
-  /** 결과 화면 산출용 — 마지막 오답 목록 */
-  _wrong?: number[];
 }
 
 // 읽기 뷰: Progress + 진행 중 active Session. (백업/복원 입력 타입이기도 함)

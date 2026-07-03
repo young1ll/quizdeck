@@ -1,5 +1,5 @@
 import type { Question } from "./types";
-import type { Mode, QHist, Store } from "./store";
+import type { AnswerRec, Mode, QHist, SessionState, Store } from "./store";
 import { myProblems } from "./progress";
 
 export function shuffle<T>(arr: T[]): T[] {
@@ -15,6 +15,115 @@ export function setsEqual(a: string[], b: string[]): boolean {
   if (a.length !== b.length) return false;
   const sb = new Set(b);
   return a.every((x) => sb.has(x));
+}
+
+/**
+ * 채점 규칙 — **단일 출처**. 이미 채점된 답이면(a.ok) 그것을, 아니면 정답 집합과 비교. 컨트롤러 제출·
+ * 결과 집계·PDF·뷰가 모두 이 함수를 쓴다(옛날엔 `a.ok ?? setsEqual(...)`가 7곳에 복붙돼 있었다).
+ */
+export function gradeAnswer(a: AnswerRec | undefined, answer: string[]): boolean {
+  if (!a) return false;
+  return a.ok !== undefined ? a.ok : setsEqual(a.sel, answer);
+}
+
+export interface WrongItem {
+  qn: number;
+  sel: string[]; // 틀린 문항에서 내 선택(결과·PDF 렌더용)
+}
+
+export interface QuizResult {
+  okCount: number;
+  total: number;
+  pct: number; // round(okCount/total*100)
+  wrong: WrongItem[];
+  perTopic: Record<string, { n: number; ok: number }>;
+}
+
+/**
+ * 세션 결과 집계(순수) — okCount·틀린 문항(+내 선택)·주제별 정답을 한 번에. 컨트롤러가 finish 시 1회
+ * 계산해 result 모델로 노출하고, Result 뷰·PDF 는 재채점 대신 이 결과를 읽는다. 소요 시간(sec)은 시간
+ * 의존이라 여기 없다 — 호출부(finish 시점)에서 얹는다.
+ */
+export interface CurrentNavItem {
+  qn: number;
+  answered: boolean;
+  flagged: boolean;
+  current: boolean;
+}
+
+// 현재 문항 뷰모델 — Quiz 화면이 raw SessionState 를 뒤지는 대신 읽는 파생 읽기. 순수·결정적이라 단위
+// 테스트 가능(옛날엔 currentQuestion·selected·isGraded·isLast·isFlagged·진행·nav 를 뷰가 s.queue[s.idx]…
+// 로 재파생했다). 채점 여부/정오는 gradeAnswer 단일 규칙.
+export interface CurrentView {
+  question: Question;
+  qn: number;
+  idx: number;
+  total: number;
+  isLast: boolean;
+  selected: string[];
+  isGraded: boolean; // 비시험 && 채점됨(피드백 표시)
+  isCorrect: boolean; // isGraded 일 때만 의미
+  isFlagged: boolean;
+  exam: boolean;
+  mode: Mode;
+  nav: CurrentNavItem[]; // 시험 문항 네비 그리드용
+}
+
+export function currentView(
+  session: SessionState,
+  byQn: Map<number, Question>,
+): CurrentView | null {
+  const qn = session.queue[session.idx];
+  const question = byQn.get(qn);
+  if (!question) return null;
+  const a = session.answers[qn];
+  const isGraded = !session.exam && a?.ok !== undefined;
+  return {
+    question,
+    qn,
+    idx: session.idx,
+    total: session.queue.length,
+    isLast: session.idx === session.queue.length - 1,
+    selected: a?.sel ?? [],
+    isGraded,
+    isCorrect: isGraded ? gradeAnswer(a, question.answer) : false,
+    isFlagged: session.flags.includes(qn),
+    exam: session.exam,
+    mode: session.mode,
+    nav: session.queue.map((q, i) => ({
+      qn: q,
+      answered: !!session.answers[q]?.sel?.length,
+      flagged: session.flags.includes(q),
+      current: i === session.idx,
+    })),
+  };
+}
+
+// 이어하기 배너용 요약(순수) — 허브(Home)가 저장된 진행 세션(store.active)의 raw 필드를 읽는 대신.
+export function resumeInfo(
+  active: SessionState | null,
+): { mode: Mode; position: number; total: number } | null {
+  if (!active) return null;
+  return { mode: active.mode, position: active.idx + 1, total: active.queue.length };
+}
+
+export function computeResult(session: SessionState, byQn: Map<number, Question>): QuizResult {
+  const perTopic: Record<string, { n: number; ok: number }> = {};
+  const wrong: WrongItem[] = [];
+  let okCount = 0;
+  for (const qn of session.queue) {
+    const d = byQn.get(qn);
+    if (!d) continue;
+    const a = session.answers[qn];
+    const correct = gradeAnswer(a, d.answer);
+    if (correct) okCount++;
+    else wrong.push({ qn, sel: a?.sel ?? [] });
+    perTopic[d.topic] = perTopic[d.topic] ?? { n: 0, ok: 0 };
+    perTopic[d.topic].n++;
+    if (correct) perTopic[d.topic].ok++;
+  }
+  const total = session.queue.length;
+  return { okCount, total, pct: total ? Math.round((okCount / total) * 100) : 0, wrong, perTopic };
 }
 
 /** 데이터에 등장하는 주제 목록(등장 순서 유지) */

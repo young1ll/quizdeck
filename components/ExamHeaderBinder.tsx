@@ -29,11 +29,12 @@ export default function ExamHeaderBinder() {
   const base = `/${meta.provider}/${meta.slug}`;
   const adminHref = `/admin/${meta.provider}/${meta.slug}`;
 
-  const s = quiz.session;
-  const activeQuiz = phase === "active" && !!s && !!pathname?.endsWith("/quiz");
-  const idx = s?.idx ?? 0;
-  const len = s?.queue.length ?? 0;
-  const exam = s?.exam ?? false;
+  // 진행 표시는 컨트롤러의 현재-문항 뷰모델에서(raw SessionState 안 읽음, ADR-0012 결정 9 focus chrome).
+  const cur = quiz.current;
+  const activeQuiz = phase === "active" && !!cur && !!pathname?.endsWith("/quiz");
+  const idx = cur?.idx ?? 0;
+  const len = cur?.total ?? 0;
+  const exam = cur?.exam ?? false;
   const timeLeft = quiz.timeLeft;
   const quit = quiz.quit;
 

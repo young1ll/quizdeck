@@ -1,7 +1,7 @@
 import { renderMarkdown } from "./md";
-import { setsEqual, topicStat, topicsOf } from "./session";
+import { topicStat, topicsOf, type QuizResult } from "./session";
 import type { Question, ExamMeta } from "./types";
-import type { SessionState, Store } from "./store";
+import type { Store } from "./store";
 
 function esc(s: string): string {
   return s
@@ -58,26 +58,20 @@ function printHTML(inner: string): void {
   window.print();
 }
 
+// 결과 PDF — 컨트롤러가 낸 결과 모델(QuizResult, 순수)을 그대로 렌더한다. 재채점하지 않는다
+// (채점·집계는 lib/session computeResult 단일 정의). wrong 은 {qn, 내 선택}이라 세션 참조 불필요.
 export function exportResultPDF(
-  session: SessionState,
+  result: QuizResult,
   byQn: Map<number, Question>,
   meta: ExamMeta,
 ): void {
-  const Q = session.queue;
-  const ok = Q.filter((qn) => {
-    const a = session.answers[qn];
-    const d = byQn.get(qn)!;
-    return a && (a.ok !== undefined ? a.ok : setsEqual(a.sel, d.answer));
-  }).length;
-  const wrong = session._wrong ?? [];
+  const { okCount, total, pct, wrong } = result;
   let h = `<h2>${esc(meta.code)} 세션 결과</h2><p>${new Date().toLocaleString(
     "ko",
-  )} · ${ok}/${Q.length} (${Math.round((ok / Q.length) * 100)}%)</p><h3>틀린 문항 (${
-    wrong.length
-  })</h3>`;
-  wrong.forEach((qn) => {
+  )} · ${okCount}/${total} (${pct}%)</p><h3>틀린 문항 (${wrong.length})</h3>`;
+  wrong.forEach(({ qn, sel }) => {
     const d = byQn.get(qn);
-    if (d) h += detailHTML(d, session.answers[qn]?.sel, undefined);
+    if (d) h += detailHTML(d, sel, undefined);
   });
   printHTML(h);
 }

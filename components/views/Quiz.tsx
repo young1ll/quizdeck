@@ -20,25 +20,26 @@ import { TextArea } from "@astryxdesign/core/TextArea";
 import { useExam } from "@/lib/exam-context";
 import { useNav } from "@/lib/nav-context";
 import { useStore } from "@/lib/store";
-import { setsEqual, shuffle } from "@/lib/session";
+import { shuffle } from "@/lib/session";
 import type { QuizController } from "@/lib/use-quiz";
 import Icon from "@/components/Icon";
 import AnnotatableText from "@/components/AnnotatableText";
 import { Button } from "@/components/ui/Button";
 
 export default function Quiz({ quiz }: { quiz: QuizController }) {
-  const { byQn, q2svc } = useExam();
+  const { q2svc } = useExam();
   const { store, toggleStar, setMemo } = useStore();
   const { openConceptFor } = useNav();
-  const s = quiz.session;
+  // raw SessionState 대신 컨트롤러의 현재-문항 뷰모델을 읽는다(파생 읽기 단일화, lib/session currentView).
+  const c = quiz.current;
 
   const [showNav, setShowNav] = useState(false);
   const [showMemo, setShowMemo] = useState(false);
   const [memoDraft, setMemoDraft] = useState("");
   const orderCache = useRef<Map<number, string[]>>(new Map());
 
-  const qn = s ? s.queue[s.idx] : -1;
-  const d = qn >= 0 ? byQn.get(qn) : undefined;
+  const qn = c?.qn ?? -1;
+  const d = c?.question;
 
   // 보기 표시 순서(셔플 시 qn별 1회 캐시)
   const optOrder = useMemo(() => {
@@ -63,44 +64,41 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
   // 키보드 단축키
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const cur = quiz.session;
+      const cur = quiz.current;
       if (!cur) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "TEXTAREA" || tag === "INPUT") return;
-      const cqn = cur.queue[cur.idx];
-      const cd = byQn.get(cqn);
-      if (!cd) return;
+      const cd = cur.question;
       const k = e.key.toUpperCase();
-      const graded = !cur.exam && cur.answers[cqn]?.ok !== undefined;
       if (/^[A-F]$/.test(k) && cd.options[k]) {
-        if (!graded) quiz.select(k, cd.answer.length > 1);
+        if (!cur.isGraded) quiz.select(k, cd.answer.length > 1);
         e.preventDefault();
         return;
       }
       if (e.key === "Enter") {
-        if (!cur.exam && !graded) quiz.submit();
-        else if (cur.exam && cur.idx === cur.queue.length - 1) quiz.finishExam();
+        if (!cur.exam && !cur.isGraded) quiz.submit();
+        else if (cur.exam && cur.isLast) quiz.finishExam();
         else quiz.next();
         e.preventDefault();
       }
       if (e.key === "ArrowRight") quiz.next();
       if (e.key === "ArrowLeft") quiz.prev();
-      if (k === "S") toggleStar(cqn);
+      if (k === "S") toggleStar(cur.qn);
       if (k === "F" && cur.exam) quiz.toggleFlag();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [quiz, byQn, toggleStar]);
+  }, [quiz, toggleStar]);
 
-  if (!s || !d) return null;
+  if (!c || !d) return null;
 
-  const sel = s.answers[qn]?.sel ?? [];
-  const graded = !s.exam && s.answers[qn]?.ok !== undefined;
+  const sel = c.selected;
+  const graded = c.isGraded;
   const multi = d.answer.length > 1;
-  const isLast = s.idx === s.queue.length - 1;
+  const isLast = c.isLast;
   const starred = store.stars.includes(qn);
-  const flagged = s.flags.includes(qn);
-  const ok = graded ? setsEqual(sel, d.answer) : false;
+  const flagged = c.isFlagged;
+  const ok = c.isCorrect;
   const rel = q2svc[String(qn)] ?? [];
 
   // 진행(n/N)·타이머·나가기는 sticky 맥락 헤더의 focus chrome 으로 승격됨(ExamHeaderBinder, ADR-0012
@@ -127,8 +125,8 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
       </div>
       <div className="mb-5">
         <ProgressBar
-          value={s.idx + 1}
-          max={s.queue.length}
+          value={c.idx + 1}
+          max={c.total}
           label="퀴즈 진행"
           isLabelHidden
           variant="accent"
@@ -278,7 +276,7 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
       </Card>
 
       {/* 시험 모드: 검토 표시 + 네비 토글 */}
-      {s.exam && (
+      {c.exam && (
         <div className="mt-3 flex items-center gap-2 text-sm">
           <Button
             variant="outline"
@@ -298,23 +296,20 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
           </Button>
         </div>
       )}
-      {s.exam && showNav && (
+      {c.exam && showNav && (
         <div className="mt-3 grid grid-cols-8 gap-1.5 sm:grid-cols-10">
-          {s.queue.map((cqn, i) => {
-            const done = !!s.answers[cqn]?.sel?.length;
-            const fl = s.flags.includes(cqn);
-            const cur = i === s.idx;
+          {c.nav.map((item, i) => {
             return (
               <button
-                key={cqn}
+                key={item.qn}
                 type="button"
                 onClick={() => quiz.navTo(i)}
                 className={`aspect-square rounded-md border text-xs ${
-                  cur
+                  item.current
                     ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                    : fl
+                    : item.flagged
                       ? "border-[var(--warn)] text-[var(--warn)]"
-                      : done
+                      : item.answered
                         ? "border-[var(--good)] text-[var(--good)]"
                         : "border-[var(--border)] text-[var(--muted)]"
                 }`}
@@ -340,12 +335,12 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
         </div>
 
         <div className="flex gap-2">
-          {s.idx > 0 && (
+          {c.idx > 0 && (
             <Button variant="outline" onClick={quiz.prev}>
               이전
             </Button>
           )}
-          {s.exam ? (
+          {c.exam ? (
             isLast ? (
               <Button variant="primary" onClick={quiz.finishExam}>
                 제출·채점
