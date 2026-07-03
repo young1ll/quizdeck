@@ -11,14 +11,13 @@ afterEach(cleanup);
 
 describe("Button 어댑터 (우리 variant ⇄ astryx)", () => {
   // 회귀 핀 — dangerOutline 과 danger 가 둘 다 destructive 로 붕괴하던 버그(ADR-0014 리스킨).
-  // dangerOutline 은 outline+danger(덜 요란) 룩이라 solid destructive 와 **시각적으로 구별**돼야 한다.
+  // dangerOutline 은 이제 진짜 astryx 커스텀 variant(A1 Path-B) — 자기 data-variant 로 렌더되고
+  // solid destructive 와 **구별**된다(룩은 lib/astryx-theme.ts components.button 이 공급).
   // 두 실제 호출부: MyPage 회원 탈퇴 트리거 · Stats 데이터 초기화.
   it("dangerOutline ≠ danger — 붕괴 회귀 핀", () => {
     render(<Button variant="dangerOutline">초기화</Button>);
     const b = screen.getByRole("button", { name: "초기화" });
-    // 우리 계약: outline+danger 는 bad 테두리/텍스트를 얹고 solid destructive 로 가지 않는다.
-    expect(b.className).toContain("border-[var(--bad)]");
-    expect(b.className).toContain("text-[var(--bad)]");
+    expect(b.getAttribute("data-variant")).toBe("dangerOutline");
     expect(b.getAttribute("data-variant")).not.toBe("destructive");
   });
 
