@@ -8,14 +8,25 @@ import { Button as AstryxButton } from "@astryxdesign/core/Button";
 // (65곳 호출부 대량 변경 회피). astryx Button 은 label(string) 필수라, string children → label, JSX
 // children 은 children 으로 전달. 우리 variant(primary/danger/dangerOutline/outline) → astryx
 // (primary/secondary/ghost/destructive). title → astryx tooltip(BaseProps 는 title 을 omit).
+//
+// dangerOutline = outline+danger(덜 요란한 파괴적 affordance — 회원 탈퇴 트리거·데이터 초기화).
+// astryx 엔 outline-destructive 내장이 없어 danger(destructive)와 **같은 룩으로 붕괴**하던 버그가 있었다.
+// 어댑터가 astryx 가 못 주는 룩을 **한 곳에서** 공급한다: secondary(중립 outline) 베이스 + bad 테두리/텍스트.
+// (테마 확장으로 진짜 astryx variant 등록도 가능하나, 룩을 어댑터에 담아 A1 을 작고 안전하게. 회귀는
+// components/ui/Button.test.tsx 가 핀 — dangerOutline≠danger.)
 type Variant = "primary" | "danger" | "dangerOutline" | "outline";
 type Size = "sm" | "md" | "lg";
 
 const VARIANT_MAP: Record<Variant, "primary" | "secondary" | "ghost" | "destructive"> = {
   primary: "primary",
   danger: "destructive",
-  dangerOutline: "destructive",
+  dangerOutline: "secondary", // 중립 outline 베이스 위에 bad 색을 얹는다(아래 EXTRA_CLASS).
   outline: "secondary",
+};
+
+// astryx 가 못 주는 룩을 어댑터가 보태는 곳 — dangerOutline 만 bad 테두리/텍스트를 얹어 danger 와 구별.
+const EXTRA_CLASS: Partial<Record<Variant, string>> = {
+  dangerOutline: "border-[var(--bad)] text-[var(--bad)]",
 };
 
 export function Button({
@@ -49,7 +60,10 @@ export function Button({
       icon={icon}
       isDisabled={disabled || undefined}
       isLoading={loading}
-      className={`${fullWidth ? "w-full " : ""}${className}`.trim() || undefined}
+      className={
+        `${fullWidth ? "w-full " : ""}${EXTRA_CLASS[variant] ? `${EXTRA_CLASS[variant]} ` : ""}${className}`.trim() ||
+        undefined
+      }
       tooltip={typeof title === "string" ? title : undefined}
       // 나머지 HTML attrs(onClick·name·value·form·aria-*·data-*·id·style)는 astryx BaseProps 로 흘린다.
       // 스프레드 타입 정합은 astryx 가 관대(Omit<HTMLAttributes>)하나 excess-prop 회피 위해 캐스트.
