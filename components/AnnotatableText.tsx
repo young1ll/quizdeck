@@ -7,6 +7,7 @@ import {
   useState,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
+  type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 import { LuX, LuStickyNote, LuTriangleAlert, LuHighlighter, LuUnderline, LuTrash2 } from "react-icons/lu";
@@ -199,22 +200,14 @@ export default function AnnotatableText({
         </span>
       )}
 
-      {/* 선택 툴바 — 밑줄/형광펜/메모 추가. fixed + portal(body) — <p> 안의 div 중첩·overflow 클리핑 회피 */}
-      {toolbar &&
-        createPortal(
-        <div
-          style={{
-            position: "fixed",
-            left: toolbar.x,
-            top: toolbar.y - 44,
-            transform: "translateX(-50%)",
-            zIndex: 50,
-          }}
+      {/* 선택 툴바 — 밑줄/형광펜/메모 추가. 앵커(선택 rect) 위에 뜬다(y-44 · 가운데 정렬), 선택 유지. */}
+      {toolbar && (
+        <FloatingPopover
+          x={toolbar.x}
+          y={toolbar.y - 44}
+          centered
+          keepSelection
           className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-1 text-xs shadow-popover"
-          onMouseDown={(ev) => {
-            ev.preventDefault(); // 선택 유지
-            ev.stopPropagation(); // 바깥-클릭 닫힘 방지
-          }}
         >
           <button type="button" onClick={() => create("highlight", false)} className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-[var(--panel-2)]">
             <LuHighlighter className="size-3.5" aria-hidden /> 형광펜
@@ -225,18 +218,15 @@ export default function AnnotatableText({
           <button type="button" onClick={() => create("highlight", true)} className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-[var(--panel-2)]">
             <LuStickyNote className="size-3.5" aria-hidden /> 메모
           </button>
-        </div>,
-          document.body,
-        )}
+        </FloatingPopover>
+      )}
 
-      {/* 편집 팝오버 — 스타일 전환 / 메모 / 삭제 */}
-      {editing &&
-        editingAnn &&
-        createPortal(
-        <div
-          style={{ position: "fixed", left: editing.x, top: editing.y + 4, zIndex: 50 }}
+      {/* 편집 팝오버 — 스타일 전환 / 메모 / 삭제. 앵커 아래(y+4)에 뜬다. 입력 포커스는 허용(keepSelection 없음). */}
+      {editing && editingAnn && (
+        <FloatingPopover
+          x={editing.x}
+          y={editing.y + 4}
           className="w-56 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-2 shadow-popover"
-          onMouseDown={(ev) => ev.stopPropagation()} // 바깥-클릭 닫힘 방지(입력 포커스는 허용)
         >
           <div className="mb-2 flex items-center gap-1 text-xs">
             <button
@@ -273,9 +263,49 @@ export default function AnnotatableText({
             placeholder="메모…"
             className="h-16 w-full resize-none rounded-md border border-[var(--border)] bg-[var(--panel-2)] p-1.5 text-sm outline-none focus:border-[var(--accent)]"
           />
-        </div>,
-          document.body,
-        )}
+        </FloatingPopover>
+      )}
     </>
+  );
+}
+
+// 앵커(선택 rect) 좌표에 뜨는 비차단 플로팅 팝오버 — createPortal(body)로 <p> 안 div 중첩·overflow
+// 클리핑을 피하고, fixed 로 좌표에 붙는다. onMouseDown 으로 바깥-클릭 닫힘(공유 dismiss effect)을 막는다.
+// AnnotatableText 의 툴바·에디터가 공유하던 portal+fixed+가드 보일러플레이트를 한 곳으로. 앵커 계산·
+// dismiss·주석 로직은 호출부(AnnotatableText)에 그대로 — 이건 팝오버 셸만.
+function FloatingPopover({
+  x,
+  y,
+  centered = false,
+  keepSelection = false,
+  className,
+  children,
+}: {
+  x: number;
+  y: number;
+  centered?: boolean; // 앵커 가운데 정렬(translateX(-50%)) — 툴바
+  keepSelection?: boolean; // mousedown 시 preventDefault 로 텍스트 선택 유지 — 툴바
+  className?: string;
+  children: ReactNode;
+}) {
+  const style: CSSProperties = {
+    position: "fixed",
+    left: x,
+    top: y,
+    zIndex: 50,
+    ...(centered ? { transform: "translateX(-50%)" } : {}),
+  };
+  return createPortal(
+    <div
+      style={style}
+      className={className}
+      onMouseDown={(ev) => {
+        if (keepSelection) ev.preventDefault(); // 선택 유지(툴바)
+        ev.stopPropagation(); // 바깥-클릭 닫힘 방지(공유 dismiss effect)
+      }}
+    >
+      {children}
+    </div>,
+    document.body,
   );
 }
