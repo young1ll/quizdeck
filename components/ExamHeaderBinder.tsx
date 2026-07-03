@@ -1,114 +1,49 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { LuSquarePen, LuSearch, LuTimer } from "react-icons/lu";
 import { useExam } from "@/lib/exam-context";
 import { useQuizFlow } from "@/lib/quiz-flow-context";
 import { useSession } from "@/lib/auth-client";
 import { isAdminSession } from "@/lib/admin-role";
-import AccountChip from "@/components/AccountChip";
+import { buildHeaderModel } from "@/lib/header-model";
 import { useSetHeaderSlot } from "@/lib/header-slot";
 
 // exam 섹션의 맥락 헤더 바인더 (ADR-0012 결정 5·6·9·10). ExamProviders 안쪽(useExam·useQuizFlow 가용)에서
-// 헤더 슬롯을 채운다. 3단 적응(결정 6):
-//  · 퀴즈 active(/quiz + phase active) → focus chrome: `진행 n/N · [타이머] · 나가기`. 검색·허브·계정 숨김
-//    (집중, 결정 9). 나가기=quiz.quit(세션을 store.active 에 보존 → 허브 이어하기 배너, 비파괴).
-//  · 그 외 exam 안 → `QuizDeck(→홈) › 시험코드(→허브) · [✏️편집(admin)] · 🔎검색 · 계정`(결정 5·10).
-//    브레드크럼으로 홈(`/`)·허브 둘 다 상시 도달 — exam 안에서 홈으로 못 가던 회귀 수정.
-// 시각 출력 없음(슬롯만 설정). 바깥(카탈로그·/me)의 기본 헤더는 LearnerHeader 가 슬롯 없을 때 렌더.
-const fmtTime = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
-
+// 헤더 **모델**을 계산해 슬롯에 채운다 — 결정은 순수 buildHeaderModel(lib/header-model, 테스트됨), 렌더는
+// shell(LearnerHeader)이 한다. 시각 출력 없음(모델만 설정) · onExit=quiz.quit(세션을 store.active 에 보존
+// → 허브 이어하기 배너, 비파괴). 바깥(카탈로그·/me)의 기본 헤더는 LearnerHeader 가 슬롯 없을 때 렌더.
 export default function ExamHeaderBinder() {
   const { meta } = useExam();
   const { quiz, phase } = useQuizFlow();
   const { data: session } = useSession();
   const pathname = usePathname();
-  const admin = isAdminSession(session);
-  const base = `/${meta.provider}/${meta.slug}`;
-  const adminHref = `/admin/${meta.provider}/${meta.slug}`;
 
-  // 진행 표시는 컨트롤러의 현재-문항 뷰모델에서(raw SessionState 안 읽음, ADR-0012 결정 9 focus chrome).
   const cur = quiz.current;
-  const activeQuiz = phase === "active" && !!cur && !!pathname?.endsWith("/quiz");
+  const isOnQuizRoute = !!pathname?.endsWith("/quiz");
+  const isAdmin = isAdminSession(session);
   const idx = cur?.idx ?? 0;
-  const len = cur?.total ?? 0;
+  const total = cur?.total ?? 0;
+  const hasCurrent = !!cur;
   const exam = cur?.exam ?? false;
   const timeLeft = quiz.timeLeft;
   const quit = quiz.quit;
 
-  const node = useMemo(() => {
-    if (activeQuiz) {
-      return (
-        <>
-          <span className="font-mono text-sm text-[var(--muted)]">
-            진행 {idx + 1} / {len}
-          </span>
-          <div className="flex shrink-0 items-center gap-3">
-            {exam && timeLeft !== null && (
-              <span
-                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-xs ${
-                  timeLeft < 300 ? "bg-[var(--bad)] text-white" : "bg-[var(--panel-2)]"
-                }`}
-              >
-                <LuTimer className="size-3.5" aria-hidden /> {fmtTime(Math.max(0, timeLeft))}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={quit}
-              className="flex min-h-[44px] items-center text-sm text-[var(--muted)] hover:text-[var(--bad)]"
-            >
-              나가기
-            </button>
-          </div>
-        </>
-      );
-    }
-    return (
-      <>
-        <div className="flex min-w-0 items-center gap-1.5">
-          <Link
-            href="/"
-            className="flex min-h-[44px] shrink-0 items-center font-bold tracking-tight hover:text-[var(--accent)]"
-          >
-            QuizDeck
-          </Link>
-          <span aria-hidden className="shrink-0 text-[var(--muted)]">
-            ›
-          </span>
-          <Link
-            href={base}
-            aria-label="시험 허브"
-            className="flex min-h-[44px] min-w-0 items-center hover:text-[var(--fg)]"
-          >
-            <span className="truncate font-mono text-sm text-[var(--muted)]">{meta.code}</span>
-          </Link>
-        </div>
-        <div className="flex shrink-0 items-center gap-3">
-          {admin && (
-            <Link
-              href={adminHref}
-              aria-label="이 시험 편집"
-              className="flex min-h-[44px] min-w-[44px] items-center justify-center text-[var(--muted)] hover:text-[var(--accent)]"
-            >
-              <LuSquarePen className="size-4" aria-hidden />
-            </Link>
-          )}
-          <Link
-            href={`${base}/search`}
-            aria-label="검색"
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center text-[var(--muted)] hover:text-[var(--fg)]"
-          >
-            <LuSearch className="size-[18px]" aria-hidden />
-          </Link>
-          <AccountChip />
-        </div>
-      </>
-    );
-  }, [activeQuiz, idx, len, exam, timeLeft, quit, base, adminHref, admin, meta.code]);
+  const model = useMemo(
+    () =>
+      buildHeaderModel({
+        meta,
+        phase,
+        isOnQuizRoute,
+        isAdmin,
+        current: hasCurrent ? { idx, total } : null,
+        exam,
+        timeLeft,
+      }),
+    [meta, phase, isOnQuizRoute, isAdmin, hasCurrent, idx, total, exam, timeLeft],
+  );
 
-  useSetHeaderSlot(node);
+  const slot = useMemo(() => ({ model, onExit: quit }), [model, quit]);
+  useSetHeaderSlot(slot);
   return null;
 }
