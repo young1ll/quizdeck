@@ -44,17 +44,23 @@ function LogoutSection() {
   const [busy, setBusy] = useState(false);
   return (
     <Section title="세션">
-      <Button
-        variant="outline"
-        loading={busy}
-        onClick={async () => {
-          setBusy(true);
-          await signOut().catch(() => {});
-          window.location.href = "/";
-        }}
-      >
-        로그아웃
-      </Button>
+      <p className="text-sm text-[var(--muted)]">
+        이 브라우저에서 로그아웃합니다. 학습 기록은 계정에 안전하게 남습니다.
+      </p>
+      {/* astryx Button 은 StyleX 로 margin:0 고정 → mt-* 무력. 간격은 plain wrapper 에 준다. */}
+      <div className="mt-3">
+        <Button
+          variant="outline"
+          loading={busy}
+          onClick={async () => {
+            setBusy(true);
+            await signOut().catch(() => {});
+            window.location.href = "/";
+          }}
+        >
+          로그아웃
+        </Button>
+      </div>
     </Section>
   );
 }
@@ -97,12 +103,12 @@ function ProfileSection({ initialName, email }: { initialName: string; email: st
   return (
     <Section title="프로필">
       <form onSubmit={save} className="space-y-3">
-        <label className="block">
-          <span className="mb-1 block text-xs text-[var(--muted)]">이메일</span>
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--panel-2)] px-3 py-2 text-sm text-[var(--muted)]">
-            {email}
-          </div>
-        </label>
+        <div>
+          <Field label="이메일" value={email} onChange={() => {}} disabled required={false} />
+          <p className="mt-1 text-xs text-[var(--muted)]">
+            변경하려면 아래 <b className="text-[var(--fg)]">이메일 변경</b>을 이용하세요.
+          </p>
+        </div>
         <Field
           label="이름"
           autoComplete="name"
@@ -219,7 +225,7 @@ function PasswordSection() {
   };
 
   return (
-    <Section title="보안 — 비밀번호 변경">
+    <Section title="비밀번호 변경">
       <form onSubmit={submit} className="space-y-3">
         <Field
           label="현재 비밀번호"
@@ -304,9 +310,9 @@ function PasskeySection() {
   };
 
   return (
-    <Section title="보안 — 패스키">
+    <Section title="패스키">
       <p className="text-sm text-[var(--muted)]">
-        기기 생체인증(지문·얼굴)이나 보안키로 <b className="text-[var(--fg)]">비밀번호 없이</b>
+        기기 생체인증(지문·얼굴)이나 보안키로 <b className="text-[var(--fg)]">비밀번호 없이</b>{" "}
         로그인합니다. 등록한 기기에서 만들어 두세요.
       </p>
       {list && list.length > 0 && (
