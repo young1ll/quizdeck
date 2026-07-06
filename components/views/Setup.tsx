@@ -100,7 +100,10 @@ export default function Setup({
               label="주제"
               value={topic}
               onChange={(v) => setTopic(v ?? "all")}
-              options={[{ value: "all", label: "전체 주제" }, ...topics]}
+              options={[
+                { value: "all", label: "전체 주제" },
+                ...topics.map((t) => ({ value: t.id, label: t.label })),
+              ]}
             />
 
             {/* 문항 수 — astryx NumberInput */}

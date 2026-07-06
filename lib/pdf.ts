@@ -1,5 +1,5 @@
 import { renderMarkdown } from "./md";
-import { topicStat, topicsOf, type QuizResult } from "./session";
+import { topicStat, type QuizResult } from "./session";
 import type { Question, ExamMeta } from "./types";
 import type { Store } from "./store";
 
@@ -89,10 +89,9 @@ export function exportProgressPDF(
     "ko",
   )} · 숙련도 ${masteryPct}% · 연속 ${streakDays}일</p>
     <h3>주제별 정답률</h3><table border="1" cellpadding="6" style="border-collapse:collapse;width:100%"><tr><th align="left">주제</th><th>시도</th><th>정답률</th></tr>`;
-  for (const x of topicsOf(questions)) {
-    const m = t[x];
+  for (const [topic, m] of Object.entries(t)) {
     const p = m.seen ? Math.round((m.ok / m.seen) * 100) + "%" : "–";
-    h += `<tr><td>${esc(x)}</td><td align="center">${m.seen}/${m.n}</td><td align="center">${p}</td></tr>`;
+    h += `<tr><td>${esc(topic)}</td><td align="center">${m.seen}/${m.n}</td><td align="center">${p}</td></tr>`;
   }
   h += `</table><h3 style="margin-top:16px">오답 문항 (${store.wrong.length})</h3>`;
   store.wrong

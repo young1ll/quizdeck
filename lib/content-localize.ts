@@ -31,9 +31,16 @@ function pickSlot<T>(content: Record<string, T>, lang: string): T | undefined {
   return content[lang] ?? Object.values(content)[0];
 }
 
-export function projectQuestion(lq: LocalizedQuestion, lang: string): Question {
+// canonicalLang(기본 = lang) 슬롯의 topic 을 **안정 topicId** 로 얹는다 — 그룹/필터/조인 키가 언어
+// 토글에 불변이게(topic 은 지역화 라벨). 호출부(ExamProviders)가 meta.language 를 canonical 로 넘긴다.
+export function projectQuestion(
+  lq: LocalizedQuestion,
+  lang: string,
+  canonicalLang: string = lang,
+): Question {
   const slot = pickSlot(lq.content, lang) ?? ({} as Omit<Question, "qn" | "answer">);
-  return { qn: lq.qn, answer: lq.answer, ...slot };
+  const canonical = pickSlot(lq.content, canonicalLang) ?? slot;
+  return { qn: lq.qn, answer: lq.answer, ...slot, topicId: canonical.topic ?? slot.topic };
 }
 
 export function projectConcept(lc: LocalizedConcept, lang: string): Concept {

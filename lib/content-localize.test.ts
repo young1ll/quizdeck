@@ -33,6 +33,7 @@ describe("projectQuestion", () => {
       qn: 7,
       answer: ["A", "B"],
       topic: "스토리지",
+      topicId: "스토리지", // canonical 기본 = lang(ko) → 표시와 같음
       q: "S3 한글",
       options: { A: "에이", B: "비" },
       explanation: "해설",
@@ -43,6 +44,15 @@ describe("projectQuestion", () => {
     expect(en.answer).toEqual(["A", "B"]); // 정답은 언어 무관 — 토글해도 동일
     expect(en.q).toBe("S3 english");
     expect(en.explanation).toBeUndefined(); // en 슬롯엔 explanation 없음
+  });
+
+  it("canonicalLang 슬롯의 topic 을 안정 topicId 로 — 표시 언어와 무관(토글 불변)", () => {
+    // ko 가 기본 언어(canonical=ko). en 으로 표시해도 topicId 는 ko topic(안정 키).
+    const enView = projectQuestion(lq, "en", "ko");
+    expect(enView.topic).toBe("storage"); // 표시 라벨 = en
+    expect(enView.topicId).toBe("스토리지"); // id = canonical(ko) — 언어 무관
+    const koView = projectQuestion(lq, "ko", "ko");
+    expect(enView.topicId).toBe(koView.topicId); // 토글해도 같은 id → basePool 필터 생존
   });
 
   it("요청 언어 슬롯이 없으면 가용 언어로 폴백한다(빈 화면 없음)", () => {
