@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useAnnotationState } from "./annotation-context";
 import type { AnnotationStore } from "./annotation-store-remote";
+import { inMemoryAnnotationCache } from "./annotation-store-local";
 import type { Annotation } from "./annotation";
 
 // useAnnotationState 의 낙관적 CRUD wiring 테스트 (리뷰 C4). 전송을 어댑터로 가른 뒤, 훅은 주입된
@@ -61,5 +62,85 @@ describe("useAnnotationState — optimistic CRUD over injected AnnotationStore",
     expect(result.current.enabled).toBe(false);
     expect(result.current.forField(1, "ko", "q")).toHaveLength(0);
     expect(load).not.toHaveBeenCalled();
+  });
+});
+
+describe("useAnnotationState — 로컬 캐시 미러(ADR-0016, 새로고침·오프라인 생존)", () => {
+  it("서버 로드 실패(오프라인)여도 캐시에서 복원 — 빈 상태로 두지 않는다", async () => {
+    const cache = inMemoryAnnotationCache();
+    cache.write("learner-1", "aws/x", [annOf("cached")]);
+    const load = vi.fn(async () => {
+      throw new Error("offline");
+    });
+    const store: AnnotationStore = { load, upsert: vi.fn(), remove: vi.fn() };
+
+    const { result } = renderHook(() =>
+      useAnnotationState("aws/x", "learner-1", store, cache),
+    );
+
+    await waitFor(() => expect(load).toHaveBeenCalled());
+    expect(result.current.forField(1, "ko", "q").map((a) => a.id)).toEqual(["cached"]);
+  });
+
+  it("캐시 우선 표시 후 서버 성공 시 server-wins 로 덮고 캐시 재정합", async () => {
+    const cache = inMemoryAnnotationCache();
+    cache.write("learner-1", "aws/x", [annOf("stale")]);
+    const { store } = spyStore([annOf("fresh")]); // 서버 권위 데이터
+
+    const { result } = renderHook(() =>
+      useAnnotationState("aws/x", "learner-1", store, cache),
+    );
+
+    await waitFor(() =>
+      expect(result.current.forField(1, "ko", "q").map((a) => a.id)).toEqual(["fresh"]),
+    );
+    expect(cache.read("learner-1", "aws/x").map((a) => a.id)).toEqual(["fresh"]); // 캐시 재정합
+  });
+
+  it("add 는 캐시에 write-through 한다(새로고침 생존)", async () => {
+    const cache = inMemoryAnnotationCache();
+    const { store, load } = spyStore();
+    const { result } = renderHook(() =>
+      useAnnotationState("aws/x", "learner-1", store, cache),
+    );
+    await waitFor(() => expect(load).toHaveBeenCalled());
+
+    let added!: Annotation;
+    act(() => {
+      added = result.current.add({ qn: 1, lang: "ko", field: "q" }, "highlight", anchor);
+    });
+
+    await waitFor(() =>
+      expect(cache.read("learner-1", "aws/x").map((a) => a.id)).toEqual([added.id]),
+    );
+  });
+
+  it("remove 는 캐시에서도 뺀다", async () => {
+    const cache = inMemoryAnnotationCache();
+    const { store } = spyStore([annOf("x")]);
+    const { result } = renderHook(() =>
+      useAnnotationState("aws/x", "learner-1", store, cache),
+    );
+    await waitFor(() => expect(result.current.forField(1, "ko", "q")).toHaveLength(1));
+
+    act(() => result.current.remove("x"));
+
+    await waitFor(() => expect(cache.read("learner-1", "aws/x")).toEqual([]));
+  });
+
+  it("다른 Learner 로 로그인해도 자기 캐시만 읽는다(계정 간 격리)", async () => {
+    const cache = inMemoryAnnotationCache();
+    cache.write("learner-1", "aws/x", [annOf("l1-secret")]);
+    const load = vi.fn(async () => {
+      throw new Error("offline");
+    });
+    const store: AnnotationStore = { load, upsert: vi.fn(), remove: vi.fn() };
+
+    const { result } = renderHook(() =>
+      useAnnotationState("aws/x", "learner-2", store, cache),
+    );
+
+    await waitFor(() => expect(load).toHaveBeenCalled());
+    expect(result.current.forField(1, "ko", "q")).toHaveLength(0); // learner-1 캐시 안 보임
   });
 });
