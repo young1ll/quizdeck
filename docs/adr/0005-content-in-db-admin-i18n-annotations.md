@@ -44,3 +44,14 @@ Status: accepted
 - **어드민 표면**: `/admin` 라우트·CRUD·검증(정답 글자 ⊂ options)·revalidate. admin 인가가 새 보안 경계.
 - **단계화(의존 순서)**: **A**(콘텐츠→DB + ISR) → **B**(어드민) → **C**(i18n) → **D**(주석). B·C 는 A 후, D 는 C 후(언어별).
 - ADR-0001/0003 의 "콘텐츠=파일·SSG"는 **Question/Concept 에 한해** 갱신된다. Progress qn 정체성·동기화([[0003-auth-and-progress-sync.md|ADR-0003]]·#7)·로그인 게이팅([[0004-login-gating-and-email-verification.md|ADR-0004]])은 그대로 승계.
+
+## 애던덤 — envelope 역방향 split SSOT (아키텍처 리뷰 content-envelope, 2026-07-06)
+
+결정 7 의 envelope 경계(컬럼 vs 언어 슬롯)는 **정방향**(저장→도메인)만 순수·테스트됐다(`projectQuestion`/`projectConcept`).
+**역방향**(도메인→저장 슬롯)은 `upsertQuestion`/`upsertConcept` 안에 인라인 blacklist(`const {qn,answer,...rest}=q`)로
+숨어 있어 DB 통합테스트로만 커버됐고, topic-id 리뷰가 얹은 **파생 `topicId`**(canonical 슬롯 topic 에서 파생, 비저장)를
+`...rest` 가 그대로 슬롯에 통과시킬 수 있었다(라이브 버그는 아님 — admin 은 `questionForLang` 경로라 topicId 미포함).
+
+역방향을 순수 SSOT 로 승격: `toQuestionSlot`/`toConceptSlot`(content-localize) 이 컬럼과 **파생 필드를 명시 제외**하고
+언어별 슬롯만 낸다. 저장 슬롯 타입도 `QuestionSlot = Omit<Question, "qn"|"answer"|"topicId">` 로 한 정의를 공유한다.
+`upsert*` 는 이걸 호출 — DB 없이 단위테스트되고, 파생·미상 필드가 jsonb 슬롯에 새지 않는다. `content-validate`(순수 도메인 검증)와 같은 결.

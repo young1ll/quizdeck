@@ -4,15 +4,22 @@ import type { Concept, Diagram, ExamMeta, Question } from "./types";
 // (ExamApp 토글)가 공유한다. 같은 Question 의 언어 변형: qn·answer 는 언어 무관, q/options/
 // explanation/tip/topic 만 언어별. content jsonb 의 언어 슬롯({en:{…}, ko:{…}})에서 골라낸다.
 
+// 저장 슬롯(content jsonb 의 언어별 조각) 타입 — SSOT. 언어별 필드만 담는다:
+//  - Question: 컬럼(qn·answer)과 **파생 topicId**(projectQuestion 이 canonical 에서 얹는 값, 비저장)를 제외.
+//  - Concept: 컬럼(svc)을 제외.
+// LocalizedQuestion.content 타입과 역방향 split(toQuestionSlot) 반환 타입이 이 한 정의를 공유한다.
+export type QuestionSlot = Omit<Question, "qn" | "answer" | "topicId">;
+export type ConceptSlot = Omit<Concept, "svc">;
+
 export interface LocalizedQuestion {
   qn: number;
   answer: string[];
-  content: Record<string, Omit<Question, "qn" | "answer">>;
+  content: Record<string, QuestionSlot>;
 }
 
 export interface LocalizedConcept {
   svc: string;
-  content: Record<string, Omit<Concept, "svc">>;
+  content: Record<string, ConceptSlot>;
 }
 
 // 로더 출력 / ExamApp 입력 — 양 언어 콘텐츠 + 가용 언어. 클라이언트가 현재 언어로 투영한다.
@@ -44,8 +51,21 @@ export function projectQuestion(
 }
 
 export function projectConcept(lc: LocalizedConcept, lang: string): Concept {
-  const slot = pickSlot(lc.content, lang) ?? ({} as Omit<Concept, "svc">);
+  const slot = pickSlot(lc.content, lang) ?? ({} as ConceptSlot);
   return { svc: lc.svc, ...slot };
+}
+
+// projectQuestion/projectConcept 의 역방향 — 도메인 객체를 저장 슬롯(content[lang])으로. 컬럼과
+// **파생 필드**를 떨궈 언어별 필드만 남긴다(envelope 경계의 단일 정의). 순수라 DB 없이 테스트되고,
+// content-db 의 upsert 가 이걸 써서 파생 topicId·미상 필드가 jsonb 슬롯에 새지 않는다(리뷰 content-envelope).
+export function toQuestionSlot(q: Question): QuestionSlot {
+  const { qn, answer, topicId, ...slot } = q; // 컬럼(qn·answer)·파생(topicId) 제외
+  return slot;
+}
+
+export function toConceptSlot(c: Concept): ConceptSlot {
+  const { svc, ...slot } = c; // 컬럼(svc) 제외 — Concept 엔 파생 필드 없음
+  return slot;
 }
 
 /** 모든 항목의 content 슬롯 키 합집합 — 토글에 노출할 가용 언어(부분 번역도 합집합). */

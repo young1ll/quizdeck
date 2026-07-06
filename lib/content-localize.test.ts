@@ -3,6 +3,8 @@ import type { Concept, Question } from "./types";
 import {
   projectQuestion,
   projectConcept,
+  toQuestionSlot,
+  toConceptSlot,
   availableLangs,
   questionForLang,
   conceptForLang,
@@ -76,6 +78,70 @@ describe("projectConcept", () => {
       rel: [1, 2],
       reln: 5,
     });
+  });
+});
+
+describe("toQuestionSlot / toConceptSlot (역방향 split — 저장 슬롯, 리뷰 content-envelope)", () => {
+  it("컬럼(qn·answer)과 파생(topicId)을 떨구고 언어별 슬롯만 남긴다", () => {
+    const q: Question = {
+      qn: 7,
+      answer: ["A"], // 컬럼
+      topicId: "스토리지", // 파생(비저장)
+      topic: "storage",
+      q: "본문",
+      options: { A: "a" },
+      explanation: "e",
+      tip: "t",
+      page: 3,
+      deeplink: "d",
+    };
+    const slot = toQuestionSlot(q);
+    expect(slot).toEqual({
+      topic: "storage",
+      q: "본문",
+      options: { A: "a" },
+      explanation: "e",
+      tip: "t",
+      page: 3,
+      deeplink: "d",
+    });
+    expect("qn" in slot).toBe(false);
+    expect("answer" in slot).toBe(false);
+    expect("topicId" in slot).toBe(false); // 파생 topicId 가 저장 슬롯에 새지 않음(핵심)
+  });
+
+  it("projectQuestion 의 역방향 — 되돌리면 topicId 없는 원 슬롯", () => {
+    const stored = { topic: "스토리지", q: "S3", options: { A: "에이" }, explanation: "해설" };
+    const lqOne: LocalizedQuestion = { qn: 7, answer: ["A"], content: { ko: stored } };
+    const projected = projectQuestion(lqOne, "ko"); // topicId 얹힘
+    expect(projected.topicId).toBe("스토리지");
+    expect(toQuestionSlot(projected)).toEqual(stored); // 역방향은 파생 제거 → 원 슬롯과 동일
+  });
+
+  it("toConceptSlot — svc(컬럼)만 떨구고 나머지 보존(Concept 엔 파생 없음)", () => {
+    const c: Concept = {
+      svc: "S3",
+      cat: "스토리지",
+      deff: "정의",
+      key: "핵심",
+      when: "언제",
+      trap: "함정",
+      vs: "비교",
+      rel: [1],
+      reln: 2,
+    };
+    const slot = toConceptSlot(c);
+    expect(slot).toEqual({
+      cat: "스토리지",
+      deff: "정의",
+      key: "핵심",
+      when: "언제",
+      trap: "함정",
+      vs: "비교",
+      rel: [1],
+      reln: 2,
+    });
+    expect("svc" in slot).toBe(false);
   });
 });
 
