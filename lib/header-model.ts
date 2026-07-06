@@ -14,7 +14,11 @@ export interface ExamRoutes {
 }
 export function examRoutes(meta: { provider: string; slug: string }): ExamRoutes {
   const base = `/${meta.provider}/${meta.slug}`;
-  return { hub: base, search: `${base}/search`, admin: `/admin/${meta.provider}/${meta.slug}` };
+  return {
+    hub: base,
+    search: `${base}/search`,
+    admin: `/admin/content/${meta.provider}/${meta.slug}`,
+  };
 }
 
 export interface HeaderContext {
