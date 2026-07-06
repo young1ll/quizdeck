@@ -1,7 +1,5 @@
-import { headers } from "next/headers";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getLearnerSession } from "@/lib/learner-server";
+import { requireLearnerPage } from "@/lib/route-guards";
 import { Container } from "@/components/ui/Container";
 import { pool } from "@/lib/db";
 import { listExams } from "@/lib/content";
@@ -19,8 +17,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function Me() {
-  const session = await getLearnerSession(await headers());
-  if (!session) redirect("/");
+  const session = await requireLearnerPage();
 
   // 전 Exam Progress(동기화된 DB 소스) + 카탈로그 meta(문항 수·이름·링크) → 집계.
   const rows = await loadAllProgress(pool, session.user.id);

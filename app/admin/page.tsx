@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { headers } from "next/headers";
-import { notFound } from "next/navigation";
 import { Card } from "@/components/ui/Card";
-import { getAdminSession } from "@/lib/admin";
+import { requireAdminPage } from "@/lib/route-guards";
 import { listExams } from "@/lib/content";
 
 // 어드민 홈 — Exam 목록. admin role 아니면 notFound(존재를 드러내지 않음). (이슈 #27 / ADR-0005 B)
@@ -11,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function AdminHome() {
-  if (!(await getAdminSession(await headers()))) notFound();
+  await requireAdminPage();
   const exams = listExams();
 
   return (
