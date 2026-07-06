@@ -1,7 +1,5 @@
-import { headers } from "next/headers";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getLearnerSession } from "@/lib/learner-server";
+import { requireLearnerPage } from "@/lib/route-guards";
 import { Container } from "@/components/ui/Container";
 import MyPage from "@/components/MyPage";
 
@@ -12,8 +10,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function Account() {
-  const session = await getLearnerSession(await headers());
-  if (!session) redirect("/");
+  const session = await requireLearnerPage();
 
   return (
     <Container size="sm" className="py-8">

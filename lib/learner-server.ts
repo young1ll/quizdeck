@@ -12,18 +12,10 @@ import { isLearner, type LearnerSession } from "./learner";
  * 요청 헤더에서 세션을 해석해 검증된 Learner 면 반환, 아니면 null. 헤더 주입식이라 Route Handler
  * (`req.headers`)와 Server Component(`await headers()`) 양쪽에서 쓰고 테스트도 쉽다. (admin 대칭)
  */
+// 세션 해석기 — 검증된 Learner 세션 또는 null(게이팅 없음). API 라우트는 withLearner, RSC 는
+// requireLearnerPage(lib/route-guards)가 이걸 감싸 게이팅한다. (learner)/page.tsx 처럼 게이팅 없이
+// 익명/Learner 조건부 렌더에만 필요한 곳은 이 해석기를 직접 쓴다.
 export async function getLearnerSession(reqHeaders: Headers): Promise<LearnerSession | null> {
   const session = await auth.api.getSession({ headers: reqHeaders });
   return isLearner(session) ? (session as unknown as LearnerSession) : null;
-}
-
-/**
- * API 라우트용 — 검증된 Learner 면 learner_id(string), 아니면 401 Response. 호출부는
- * `const id = await requireLearner(req); if (id instanceof Response) return id;` 한 줄로 가드한다.
- * 5곳에 복붙됐던 401 을 한 주인으로 수렴한다(상태·본문·향후 감사/레이트리밋의 단일 정의).
- */
-export async function requireLearner(req: Request): Promise<string | Response> {
-  const session = await getLearnerSession(req.headers);
-  if (!session) return new Response("unauthorized", { status: 401 });
-  return session.user.id;
 }

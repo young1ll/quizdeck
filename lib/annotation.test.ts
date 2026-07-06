@@ -3,6 +3,7 @@ import {
   findAnnotationAt,
   makeAnchor,
   locateAnchor,
+  parseAnnotation,
   segmentText,
   toPlainText,
   type Annotation,
@@ -110,3 +111,36 @@ describe("segmentText", () => {
     expect(segments.some((s) => s.annotations.some((x) => x.id === "g"))).toBe(true);
   });
 });
+
+describe("parseAnnotation (경계 검증)", () => {
+  const valid = {
+    id: "a1",
+    qn: 3,
+    lang: "ko",
+    field: "q",
+    kind: "highlight",
+    memo: "메모",
+    anchor: { quote: "인용", prefix: "앞", suffix: "뒤" },
+  };
+
+  it("유효한 body 를 Annotation 으로 확정", () => {
+    expect(parseAnnotation(valid)).toEqual(valid);
+  });
+
+  it("memo 없으면 null 로 정규화", () => {
+    const { memo: _omit, ...noMemo } = valid;
+    expect(parseAnnotation(noMemo)?.memo).toBeNull();
+  });
+
+  it("kind 가 underline/highlight 아니면 null", () => {
+    expect(parseAnnotation({ ...valid, kind: "bold" })).toBeNull();
+  });
+
+  it("id·qn·lang·field·anchor 필드 하나라도 형태 어긋나면 null", () => {
+    expect(parseAnnotation({ ...valid, id: "" })).toBeNull();
+    expect(parseAnnotation({ ...valid, qn: 1.5 })).toBeNull();
+    expect(parseAnnotation({ ...valid, anchor: { quote: "q", prefix: "p" } })).toBeNull();
+    expect(parseAnnotation({ ...valid, memo: 5 })).toBeNull();
+    expect(parseAnnotation(null)).toBeNull();
+  });
+})

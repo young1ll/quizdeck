@@ -1,6 +1,5 @@
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { getAdminSession } from "@/lib/admin";
+import { requireAdminPage } from "@/lib/route-guards";
 import { loadExamLocalized } from "@/lib/content";
 import ContentEditor from "@/components/admin/ContentEditor";
 
@@ -14,7 +13,7 @@ export default async function AdminExamPage({
 }: {
   params: Promise<{ provider: string; exam: string }>;
 }) {
-  if (!(await getAdminSession(await headers()))) notFound();
+  await requireAdminPage();
   const { provider, exam } = await params;
   const data = await loadExamLocalized(provider, exam);
   if (!data) notFound();

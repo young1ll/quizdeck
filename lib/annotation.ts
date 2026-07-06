@@ -143,3 +143,41 @@ export function segmentText(plain: string, annotations: Annotation[]): SegmentRe
   }
   return { segments, orphans };
 }
+
+// 경계 검증 — API 라우트 body(unknown)를 Annotation 으로 확정하거나 null(파싱 실패). 순수·클라-안전이라
+// annotation-db(pg) 밖 이 도메인 모듈이 Annotation shape 를 소유한다(옛날엔 annotations/route 안
+// unexported 였다). 라우트는 이걸 import 해 null 이면 throw badRequest. SQL 은 파라미터화라 주입 불가 —
+// 형태(id·qn·lang·field·kind·memo·anchor)만 막는다.
+export function parseAnnotation(v: unknown): Annotation | null {
+  if (typeof v !== "object" || v === null) return null;
+  const o = v as Record<string, unknown>;
+  const anchor = o.anchor as Record<string, unknown> | null | undefined;
+  if (
+    typeof o.id !== "string" ||
+    !o.id ||
+    typeof o.qn !== "number" ||
+    !Number.isInteger(o.qn) ||
+    typeof o.lang !== "string" ||
+    !o.lang ||
+    typeof o.field !== "string" ||
+    !o.field ||
+    (o.kind !== "underline" && o.kind !== "highlight") ||
+    (o.memo != null && typeof o.memo !== "string") ||
+    typeof anchor !== "object" ||
+    anchor === null ||
+    typeof anchor.quote !== "string" ||
+    typeof anchor.prefix !== "string" ||
+    typeof anchor.suffix !== "string"
+  ) {
+    return null;
+  }
+  return {
+    id: o.id,
+    qn: o.qn,
+    lang: o.lang,
+    field: o.field,
+    kind: o.kind,
+    memo: (o.memo as string | undefined) ?? null,
+    anchor: { quote: anchor.quote, prefix: anchor.prefix, suffix: anchor.suffix },
+  };
+}
