@@ -3,6 +3,8 @@ import type { Concept, Question } from "./types";
 import {
   projectConcept,
   projectQuestion,
+  toConceptSlot,
+  toQuestionSlot,
   type LocalizedConcept,
   type LocalizedQuestion,
 } from "./content-localize";
@@ -59,15 +61,15 @@ export async function upsertQuestion(
   q: Question,
   lang: string,
 ): Promise<void> {
-  const { qn, answer, ...rest } = q;
-  const content = { [lang]: rest };
+  // 언어별 슬롯은 순수 역방향(toQuestionSlot)이 만든다 — 파생 topicId·미상 필드가 슬롯에 새지 않게.
+  const content = { [lang]: toQuestionSlot(q) };
   await pool.query(
     `insert into "question" ("exam_key", "qn", "answer", "content")
           values ($1, $2, $3, $4::jsonb)
      on conflict ("exam_key", "qn")
           do update set "answer" = excluded."answer",
                         "content" = "question"."content" || excluded."content"`,
-    [examKey, qn, answer, JSON.stringify(content)],
+    [examKey, q.qn, q.answer, JSON.stringify(content)],
   );
 }
 
@@ -80,14 +82,13 @@ export async function upsertConcept(
   lang: string,
   ord: number,
 ): Promise<void> {
-  const { svc, ...rest } = c;
-  const content = { [lang]: rest };
+  const content = { [lang]: toConceptSlot(c) };
   await pool.query(
     `insert into "concept" ("exam_key", "svc", "ord", "content")
           values ($1, $2, $3, $4::jsonb)
      on conflict ("exam_key", "svc")
           do update set "content" = "concept"."content" || excluded."content"`,
-    [examKey, svc, ord, JSON.stringify(content)],
+    [examKey, c.svc, ord, JSON.stringify(content)],
   );
 }
 
