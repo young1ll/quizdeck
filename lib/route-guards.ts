@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { getLearnerSession } from "./learner-server";
-import { getAdminSession, type AdminSession } from "./admin";
+import { getAdminSession, type AdminSession } from "./admin-server";
 import type { LearnerSession } from "./learner";
 
 // API/RSC 인가 seam (아키텍처 리뷰). "인증→거절+parse+error" 를 한 곳에. 옛날엔 라우트마다

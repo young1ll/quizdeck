@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { LuSettings } from "react-icons/lu";
 import { useSession } from "@/lib/auth-client";
-import { isAdminSession } from "@/lib/admin-role";
+import { isAdminSession } from "@/lib/admin";
 
 // /me 의 보조 admin 진입 (ADR-0012 결정 10). role=admin 일 때만 '어드민'(→ /admin 전체 목록)을 렌더하고,
 // 일반 Learner 엔 아무것도 안 보인다. 주 진입은 exam 맥락 헤더의 '이 시험 편집'(ExamHeaderBinder) — 여긴

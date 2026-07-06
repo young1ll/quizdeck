@@ -4,7 +4,7 @@ Status: accepted — 그릴링 2026-07-06 (아키텍처 리뷰 · 구현 `feat/r
 
 ## 맥락
 
-[[0003-auth-and-progress-sync.md|ADR-0003]]이 Route Handler(`app/api/*`)를 세우고, [[0004-login-gating-and-email-verification.md|ADR-0004]] 애던덤이 Learner 신원 경계를, [[0005-content-in-db-admin-i18n-annotations.md|ADR-0005]]이 admin 경계를 세웠다. 인증 **술어**는 클라-안전(`lib/learner`·`lib/admin-role`)/서버(`lib/learner-server`·`lib/admin`)로 잘 갈렸으나, 인증→거절+parse+error **envelope**은 라우트마다 재구현돼 있었다(아키텍처 리뷰 관찰):
+[[0003-auth-and-progress-sync.md|ADR-0003]]이 Route Handler(`app/api/*`)를 세우고, [[0004-login-gating-and-email-verification.md|ADR-0004]] 애던덤이 Learner 신원 경계를, [[0005-content-in-db-admin-i18n-annotations.md|ADR-0005]]이 admin 경계를 세웠다. 인증 **술어**는 클라-안전(`lib/learner`·`lib/admin`)/서버(`lib/learner-server`·`lib/admin-server`)로 잘 갈렸으나, 인증→거절+parse+error **envelope**은 라우트마다 재구현돼 있었다(아키텍처 리뷰 관찰):
 
 - **누출 union**: `requireLearner(req)`가 `string | Response`라 매 핸들러가 `const id = await requireLearner(req); if (id instanceof Response) return id;`로 unwrap(5곳). 가드를 빠뜨리면 `Response` 객체가 `learnerId`로 store 에 넘어가는 **컴파일-통과 auth 우회**다.
 - **비대칭**: `requireLearner`("5곳 401→1")의 딥닝이 admin 엔 없어, `getAdminSession`이 `null`을 반환하고 admin 라우트가 403을 재인라인(2곳)했다.
