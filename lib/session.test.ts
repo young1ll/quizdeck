@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { basePool, gradeAnswer, computeResult, currentView, resumeInfo } from "./session";
+import { basePool, gradeAnswer, computeResult, currentView, resumeInfo, topicsOf } from "./session";
 import { emptyProgress } from "./progress";
 import type { AnswerRec, SessionState, Store } from "./store";
 import type { Question } from "./types";
@@ -179,3 +179,37 @@ describe("resumeInfo (이어하기 요약)", () => {
     expect(resumeInfo(null)).toBeNull();
   });
 });
+
+describe("topicsOf / basePool 안정 topicId (아키텍처 리뷰 topic-id)", () => {
+  const qi = (qn: number, topic: string, topicId: string): Question => ({
+    qn,
+    topic,
+    topicId,
+    q: "",
+    options: {},
+    answer: [],
+  });
+
+  it("topicsOf — id=topicId·label=topic, 등장 순서 유지·id 중복 제거", () => {
+    const qs = [qi(1, "storage", "스토리지"), qi(2, "storage", "스토리지"), qi(3, "compute", "컴퓨팅")];
+    expect(topicsOf(qs)).toEqual([
+      { id: "스토리지", label: "storage" },
+      { id: "컴퓨팅", label: "compute" },
+    ]);
+  });
+
+  it("topicId 없으면 topic 으로 폴백(구 데이터·fixture)", () => {
+    expect(topicsOf([q(1, "a"), q(2, "b")])).toEqual([
+      { id: "a", label: "a" },
+      { id: "b", label: "b" },
+    ]);
+  });
+
+  it("basePool — 표시 topic 이 언어로 바뀌어도 topicId 로 필터하면 생존(버그 방지)", () => {
+    // 같은 문항이 en 표시에선 topic='storage'지만 안정 id='스토리지'(canonical). id 로 필터.
+    const qs = [qi(1, "storage", "스토리지"), qi(2, "compute", "컴퓨팅")];
+    expect(basePool(qs, "study", "스토리지", storeWith({})).map((d) => d.qn)).toEqual([1]);
+    // 지역화 표시 문자열로는 안 걸린다(id 로만).
+    expect(basePool(qs, "study", "storage", storeWith({})).map((d) => d.qn)).toEqual([]);
+  });
+})

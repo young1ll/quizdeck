@@ -8,6 +8,10 @@
 하나의 자격 시험(예: SAP-C02). 문항·개념·다이어그램을 묶는 범위(scope)이며, 학습 기록이 귀속되는 단위다.
 _Avoid_: test, quiz(quiz는 푸는 행위), course
 
+**Topic (주제)**:
+한 [[#Exam|Exam]] 안에서 문항을 묶는 주제 분류(예: '스토리지'·'비용 최적화'). **정체성과 라벨을 가른다** — 그룹·필터·per-topic 통계의 키는 **언어 무관 안정 id**(canonical 언어 슬롯의 topic 에서 파생)이고, 화면 **표시 라벨**은 지역화 텍스트라 언어 토글 시 바뀐다([[#Annotation|Annotation]]처럼 텍스트가 언어별). [[#Progress|Progress]]는 topic 을 저장하지 않고 문항→topic 을 매번 파생하므로(qn 이 정체성) 언어에 안전하다. 라벨을 키로 쓰면 언어 토글 시 필터가 비므로 **키는 반드시 id**.
+_Avoid_: category(개념의 cat 과 혼동), 지역화 라벨을 그룹/필터 키로 사용
+
 **Learner**:
 **이메일 검증을 마친** 인증 신원. 자신의 [[#Progress|Progress]]를 소유하고 기기를 가로질러 동기화한다. [[#익명 방문자|익명 방문자]]와 달리 **연습**([[#Session|Session]] 시작·Progress 기록)은 Learner만 할 수 있다. 가입했으나 이메일 미인증인 사용자는 **아직 Learner가 아니다**(인증 전엔 세션 없음). 한 Learner는 여러 Exam의 Progress를 가진다.
 _Avoid_: User(인증 자격/행 식별자일 뿐), Account(자격증명 묶음), member, 미인증 가입자

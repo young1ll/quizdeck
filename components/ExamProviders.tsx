@@ -62,7 +62,8 @@ export default function ExamProviders({
 
   // 현재 언어로 투영(qn·정답은 언어 무관 → Progress 는 토글 무영향).
   const examValue = useMemo(() => {
-    const questions = data.questions.map((q) => projectQuestion(q, lang));
+    // canonical = meta.language 슬롯 → 안정 topicId(언어 토글 불변). 표시 topic 은 현재 lang.
+    const questions = data.questions.map((q) => projectQuestion(q, lang, data.meta.language));
     const concepts = data.concepts.map((c) => projectConcept(c, lang));
     return {
       meta: data.meta,

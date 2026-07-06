@@ -126,14 +126,23 @@ export function computeResult(session: SessionState, byQn: Map<number, Question>
   return { okCount, total, pct: total ? Math.round((okCount / total) * 100) : 0, wrong, perTopic };
 }
 
-/** 데이터에 등장하는 주제 목록(등장 순서 유지) */
-export function topicsOf(questions: Question[]): string[] {
+export interface TopicOption {
+  id: string; // 안정 topicId(언어 무관) — 필터 value·조인 키
+  label: string; // 현재 언어 표시 라벨
+}
+
+/**
+ * 등장하는 주제 목록(등장 순서 유지) — 안정 id + 현재 언어 라벨. Setup 필터의 value 는 id 라, 언어
+ * 토글로 라벨이 바뀌어도 held 선택이 살아남는다(latent 빈-세션 버그 방지). topicId 없으면 topic 폴백.
+ */
+export function topicsOf(questions: Question[]): TopicOption[] {
   const seen = new Set<string>();
-  const out: string[] = [];
+  const out: TopicOption[] = [];
   for (const q of questions) {
-    if (!seen.has(q.topic)) {
-      seen.add(q.topic);
-      out.push(q.topic);
+    const id = q.topicId ?? q.topic;
+    if (!seen.has(id)) {
+      seen.add(id);
+      out.push({ id, label: q.topic });
     }
   }
   return out;
@@ -149,9 +158,11 @@ export function topicStat(
   questions: Question[],
   hist: Record<number, QHist>,
 ): Record<string, TopicStat> {
+  // 주제별 집계 — 매 렌더 재파생하는 표시용이라 현재 언어 라벨(d.topic)로 그룹(lazy-init). topicId 는
+  // held 필터(basePool)에만 필요하고 여기선 표시라 라벨 키가 맞다.
   const t: Record<string, TopicStat> = {};
-  for (const topic of topicsOf(questions)) t[topic] = { n: 0, seen: 0, ok: 0 };
   for (const d of questions) {
+    t[d.topic] = t[d.topic] ?? { n: 0, seen: 0, ok: 0 };
     t[d.topic].n++;
     const h = hist[d.qn];
     if (h) {
@@ -170,7 +181,8 @@ export function basePool(
   store: Store,
 ): Question[] {
   let p = questions.slice();
-  if (topic !== "all") p = p.filter((d) => d.topic === topic);
+  // 필터 값은 안정 topicId(Setup Selector value) — 언어 토글에도 held 선택이 맞는다. topicId 없으면 topic.
+  if (topic !== "all") p = p.filter((d) => (d.topicId ?? d.topic) === topic);
   if (mode === "wrong") p = p.filter((d) => store.wrong.includes(d.qn));
   if (mode === "star") p = p.filter((d) => store.stars.includes(d.qn));
   if (mode === "mine") {

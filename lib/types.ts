@@ -1,6 +1,13 @@
 export interface Question {
   qn: number;
+  /** 표시용 주제 라벨(현재 언어). 지역화 텍스트 — 언어 토글 시 바뀐다. UI 표시에만 쓴다. */
   topic: string;
+  /**
+   * 안정 주제 id(언어 무관) — 그룹/필터/조인 키. canonical(meta.language) 슬롯의 topic 에서 파생돼
+   * 언어 토글에도 불변이다(아키텍처 리뷰 topic-id). 없으면(fixture·구 데이터) 소비부가 topic 으로 폴백.
+   * topic 은 지역화 문자열이라 그 자체를 키로 쓰면 언어 토글 시 필터가 빈다(latent 버그)를 막는다.
+   */
+  topicId?: string;
   /** 시나리오 본문(마크다운). "(N개를 선택하세요)" 안내 포함 가능 */
   q: string;
   /** 보기: { "A": "텍스트", "B": "텍스트", ... } */
