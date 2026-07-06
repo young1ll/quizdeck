@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useExam } from "@/lib/exam-context";
 import { useQuizFlow } from "@/lib/quiz-flow-context";
 import { useSession } from "@/lib/auth-client";
-import { isAdminSession } from "@/lib/admin-role";
+import { isAdminSession } from "@/lib/admin";
 import { buildHeaderModel } from "@/lib/header-model";
 import { useSetHeaderSlot } from "@/lib/header-slot";
 

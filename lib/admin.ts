@@ -1,22 +1,20 @@
-import { auth } from "./auth";
-import { isAdminRole } from "./admin-role";
+// admin 권한 술어 — 순수(클라-안전) 절반 (ADR-0012 결정 10 / 아키텍처 리뷰 auth-coherence).
+// 서버 절반 lib/admin-server.ts(getAdminSession, auth=pg 의존)와 대칭이되, 이 술어는 클라(exam 맥락
+// 헤더의 '이 시험 편집'·/me 의 '어드민' 조건부 렌더)에서도 쓰여 서버 전용 lib/auth 를 끌면 클라 번들이
+// 깨진다. learner.ts(순수) / learner-server.ts(서버) 와 **정확히 같은 네이밍 규칙** — bare=순수,
+// -server=서버. 정규 규칙 = user.role 이 'admin' 포함(better-auth admin 플러그인 adminRoles 기본값 ["admin"]).
 
-// admin 권한 경계 — 서버 절반 (이슈 #27 / ADR-0005 B). /admin 페이지·콘텐츠 변경 API 가 공유한다.
-// better-auth admin 플러그인의 adminRoles 기본값은 ["admin"] — user.role 이 'admin' 이어야 통과.
-// 첫 admin 은 DB 에서 수동 지정한다(0004_admin.sql 주석). 순수 술어 isAdminRole 은 클라-안전
-// lib/admin-role 로 갈라 두고(ADR-0012 결정 10 — 맥락 헤더·/me 의 admin 진입 조건부 렌더) 재노출한다.
-export { isAdminRole } from "./admin-role";
-
-export interface AdminSession {
-  user: { id: string; email: string; name?: string | null; role?: string | null };
+/** role 문자열이 admin 을 포함하는가. 단일 role 이 기본이나 콤마 다중 role 도 안전 처리. */
+export function isAdminRole(role: string | null | undefined): boolean {
+  return !!role && role.split(",").map((r) => r.trim()).includes("admin");
 }
 
 /**
- * 요청 헤더에서 세션을 해석해 admin 이면 반환, 아니면 null. 헤더 주입식이라 Route Handler
- * (`req.headers`)와 Server Component(`await headers()`) 양쪽에서 쓰고 테스트도 쉽다.
+ * 세션이 admin 의 것인가. 순수 — 클라(useSession)·서버(getSession) 가 공유한다. 클라 세션 타입엔 role 이
+ * 안 실려(admin 플러그인 미타이핑) 있으나 런타임엔 있으므로 unknown 으로 받아 내부에서 좁힌다.
  */
-export async function getAdminSession(reqHeaders: Headers): Promise<AdminSession | null> {
-  const session = await auth.api.getSession({ headers: reqHeaders });
-  const role = (session?.user as { role?: string | null } | undefined)?.role;
-  return session && isAdminRole(role) ? (session as unknown as AdminSession) : null;
+export function isAdminSession(session: unknown): boolean {
+  const role = (session as { user?: { role?: string | null } | null } | null | undefined)?.user
+    ?.role;
+  return isAdminRole(role);
 }
