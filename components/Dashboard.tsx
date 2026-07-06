@@ -32,7 +32,7 @@ export default function Dashboard({
       ) : (
         <>
           <div className="grid grid-cols-4 gap-2 text-center">
-            <StatTile b={data.totalExams} s="학습 시험" className="py-2" />
+            <StatTile b={data.totalExams} s="학습 시험" className="border border-[var(--border)] py-2.5" />
             <StatTile
               b={
                 <span className="inline-flex items-center justify-center gap-0.5">
@@ -41,10 +41,10 @@ export default function Dashboard({
                 </span>
               }
               s="연속일"
-              className="py-2"
+              className="border border-[var(--border)] py-2.5"
             />
-            <StatTile b={data.totalSeen} s="학습 문항" className="py-2" />
-            <StatTile b={data.totalMine} s="내 문제함" className="py-2" />
+            <StatTile b={data.totalSeen} s="학습 문항" className="border border-[var(--border)] py-2.5" />
+            <StatTile b={data.totalMine} s="내 문제함" className="border border-[var(--border)] py-2.5" />
           </div>
           <ul className="mt-4 space-y-2">
             {data.exams.map((e) => {
