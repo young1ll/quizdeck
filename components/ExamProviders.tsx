@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ExamContext, useExam } from "@/lib/exam-context";
-import { StoreContext, useStoreState, type Mode } from "@/lib/store";
+import { StoreContext, useStoreState } from "@/lib/store";
 import { NavContext } from "@/lib/nav-context";
-import { QuizFlowContext, type QuizPhase } from "@/lib/quiz-flow-context";
-import { useQuizController } from "@/lib/use-quiz";
+import { QuizFlowContext } from "@/lib/quiz-flow-context";
+import { useExamFlow } from "@/lib/use-exam-flow";
+import { usePracticeGate } from "@/lib/use-practice-gate";
 import { LangContext } from "@/lib/lang-context";
 import { AnnotationContext, useAnnotationState } from "@/lib/annotation-context";
 import {
@@ -16,7 +17,7 @@ import {
 } from "@/lib/content-localize";
 import { topicsOf } from "@/lib/session";
 import { useSession } from "@/lib/auth-client";
-import { isLearner, learnerId } from "@/lib/learner";
+import { learnerId } from "@/lib/learner";
 import { localStorageProgressStore } from "@/lib/progress-store";
 import { compositeProgressStore } from "@/lib/progress-store-composite";
 import { remoteApiProgressStore } from "@/lib/progress-store-remote";
@@ -95,34 +96,9 @@ export default function ExamProviders({
   const storeCtx = useStoreState(examKey, store);
   const annoCtx = useAnnotationState(examKey, id);
 
-  // 연습 게이트 — verified Learner 면 즉시 실행, 익명이면 로그인 모달 띄우고 보류(전환 유도, ADR-0004).
-  const learner = isLearner(session);
-  const [gateOpen, setGateOpen] = useState(false);
-  const pending = useRef<(() => void) | null>(null);
-  const requireLearner = useCallback(
-    (action: () => void) => {
-      if (learner) {
-        action();
-        return;
-      }
-      pending.current = action;
-      setGateOpen(true);
-    },
-    [learner],
-  );
-  // 로그인 성공 → 보류한 연습 액션 재개(모달 닫기). 신규 가입은 세션이 없어 보류 유지.
-  useEffect(() => {
-    if (learner && gateOpen) {
-      const a = pending.current;
-      pending.current = null;
-      setGateOpen(false);
-      a?.();
-    }
-  }, [learner, gateOpen]);
-  const closeGate = useCallback(() => {
-    pending.current = null;
-    setGateOpen(false);
-  }, []);
+  // 연습 게이트 (ADR-0004) — verified Learner 면 즉시 실행, 익명이면 로그인 모달 띄우고 보류(전환 유도).
+  // 로직(pending·resume-after-login)은 usePracticeGate 심에 있고 여기선 모달만 렌더한다.
+  const { requireLearner, gateOpen, closeGate } = usePracticeGate(session);
 
   // 퀴즈 플로·nav 는 StoreContext **안쪽**의 ExamQuizFlow 가 제공한다 — useQuizController 가 useStore 를
   // 쓰는데, 그 Provider 를 이 컴포넌트가 렌더하므로 같은 본문에서 호출하면 컨텍스트가 아직 없다(슬라이스 B2).
@@ -150,8 +126,9 @@ export default function ExamProviders({
 }
 
 // 퀴즈 플로 + cross-route nav (ADR-0010 슬라이스 B2). StoreContext·ExamContext **안쪽**이라
-// useQuizController(→ useStore)·useExam 이 동작한다 — 컨트롤러·phase 를 라우트를 가로질러 유지하고
-// 허브·/quiz·studyOne 이 한 컨트롤러를 공유한다. 게이트(requireLearner)는 상위에서 받는다.
+// useExamFlow(→ useQuizController → useStore)·useExam 이 동작한다 — 컨트롤러·phase 를 라우트를 가로질러
+// 유지하고 허브·/quiz·studyOne 이 한 컨트롤러를 공유한다. 오케스트레이션(phase·컨트롤러·라우팅)은
+// useExamFlow 심에 있고 여기선 useExam 읽기 + router.push 주입 + provider 중첩만 한다. 게이트는 상위에서 받는다.
 function ExamQuizFlow({
   requireLearner,
   children,
@@ -161,58 +138,8 @@ function ExamQuizFlow({
 }) {
   const { questions, byQn, meta } = useExam();
   const router = useRouter();
-  const base = `/${meta.provider}/${meta.slug}`;
-
-  // 콜백은 phase 로 전환, 중단/복귀는 라우팅으로: onResult→결과, onHome(quit)→허브, goQuiz→active.
-  const [phase, setPhase] = useState<QuizPhase>("setup");
-  const [setupMode, setSetupMode] = useState<Mode>("study");
-  const onResult = useCallback(() => setPhase("result"), []);
-  const onHome = useCallback(() => {
-    setPhase("setup");
-    router.push(base);
-  }, [router, base]);
-  const goQuiz = useCallback(() => setPhase("active"), []);
-  const quiz = useQuizController(questions, byQn, onResult, onHome, goQuiz);
-
-  const quizFlow = useMemo(
-    () => ({
-      quiz,
-      phase,
-      setupMode,
-      // 허브: 모드 시작 — 게이트 후 setup 단계로 /quiz 진입.
-      startMode: (mode: Mode) =>
-        requireLearner(() => {
-          setSetupMode(mode);
-          setPhase("setup");
-          router.push(`${base}/quiz`);
-        }),
-      // 허브: 진행 중 세션 이어하기 → goQuiz(active) + /quiz.
-      resume: () =>
-        requireLearner(() => {
-          quiz.resume();
-          router.push(`${base}/quiz`);
-        }),
-      discard: () => quiz.discard(),
-      // /quiz: 허브 복귀(setup 취소·결과 홈).
-      goHub: () => router.push(base),
-    }),
-    [quiz, phase, setupMode, requireLearner, router, base],
-  );
-
-  // cross-route nav — studyOne 은 게이트 후 컨트롤러로 바로 띄우고 /quiz 로(B2), openConceptFor 는 개념 라우트로.
-  const nav = useMemo(
-    () => ({
-      requireLearner,
-      studyOne: (qn: number) =>
-        requireLearner(() => {
-          quiz.studyOne(qn);
-          router.push(`${base}/quiz`);
-        }),
-      openConceptFor: (svc: string) =>
-        router.push(`${base}/concepts?seed=${encodeURIComponent(svc)}`),
-    }),
-    [requireLearner, quiz, router, base],
-  );
+  const navigate = useCallback((path: string) => router.push(path), [router]);
+  const { quizFlow, nav } = useExamFlow({ questions, byQn, meta, requireLearner, navigate });
 
   return (
     <NavContext.Provider value={nav}>
