@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { StoreContext, useStoreState } from "./store";
+import { StoreContext, useStore, useStoreState } from "./store";
 import { inMemoryProgressStore } from "./progress-store";
 import { useQuizController } from "./use-quiz";
 import type { Question } from "./types";
@@ -102,5 +102,35 @@ describe("useQuizController — exam 모드 (reducer shell)", () => {
     expect(result.current.result?.total).toBe(2);
     expect(result.current.result?.okCount).toBe(1);
     expect(result.current.result?.wrong.map((w) => w.qn)).toEqual([2]);
+  });
+});
+
+describe("useQuizController — exam persist elapsed 회귀", () => {
+  // exam 플레이 중 persist 가 store.active 에 **현재 경과를 스탬프**해야, 리로드 후 resume 이 타이머를
+  // 리셋하지 않는다. 버그 전엔 persist 가 elapsed:0 그대로 저장 → resume(start=now-0)=타이머 전체 리셋.
+  function renderWithActive() {
+    const store = inMemoryProgressStore();
+    const wrapper = ({ children }: { children: React.ReactNode }) => {
+      const ctx = useStoreState("test/x", store, () => 1000);
+      return <StoreContext.Provider value={ctx}>{children}</StoreContext.Provider>;
+    };
+    return renderHook(
+      () => {
+        const quiz = useQuizController(questions, byQn, vi.fn(), vi.fn(), vi.fn());
+        return { quiz, active: useStore().store.active };
+      },
+      { wrapper },
+    );
+  }
+
+  it("exam persist 가 경과를 스탬프한다(elapsed:0 리셋 버그)", () => {
+    const T0 = 1_700_000_000_000;
+    const now = vi.spyOn(Date, "now").mockReturnValue(T0);
+    const { result } = renderWithActive();
+    act(() => void result.current.quiz.start("exam", { ...OPTS, examMin: 60 }));
+    now.mockReturnValue(T0 + 130_000); // 130초 경과
+    act(() => result.current.quiz.select("A", false)); // persist
+    expect(result.current.active?.elapsed).toBe(130); // 버그 전엔 0
+    now.mockRestore();
   });
 });

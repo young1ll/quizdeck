@@ -80,8 +80,14 @@ export function useQuizController(
     return next;
   }, []);
 
-  // 진행 중 세션 영속(store.active).
-  const persist = useCallback((s: SessionState) => setActive(s), [setActive]);
+  // 진행 중 세션 영속(store.active). exam 이면 현재 경과(elapsed)를 스탬프한다 — 안 하면 store.active 가
+  // elapsed:0 인 채 저장돼, 리로드 후 resume 이 start=now-0 으로 **타이머를 전체 리셋**한다(잠복 버그).
+  // 스탬프하면 store.active 가 항상 현재 경과를 담아 resume 이 남은 시간을 정확히 복원한다. 비시험은 타이머
+  // 없음(경과 무의미). now 는 shell 이 주입(stampElapsed 는 순수).
+  const persist = useCallback(
+    (s: SessionState) => setActive(s.exam ? stampElapsed(s, Date.now()) : s),
+    [setActive],
+  );
 
   // ── 세션 시작 ──────────────────────────────────────────────
   const start = useCallback(
