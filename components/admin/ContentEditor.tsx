@@ -14,6 +14,7 @@ import {
   type LocalizedConcept,
   type LocalizedQuestion,
 } from "@/lib/content-localize";
+import { parseContentCommand, type ContentCommand } from "@/lib/content-command";
 import { Button } from "@/components/ui/Button";
 import { Msg } from "@/components/ui/Msg";
 
@@ -24,7 +25,7 @@ import { Msg } from "@/components/ui/Msg";
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const SUPPORTED_LANGS = ["ko", "en"]; // 편집 가능 언어(슬롯이 없으면 새로 채운다)
 
-function putContent(body: unknown) {
+function putContent(body: ContentCommand) {
   return fetch(`${BASE_PATH}/api/admin/content`, {
     method: "PUT",
     headers: { "content-type": "application/json" },
@@ -32,7 +33,7 @@ function putContent(body: unknown) {
     body: JSON.stringify(body),
   });
 }
-function delContent(body: unknown) {
+function delContent(body: ContentCommand) {
   return fetch(`${BASE_PATH}/api/admin/content`, {
     method: "DELETE",
     headers: { "content-type": "application/json" },
@@ -108,8 +109,21 @@ function QuestionsPanel({
   const save = async () => {
     if (!draft) return;
     setErr(null);
+    // 전송 전 서버와 **같은** parseContentCommand 로 셀프 프리플라이트 — 정답 ⊂ options 등 위반을
+    // 라운드트립 없이 인라인 표시(서버 검증은 그대로 authority).
+    const cmd = {
+      kind: "upsert-question",
+      examKey,
+      lang: editLang,
+      question: draft,
+    } satisfies ContentCommand;
+    const check = parseContentCommand(cmd);
+    if ("error" in check) {
+      setErr(check.error);
+      return;
+    }
     setBusy(true);
-    const res = await putContent({ type: "question", examKey, lang: editLang, question: draft });
+    const res = await putContent(cmd);
     setBusy(false);
     if (!res.ok) {
       setErr(`저장 실패 (${res.status}) ${await res.text()}`);
@@ -130,7 +144,7 @@ function QuestionsPanel({
   const remove = async (qn: number) => {
     if (!confirm(`문항 ${qn} 을 삭제할까요? (모든 언어)`)) return;
     setBusy(true);
-    const res = await delContent({ type: "question", examKey, qn });
+    const res = await delContent({ kind: "delete-question", examKey, qn });
     setBusy(false);
     if (res.ok) setItems((prev) => prev.filter((i) => i.qn !== qn));
   };
@@ -273,10 +287,23 @@ function ConceptsPanel({
   const save = async () => {
     if (!draft) return;
     setErr(null);
-    setBusy(true);
     const idx = items.findIndex((c) => c.svc === draft.svc);
     const ord = idx >= 0 ? idx : items.length; // 기존은 위치 보존(서버가 ord 보존), 신규는 끝에
-    const res = await putContent({ type: "concept", examKey, lang: editLang, ord, concept: draft });
+    // 전송 전 서버와 **같은** parseContentCommand 로 셀프 프리플라이트(서버 검증은 그대로 authority).
+    const cmd = {
+      kind: "upsert-concept",
+      examKey,
+      lang: editLang,
+      ord,
+      concept: draft,
+    } satisfies ContentCommand;
+    const check = parseContentCommand(cmd);
+    if ("error" in check) {
+      setErr(check.error);
+      return;
+    }
+    setBusy(true);
+    const res = await putContent(cmd);
     setBusy(false);
     if (!res.ok) {
       setErr(`저장 실패 (${res.status}) ${await res.text()}`);
@@ -295,7 +322,7 @@ function ConceptsPanel({
   const remove = async (svc: string) => {
     if (!confirm(`개념 "${svc}" 을 삭제할까요? (모든 언어)`)) return;
     setBusy(true);
-    const res = await delContent({ type: "concept", examKey, svc });
+    const res = await delContent({ kind: "delete-concept", examKey, svc });
     setBusy(false);
     if (res.ok) setItems((prev) => prev.filter((c) => c.svc !== svc));
   };
