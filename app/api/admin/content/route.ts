@@ -1,18 +1,14 @@
 import { revalidatePath } from "next/cache";
 import { pool } from "@/lib/db";
 import { withAdmin, readJson, badRequest, noContent } from "@/lib/route-guards";
-import { isValidQuestion, isValidConcept } from "@/lib/content-validate";
-import {
-  upsertQuestion,
-  upsertConcept,
-  deleteQuestion,
-  deleteConcept,
-} from "@/lib/content-db";
+import { parseContentCommand } from "@/lib/content-command";
+import { upsertQuestion, upsertConcept, deleteQuestion, deleteConcept } from "@/lib/content-db";
 
-// 콘텐츠 변경 API (이슈 #27 / ADR-0005 B). withAdmin 이 admin role 만 통과시킨다(미인증·비admin 균일 403
-// — 관리 표면 존재를 안 드러냄, progress 의 401 과 의도적 차이). 저장/삭제 후 해당 Exam 경로를
-// revalidatePath 로 무효화해 ISR 캐시를 즉시 갱신(편집 즉시반영). 경계 검증(정답 ⊂ options 등)은
-// lib/content-validate(순수 도메인)가 소유 — DB 없이 테스트되고 ContentEditor 도 재사용 가능.
+// 콘텐츠 변경 API (이슈 #27 / ADR-0005 B · 아키텍처 리뷰 C1). withAdmin 이 admin role 만 통과시킨다
+// (미인증·비admin 균일 403 — 관리 표면 존재를 안 드러냄, progress 의 401 과 의도적 차이). 봉투 decode·
+// 검증(정답 ⊂ options 등)은 parseContentCommand(순수·클라-safe)가 소유 — route 는 인가 + parse +
+// dispatch 만 남는 선형 핸들러다(kind 로 op·entity 를 함께 좁혀 delete kind 가 PUT 에 오면 400).
+// 저장/삭제 후 해당 Exam 경로를 revalidatePath 로 무효화해 ISR 캐시를 즉시 갱신(편집 즉시반영).
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -24,42 +20,33 @@ function revalidateExam(examKey: string): void {
 }
 
 export const PUT = withAdmin(async (req) => {
-  const b = await readJson(req);
-  const { examKey, lang, type } = b;
-  if (typeof examKey !== "string" || !examKey || typeof lang !== "string" || !lang) {
-    throw badRequest("examKey/lang required");
-  }
+  const cmd = parseContentCommand(await readJson(req));
+  if ("error" in cmd) throw badRequest(cmd.error);
 
-  if (type === "question") {
-    if (!isValidQuestion(b.question)) throw badRequest("invalid question (정답 ⊂ options·필수 필드 확인)");
-    await upsertQuestion(pool, examKey, b.question, lang);
-  } else if (type === "concept") {
-    if (typeof b.ord !== "number") throw badRequest("ord required");
-    if (!isValidConcept(b.concept)) throw badRequest("invalid concept (필수 필드 확인)");
-    await upsertConcept(pool, examKey, b.concept, lang, b.ord);
+  if (cmd.kind === "upsert-question") {
+    await upsertQuestion(pool, cmd.examKey, cmd.question, cmd.lang);
+  } else if (cmd.kind === "upsert-concept") {
+    await upsertConcept(pool, cmd.examKey, cmd.concept, cmd.lang, cmd.ord);
   } else {
-    throw badRequest("unknown type");
+    throw badRequest("method/op mismatch"); // delete kind 가 PUT 으로 옴
   }
 
-  revalidateExam(examKey);
+  revalidateExam(cmd.examKey);
   return noContent();
 });
 
 export const DELETE = withAdmin(async (req) => {
-  const b = await readJson(req);
-  const { examKey, type } = b;
-  if (typeof examKey !== "string" || !examKey) throw badRequest("examKey required");
+  const cmd = parseContentCommand(await readJson(req));
+  if ("error" in cmd) throw badRequest(cmd.error);
 
-  if (type === "question") {
-    if (typeof b.qn !== "number") throw badRequest("qn required");
-    await deleteQuestion(pool, examKey, b.qn);
-  } else if (type === "concept") {
-    if (typeof b.svc !== "string" || !b.svc) throw badRequest("svc required");
-    await deleteConcept(pool, examKey, b.svc);
+  if (cmd.kind === "delete-question") {
+    await deleteQuestion(pool, cmd.examKey, cmd.qn);
+  } else if (cmd.kind === "delete-concept") {
+    await deleteConcept(pool, cmd.examKey, cmd.svc);
   } else {
-    throw badRequest("unknown type");
+    throw badRequest("method/op mismatch"); // upsert kind 가 DELETE 로 옴
   }
 
-  revalidateExam(examKey);
+  revalidateExam(cmd.examKey);
   return noContent();
 });
