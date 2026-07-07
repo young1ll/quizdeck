@@ -1,11 +1,20 @@
-@import "tailwindcss";
+/* astryx 공식 Tailwind 통합 (ADR-0014 애던덤 · 캐스케이드 리뷰) — 레이어 순서를 **명시 선언**해
+   utilities 를 마지막에 둔다. Tailwind 를 theme/preflight/utilities 로 분리 import 하고 그 사이에
+   astryx(reset → astryx-base → astryx-theme)를 끼운다. astryx reset 은 `:where()` 제로 특이도라,
+   레이어 순서만 바로잡으면(utilities 가 뒤 = 이김) Tailwind border/margin 유틸이 문서대로 동작한다 —
+   이전의 !important·html 접두어 **재타겟 파일이 통째로 불필요**해진다(삭제됨).
+   Bridge(tailwind-theme.css)는 생략: quizdeck 는 브랜드 토큰(:root + @theme inline)을 SSOT 로 쓰고
+   astryx 시맨틱 토큰 이름(bg-surface 등)을 안 쓴다 — Bridge 의 --color-accent 재정의가 브랜드와 충돌.
+   과거 `@import "tailwindcss"` 는 theme/base/components/utilities 를 먼저 선언 → astryx 레이어가
+   utilities 뒤에 붙어(레이어 순서 > 특이도) 제로특이도 reset 이 유틸을 이겨 죽던 것이 근본 원인. */
+@layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
 
-/* astryx 디자인 시스템 (ADR-0014 Phase 0) — 레이어 캐스케이드: reset(@layer reset) → astryx.css
-   (@layer astryx-base) → theme.css(@layer astryx-theme). Tailwind v4 유틸이 위에서 override 가능한지
-   Phase 0 에서 검증. 지금은 neutral 테마 그대로(브랜드 토큰 매핑은 다음 스텝). */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
 @import "@astryxdesign/core/reset.css";
 @import "@astryxdesign/core/astryx.css";
 @import "@astryxdesign/theme-neutral/theme.css";
+@import "tailwindcss/utilities.css" layer(utilities);
 
 :root {
   --bg: #0f1419;
@@ -106,11 +115,11 @@ body {
   }
 }
 
-/* Card 강조 테두리 (A3) — astryx Card 기본 테두리는 astryx 레이어/StyleX 라, Tailwind utilities
-   (@layer utilities, 캐스케이드에서 astryx 뒤 레이어보다 약함)로는 못 이긴다 — 라이브에서
-   border-[var(--accent)]/40·hover:border-accent 강조가 **죽어 있던**(회색으로 렌더) 원인.
-   unlayered(모든 @layer 보다 강함) + `.astryx-card` 결합 특이도로 확실히 이긴다. ui/Card 어댑터의
-   emphasis/interactive intent 가 이 클래스를 건다(Tailwind arbitrary override 제거 → 룩이 우리 CSS 로 흐름). */
+/* Card 강조 테두리 (A3) — astryx Card 에는 **강조 테두리 prop 이 없다**(CardVariant 는 배경 union
+   default·muted·blue… 만, 닫힌 union 이라 Button 처럼 커스텀 variant 로 흘릴 수도 없음). accent/warn
+   call-out 테두리를 여기 전용 CSS 심(seam)으로 둔다. unlayered 라 모든 @layer(astryx-theme 의 Card
+   기본 테두리 포함)를 이겨 레이어 순서와 무관하게 권위를 유지한다. ui/Card 어댑터의 emphasis/
+   interactive intent 가 이 클래스를 건다 — 룩이 한 곳(우리 CSS)으로 흐른다. */
 .astryx-card.card-emph-accent {
   border-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
@@ -123,57 +132,6 @@ body {
 .astryx-card.card-interactive:hover {
   border-color: var(--accent);
 }
-
-/* Tailwind border 유틸 복원 (아키텍처 리뷰 border-cascade) — astryx reset(@layer)이 border-width·
-   border-color 를 이겨 Tailwind `border`/`border-[color]`(@layer utilities)가 라이브에서 **전부 죽어**
-   있었다(border-[var] 30여곳: 오답 카드·세션 히스토리·admin 구분선·폼 divider 등이 안 보임 — 위
-   .astryx-card 강조와 같은 트랩). **!important 필수**: unlayered 규칙만으론 prod 빌드의 Lightning CSS 가
-   Tailwind 의 동일한 `.border{border-width:1px}`(utilities)와 dedup·병합해 unlayered 이점을 날려
-   layered 로 편입 → astryx 가 다시 이겨 라이브에서만 죽는다(dev 는 미압축이라 됨 — 함정). !important 는
-   dedup 대상 아니고 레이어 무관 승리. border-0/none/반응형 border-width 변형이 없어 안전. box-border. */
-.border { border-width: 1px !important; }
-.border-0 { border-width: 0 !important; }
-.border-2 { border-width: 2px !important; }
-.border-t { border-top-width: 1px !important; }
-.border-b { border-bottom-width: 1px !important; }
-.border-l { border-left-width: 1px !important; }
-.border-r { border-right-width: 1px !important; }
-.border-\[var\(--border\)\] { border-color: var(--border) !important; }
-.border-\[var\(--accent\)\] { border-color: var(--accent) !important; }
-.border-\[var\(--bad\)\] { border-color: var(--bad) !important; }
-.border-\[var\(--warn\)\] { border-color: var(--warn) !important; }
-.border-\[var\(--good\)\] { border-color: var(--good) !important; }
-/* 인터랙티브 카드 hover 강조 테두리(plain div, 11곳) — hover 색 변형도 astryx 에 죽으므로 재타겟.
-   base 색보다 이기게 hover 도 !important(둘 다 important 면 :hover 특이도로 hover 우선). */
-.hover\:border-\[var\(--accent\)\]:hover { border-color: var(--accent) !important; }
-
-/* Tailwind margin 유틸 복원 (아키텍처 리뷰 border-cascade 의 margin 버전) — astryx reset(@layer)이
-   `h1-h6/p/ul/ol/li{margin:0}` **요소 셀렉터**로 Tailwind `mt-*`/`mb-*`/`space-y-*`(@layer utilities)를
-   이겨, **제목·목록·문단의 여백이 죽는다**(div 는 요소 리셋 대상 아니라 무영향). 학습현황 카드의
-   `<h2 mb-3>`·`<ul mt-4>` 가 0px 로 붙던 원인. border 와 같은 !important 재타겟(prod dedup 회피 + 레이어
-   승리). 현재 코드에 쓰인 값 집합 — 새 값을 요소에 쓰면 여기 추가.
-   **`html ` 접두어 필수**: `.mb-3{...!important}` 처럼 Tailwind 와 동일 셀렉터+속성이면 CI 의 Lightning CSS
-   가 병합·드롭한다(로컬 빌드는 유지·라이브만 죽음 — 함정). `html .mb-3`(descendant 결합자)는 Tailwind
-   `.mb-3` 와 다른 셀렉터라 병합 불가 + 특이도(0,1,1)로 astryx 요소 리셋을 이긴다. */
-html .mt-1 { margin-top: 0.25rem !important; }
-html .mt-2 { margin-top: 0.5rem !important; }
-html .mt-3 { margin-top: 0.75rem !important; }
-html .mt-4 { margin-top: 1rem !important; }
-html .mt-5 { margin-top: 1.25rem !important; }
-html .mt-6 { margin-top: 1.5rem !important; }
-html .mt-8 { margin-top: 2rem !important; }
-html .mb-1 { margin-bottom: 0.25rem !important; }
-html .mb-2 { margin-bottom: 0.5rem !important; }
-html .mb-3 { margin-bottom: 0.75rem !important; }
-html .mb-4 { margin-bottom: 1rem !important; }
-html .mb-6 { margin-bottom: 1.5rem !important; }
-/* space-y 는 비마지막 자식의 margin-block-end — ul>li 등 요소 자식이면 li 리셋에 죽으므로 재타겟. */
-.space-y-1 > :not(:last-child) { margin-block-end: 0.25rem !important; }
-.space-y-2 > :not(:last-child) { margin-block-end: 0.5rem !important; }
-.space-y-3 > :not(:last-child) { margin-block-end: 0.75rem !important; }
-.space-y-4 > :not(:last-child) { margin-block-end: 1rem !important; }
-.space-y-5 > :not(:last-child) { margin-block-end: 1.25rem !important; }
-.space-y-6 > :not(:last-child) { margin-block-end: 1.5rem !important; }
 
 /* PDF 인쇄 영역 — 화면 숨김, 인쇄 시 본문 대체 */
 #printarea {
