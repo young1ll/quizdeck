@@ -77,17 +77,17 @@ describe.skipIf(!hasDb)("/api/admin/content (admin authz + mutation, 실 postgre
   });
 
   it("미인증·비admin 의 PUT 은 403 (콘텐츠 변경 구조적 차단)", async () => {
-    const anon = await PUT(req("PUT", { type: "question", examKey, lang: "ko", question: validQ }));
+    const anon = await PUT(req("PUT", { kind: "upsert-question", examKey, lang: "ko", question: validQ }));
     expect(anon.status).toBe(403);
     const nonAdmin = await PUT(
-      req("PUT", { type: "question", examKey, lang: "ko", question: validQ }, userCookie),
+      req("PUT", { kind: "upsert-question", examKey, lang: "ko", question: validQ }, userCookie),
     );
     expect(nonAdmin.status).toBe(403);
   });
 
   it("admin 의 유효 PUT 은 204 + DB 반영", async () => {
     const res = await PUT(
-      req("PUT", { type: "question", examKey, lang: "ko", question: validQ }, adminCookie),
+      req("PUT", { kind: "upsert-question", examKey, lang: "ko", question: validQ }, adminCookie),
     );
     expect(res.status).toBe(204);
     const got = await loadQuestionsFromDb(pool, examKey, "ko");
@@ -97,16 +97,16 @@ describe.skipIf(!hasDb)("/api/admin/content (admin authz + mutation, 실 postgre
   it("정답이 options 에 없으면 400", async () => {
     const badQ = { ...validQ, answer: ["Z"] }; // Z ∉ options
     const res = await PUT(
-      req("PUT", { type: "question", examKey, lang: "ko", question: badQ }, adminCookie),
+      req("PUT", { kind: "upsert-question", examKey, lang: "ko", question: badQ }, adminCookie),
     );
     expect(res.status).toBe(400);
   });
 
   it("admin 의 DELETE 은 204 + 제거, 비admin 은 403", async () => {
-    const forbidden = await DELETE(req("DELETE", { type: "question", examKey, qn: 1 }, userCookie));
+    const forbidden = await DELETE(req("DELETE", { kind: "delete-question", examKey, qn: 1 }, userCookie));
     expect(forbidden.status).toBe(403);
 
-    const ok = await DELETE(req("DELETE", { type: "question", examKey, qn: 1 }, adminCookie));
+    const ok = await DELETE(req("DELETE", { kind: "delete-question", examKey, qn: 1 }, adminCookie));
     expect(ok.status).toBe(204);
     const got = await loadQuestionsFromDb(pool, examKey, "ko");
     expect(got.find((q) => q.qn === 1)).toBeUndefined();
