@@ -88,7 +88,10 @@ export default function Stats() {
 
       {/* 숙련도 + 통계 — astryx Card. 도넛(conic-gradient)·StatTile 유지, 일일목표는 ProgressBar. */}
       <Card padding={5}>
-        <div className="flex items-center gap-5">
+        {/* 도넛 + 통계 — 좁은 화면(모바일)은 세로 스택(도넛 위·그리드 full-width)이라 분수 값/라벨이
+            안 눌린다. sm+ 는 가로 배치(도넛 옆 3열). grid flex-1 을 항상 가로로 두면 좁은 폭에서 타일이
+            ~35px 로 짜부라져 "320/647"·라벨이 스필/세로붕괴됨(카드 내부 콘텐츠 겹침). */}
+        <div className="flex flex-col items-center gap-5 sm:flex-row">
           <div
             className="grid h-24 w-24 shrink-0 place-items-center rounded-full"
             style={{
@@ -99,7 +102,7 @@ export default function Stats() {
               {view.mastery}%
             </div>
           </div>
-          <div className="grid flex-1 grid-cols-3 gap-3 text-center">
+          <div className="grid w-full grid-cols-3 gap-3 text-center sm:w-auto sm:flex-1">
             <StatTile b={`${view.seen}/${total}`} s="학습 문항" />
             <StatTile b={`${view.accuracy}%`} s="정답률" />
             <StatTile b={view.wrong} s="오답" />
