@@ -83,3 +83,24 @@ describe("useQuizController — study 플로 오케스트레이션", () => {
     expect(result.current.current?.qn).toBe(2);
   });
 });
+
+describe("useQuizController — exam 모드 (reducer shell)", () => {
+  it("start(exam): timeLeft=limit, current.exam", () => {
+    const { result } = renderController();
+    act(() => void result.current.start("exam", { ...OPTS, examMin: 60 }));
+    expect(result.current.current?.exam).toBe(true);
+    expect(result.current.timeLeft).toBe(60 * 60); // limit 초
+  });
+
+  it("finishExam: 미응답 포함 전체 채점 → result (q1 정답·q2 미응답=오답)", () => {
+    const { result, onResult } = renderController();
+    act(() => void result.current.start("exam", { ...OPTS, examMin: 60 }));
+    // 시험은 제출 없이 select 만 — finishExam 이 일괄 채점. q1=정답 선택, q2=미응답.
+    act(() => result.current.select("A", false));
+    act(() => result.current.finishExam());
+    expect(onResult).toHaveBeenCalled();
+    expect(result.current.result?.total).toBe(2);
+    expect(result.current.result?.okCount).toBe(1);
+    expect(result.current.result?.wrong.map((w) => w.qn)).toEqual([2]);
+  });
+});

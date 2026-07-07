@@ -12,7 +12,8 @@ import {
   type CurrentView,
   type QuizResult,
 } from "./session";
-import type { Mode, SessionState, StoreContext as _ } from "./store";
+import { sessionReducer, stampElapsed, type SessionAction } from "./session-reducer";
+import type { Mode, SessionState } from "./store";
 import { useStore } from "./store";
 
 // 결과 뷰모델 — 세션 결과 집계(computeResult, 순수)에 mode·exam·소요시간을 얹은 것. 컨트롤러가 finish 시
@@ -51,6 +52,10 @@ export interface QuizController {
   toggleFlag: () => void;
 }
 
+// 퀴즈 컨트롤러 — imperative shell (아키텍처 리뷰). 상태 전이는 순수 sessionReducer 가 하고(결정적·단독
+// 테스트), 이 훅은 shell 로서 불순물(store 읽기·basePool/shuffle/rng·Date.now)을 해결해 액션 데이터로
+// 주입하고, 전이 결과에 부작용(영속·recordResult·pushSession·타이머·콜백)을 엮는다. 공개 인터페이스는
+// 불변(QuizController) — 소비자(Quiz·Result·useExamFlow)는 이 변경을 못 느낀다.
 export function useQuizController(
   questions: Question[],
   byQn: Map<number, Question>,
@@ -67,14 +72,16 @@ export function useQuizController(
   const resultRef = useRef<ResultView | null>(null);
   resultRef.current = result;
 
-  // store가 늦게 로드돼도 active를 메모리 세션과 동기화하진 않음(명시적 resume만)
-  const persist = useCallback(
-    (s: SessionState) => {
-      setSession({ ...s });
-      setActive(s);
-    },
-    [setActive],
-  );
+  // reducer 로 상태 전이 후 setSession — 순수 core 를 훅에 잇는 dispatch. next 를 반환해 호출부가 부작용
+  // (영속·콜백)에 쓴다. sessRef 로 최신 상태를 읽는다. no-op 전이면 reducer 가 같은 참조를 돌려준다.
+  const dispatch = useCallback((action: SessionAction): SessionState | null => {
+    const next = sessionReducer(sessRef.current, action);
+    setSession(next);
+    return next;
+  }, []);
+
+  // 진행 중 세션 영속(store.active).
+  const persist = useCallback((s: SessionState) => setActive(s), [setActive]);
 
   // ── 세션 시작 ──────────────────────────────────────────────
   const start = useCallback(
@@ -87,53 +94,40 @@ export function useQuizController(
       const n = Math.max(1, Math.min(opts.count || 20, p.length));
       p = p.slice(0, n);
       const exam = mode === "exam";
-      const s: SessionState = {
+      const limit = exam ? (opts.examMin || 180) * 60 : undefined;
+      const next = dispatch({
+        type: "start",
         queue: p.map((d) => d.qn),
-        idx: 0,
         mode,
         exam,
-        answers: {},
-        flags: [],
-        start: Date.now(),
-        elapsed: 0,
-        ...(exam ? { limit: (opts.examMin || 180) * 60 } : {}),
-      };
-      persist(s);
-      if (exam) setTimeLeft(s.limit ?? null);
+        limit,
+        now: Date.now(),
+      });
+      if (next) persist(next);
+      if (exam) setTimeLeft(limit ?? null);
       goQuiz();
       return true;
     },
-    [questions, store, persist, goQuiz],
+    [questions, store, dispatch, persist, goQuiz],
   );
 
   const studyOne = useCallback(
     (qn: number) => {
-      const s: SessionState = {
-        queue: [qn],
-        idx: 0,
-        mode: "study",
-        exam: false,
-        answers: {},
-        flags: [],
-        start: Date.now(),
-        elapsed: 0,
-      };
-      setActive(null);
-      setSession(s);
+      dispatch({ type: "studyOne", qn, now: Date.now() });
+      setActive(null); // 일회성 학습 — store.active 로 영속하지 않는다
       setTimeLeft(null);
       goQuiz();
     },
-    [setActive, goQuiz],
+    [dispatch, setActive, goQuiz],
   );
 
   const resume = useCallback(() => {
     const a = store.active;
     if (!a) return;
-    const s: SessionState = { ...a, start: Date.now() - (a.elapsed || 0) * 1000 };
-    setSession(s);
-    if (s.exam && s.limit) setTimeLeft(s.limit - (a.elapsed || 0));
+    const next = dispatch({ type: "resume", active: a, now: Date.now() });
+    if (next?.exam && next.limit) setTimeLeft(next.limit - (a.elapsed || 0));
     goQuiz();
-  }, [store.active, goQuiz]);
+  }, [store.active, dispatch, goQuiz]);
 
   const discard = useCallback(() => {
     setActive(null);
@@ -141,10 +135,7 @@ export function useQuizController(
 
   const quit = useCallback(() => {
     const s = sessRef.current;
-    if (s) {
-      const el = Math.round((Date.now() - s.start) / 1000);
-      setActive({ ...s, elapsed: el });
-    }
+    if (s) setActive(stampElapsed(s, Date.now()));
     setTimeLeft(null);
     onHome();
   }, [setActive, onHome]);
@@ -152,21 +143,10 @@ export function useQuizController(
   // ── 선택/제출 ──────────────────────────────────────────────
   const select = useCallback(
     (k: string, multi: boolean) => {
-      const s = sessRef.current;
-      if (!s) return;
-      const qn = s.queue[s.idx];
-      // 비시험에서 이미 채점된 문항은 변경 불가
-      if (!s.exam && s.answers[qn]?.ok !== undefined) return;
-      const cur = s.answers[qn]?.sel ?? [];
-      let sel: string[];
-      if (multi) sel = cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k];
-      else sel = [k];
-      const answers = { ...s.answers, [qn]: { ...s.answers[qn], sel } };
-      const ns = { ...s, answers };
-      if (s.exam) persist(ns);
-      else setSession(ns);
+      const next = dispatch({ type: "select", key: k, multi });
+      if (next?.exam) persist(next); // 시험만 즉시 영속(비시험은 메모리)
     },
-    [persist],
+    [dispatch, persist],
   );
 
   const submit = useCallback(() => {
@@ -174,21 +154,20 @@ export function useQuizController(
     if (!s) return;
     const qn = s.queue[s.idx];
     const d = byQn.get(qn)!;
-    const sel = s.answers[qn]?.sel ?? [];
-    if (!sel.length) return;
-    const ok = setsEqual(sel, d.answer);
-    const answers = { ...s.answers, [qn]: { sel, ok } };
-    recordResult(qn, sel, ok);
-    persist({ ...s, answers });
-  }, [byQn, recordResult, persist]);
+    const next = dispatch({ type: "submit", answer: d.answer });
+    if (!next || next === s) return; // 미선택 no-op
+    const a = next.answers[qn];
+    recordResult(qn, a.sel, a.ok!);
+    persist(next);
+  }, [byQn, dispatch, recordResult, persist]);
 
   const goIdx = useCallback(
     (i: number) => {
-      const s = sessRef.current;
-      if (!s || i < 0 || i >= s.queue.length) return;
-      persist({ ...s, idx: i });
+      const before = sessRef.current;
+      const next = dispatch({ type: "navTo", idx: i });
+      if (next && next !== before) persist(next);
     },
-    [persist],
+    [dispatch, persist],
   );
 
   // ── 결과 집계 ──────────────────────────────────────────────
@@ -221,8 +200,7 @@ export function useQuizController(
     // 미응답 포함 전체 채점 + 이력 기록
     s.queue.forEach((qn) => {
       const d = byQn.get(qn)!;
-      const a = s.answers[qn];
-      const sel = a?.sel ?? [];
+      const sel = s.answers[qn]?.sel ?? [];
       const ok = setsEqual(sel, d.answer);
       recordResult(qn, sel, ok);
     });
@@ -232,42 +210,32 @@ export function useQuizController(
   const next = useCallback(() => {
     const s = sessRef.current;
     if (!s) return;
-    if (s.idx < s.queue.length - 1) goIdx(s.idx + 1);
-    else if (!s.exam) doFinish();
-  }, [goIdx, doFinish]);
+    if (s.idx < s.queue.length - 1) {
+      const n = dispatch({ type: "next" });
+      if (n && n !== s) persist(n);
+    } else if (!s.exam) doFinish();
+  }, [dispatch, persist, doFinish]);
 
   const prev = useCallback(() => {
     const s = sessRef.current;
-    if (s) goIdx(s.idx - 1);
-  }, [goIdx]);
+    if (!s) return;
+    const n = dispatch({ type: "prev" });
+    if (n && n !== s) persist(n);
+  }, [dispatch, persist]);
 
   const retryWrong = useCallback(() => {
     const w = resultRef.current?.wrong.map((x) => x.qn) ?? [];
     if (!w.length) return;
-    const ns: SessionState = {
-      queue: shuffle(w),
-      idx: 0,
-      mode: "wrong",
-      exam: false,
-      answers: {},
-      flags: [],
-      start: Date.now(),
-      elapsed: 0,
-    };
-    persist(ns);
+    const next = dispatch({ type: "retryWrong", queue: shuffle(w), now: Date.now() });
+    if (next) persist(next);
     goQuiz();
-  }, [persist, goQuiz]);
+  }, [dispatch, persist, goQuiz]);
 
   const toggleFlag = useCallback(() => {
-    const s = sessRef.current;
-    if (!s) return;
-    const flags = [...s.flags];
-    const qn = s.queue[s.idx];
-    const i = flags.indexOf(qn);
-    if (i < 0) flags.push(qn);
-    else flags.splice(i, 1);
-    persist({ ...s, flags });
-  }, [persist]);
+    const before = sessRef.current;
+    const next = dispatch({ type: "toggleFlag" });
+    if (next && next !== before) persist(next);
+  }, [dispatch, persist]);
 
   // ── 시험 타이머 ────────────────────────────────────────────
   useEffect(() => {
