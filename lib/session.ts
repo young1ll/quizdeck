@@ -213,14 +213,3 @@ export function smartOrder(
     .sort((a, b) => a[0] - b[0] || a[1] - b[1])
     .map((x) => x[2]);
 }
-
-/** 문항의 보기 표시 순서(셔플 여부에 따라) */
-export function dispOrder(
-  options: Record<string, string>,
-  shuffleOn: boolean,
-  cached?: string[],
-): string[] {
-  const keys = Object.keys(options).sort();
-  if (!shuffleOn) return keys;
-  return cached ?? shuffle(keys);
-}
