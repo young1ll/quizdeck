@@ -127,22 +127,25 @@ body {
 /* Tailwind border 유틸 복원 (아키텍처 리뷰 border-cascade) — astryx reset(@layer)이 border-width·
    border-color 를 이겨 Tailwind `border`/`border-[color]`(@layer utilities)가 라이브에서 **전부 죽어**
    있었다(border-[var] 30여곳: 오답 카드·세션 히스토리·admin 구분선·폼 divider 등이 안 보임 — 위
-   .astryx-card 강조와 같은 트랩). unlayered(모든 @layer 를 이김)로 Tailwind 클래스를 재타겟해 호출부
-   무수정으로 복원한다. width·style·color 를 함께 되살린다. */
-.border { border-width: 1px; }
-.border-0 { border-width: 0; }
-.border-2 { border-width: 2px; }
-.border-t { border-top-width: 1px; }
-.border-b { border-bottom-width: 1px; }
-.border-l { border-left-width: 1px; }
-.border-r { border-right-width: 1px; }
-.border-\[var\(--border\)\] { border-color: var(--border); }
-.border-\[var\(--accent\)\] { border-color: var(--accent); }
-.border-\[var\(--bad\)\] { border-color: var(--bad); }
-.border-\[var\(--warn\)\] { border-color: var(--warn); }
-.border-\[var\(--good\)\] { border-color: var(--good); }
-/* 인터랙티브 카드 hover 강조 테두리(plain div, 11곳) — hover 색 변형도 astryx 에 죽으므로 재타겟. */
-.hover\:border-\[var\(--accent\)\]:hover { border-color: var(--accent); }
+   .astryx-card 강조와 같은 트랩). **!important 필수**: unlayered 규칙만으론 prod 빌드의 Lightning CSS 가
+   Tailwind 의 동일한 `.border{border-width:1px}`(utilities)와 dedup·병합해 unlayered 이점을 날려
+   layered 로 편입 → astryx 가 다시 이겨 라이브에서만 죽는다(dev 는 미압축이라 됨 — 함정). !important 는
+   dedup 대상 아니고 레이어 무관 승리. border-0/none/반응형 border-width 변형이 없어 안전. box-border. */
+.border { border-width: 1px !important; }
+.border-0 { border-width: 0 !important; }
+.border-2 { border-width: 2px !important; }
+.border-t { border-top-width: 1px !important; }
+.border-b { border-bottom-width: 1px !important; }
+.border-l { border-left-width: 1px !important; }
+.border-r { border-right-width: 1px !important; }
+.border-\[var\(--border\)\] { border-color: var(--border) !important; }
+.border-\[var\(--accent\)\] { border-color: var(--accent) !important; }
+.border-\[var\(--bad\)\] { border-color: var(--bad) !important; }
+.border-\[var\(--warn\)\] { border-color: var(--warn) !important; }
+.border-\[var\(--good\)\] { border-color: var(--good) !important; }
+/* 인터랙티브 카드 hover 강조 테두리(plain div, 11곳) — hover 색 변형도 astryx 에 죽으므로 재타겟.
+   base 색보다 이기게 hover 도 !important(둘 다 important 면 :hover 특이도로 hover 우선). */
+.hover\:border-\[var\(--accent\)\]:hover { border-color: var(--accent) !important; }
 
 /* PDF 인쇄 영역 — 화면 숨김, 인쇄 시 본문 대체 */
 #printarea {
