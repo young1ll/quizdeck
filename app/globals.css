@@ -151,19 +151,22 @@ body {
    `h1-h6/p/ul/ol/li{margin:0}` **요소 셀렉터**로 Tailwind `mt-*`/`mb-*`/`space-y-*`(@layer utilities)를
    이겨, **제목·목록·문단의 여백이 죽는다**(div 는 요소 리셋 대상 아니라 무영향). 학습현황 카드의
    `<h2 mb-3>`·`<ul mt-4>` 가 0px 로 붙던 원인. border 와 같은 !important 재타겟(prod dedup 회피 + 레이어
-   승리). 현재 코드에 쓰인 값 집합 — 새 값을 요소에 쓰면 여기 추가. */
-.mt-1 { margin-top: 0.25rem !important; }
-.mt-2 { margin-top: 0.5rem !important; }
-.mt-3 { margin-top: 0.75rem !important; }
-.mt-4 { margin-top: 1rem !important; }
-.mt-5 { margin-top: 1.25rem !important; }
-.mt-6 { margin-top: 1.5rem !important; }
-.mt-8 { margin-top: 2rem !important; }
-.mb-1 { margin-bottom: 0.25rem !important; }
-.mb-2 { margin-bottom: 0.5rem !important; }
-.mb-3 { margin-bottom: 0.75rem !important; }
-.mb-4 { margin-bottom: 1rem !important; }
-.mb-6 { margin-bottom: 1.5rem !important; }
+   승리). 현재 코드에 쓰인 값 집합 — 새 값을 요소에 쓰면 여기 추가.
+   **`html ` 접두어 필수**: `.mb-3{...!important}` 처럼 Tailwind 와 동일 셀렉터+속성이면 CI 의 Lightning CSS
+   가 병합·드롭한다(로컬 빌드는 유지·라이브만 죽음 — 함정). `html .mb-3`(descendant 결합자)는 Tailwind
+   `.mb-3` 와 다른 셀렉터라 병합 불가 + 특이도(0,1,1)로 astryx 요소 리셋을 이긴다. */
+html .mt-1 { margin-top: 0.25rem !important; }
+html .mt-2 { margin-top: 0.5rem !important; }
+html .mt-3 { margin-top: 0.75rem !important; }
+html .mt-4 { margin-top: 1rem !important; }
+html .mt-5 { margin-top: 1.25rem !important; }
+html .mt-6 { margin-top: 1.5rem !important; }
+html .mt-8 { margin-top: 2rem !important; }
+html .mb-1 { margin-bottom: 0.25rem !important; }
+html .mb-2 { margin-bottom: 0.5rem !important; }
+html .mb-3 { margin-bottom: 0.75rem !important; }
+html .mb-4 { margin-bottom: 1rem !important; }
+html .mb-6 { margin-bottom: 1.5rem !important; }
 /* space-y 는 비마지막 자식의 margin-block-end — ul>li 등 요소 자식이면 li 리셋에 죽으므로 재타겟. */
 .space-y-1 > :not(:last-child) { margin-block-end: 0.25rem !important; }
 .space-y-2 > :not(:last-child) { margin-block-end: 0.5rem !important; }
