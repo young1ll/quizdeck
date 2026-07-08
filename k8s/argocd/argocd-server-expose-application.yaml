@@ -1,0 +1,24 @@
+# ArgoCD 가 자기 UI 노출(IngressRoute)을 GitOps 로 관리하는 Application (ADR-0020).
+#
+# 범위는 IngressRoute *하나*로 의도적으로 좁다. argocd-cmd-params-cm(server.insecure)·Traefik
+# certresolver 같은 Argo/클러스터 자기-파라미터는 여기서 관리하지 않는다 — Argo 가 자기 server
+# 설정을 sync/prune 하면 self-lockout footgun 이라 명령형 bootstrap 으로 뺐다(README 참조).
+# cloudflared 가 별도 Application 인 선례와 정합(k8s/argocd/cloudflared-application.yaml).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-server-expose
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/young1ll/quizdeck.git
+    targetRevision: main
+    path: k8s/argocd-server
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
