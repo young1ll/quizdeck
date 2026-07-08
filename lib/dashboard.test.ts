@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { buildDashboard, examStat, overallStreak } from "./dashboard";
+import {
+  buildDashboard,
+  examStat,
+  overallStreak,
+  activeExamStats,
+  buildContinueList,
+} from "./dashboard";
 import { emptyProgress, type Progress, type QHist } from "./progress";
+import type { ExamSummary } from "./types";
 
 const h = (over: Partial<QHist>): QHist => ({
   seen: 1,
@@ -114,5 +121,75 @@ describe("buildDashboard", () => {
   it("기록이 전혀 없으면 빈 대시보드", () => {
     const d = buildDashboard([], {}, "2026-06-29");
     expect(d).toMatchObject({ exams: [], totalExams: 0, streak: 0, totalSeen: 0 });
+  });
+});
+
+describe("activeExamStats", () => {
+  const mk = (over: Partial<Progress>): Progress => ({ ...emptyProgress(), ...over });
+  it("활동 Exam 만 최근활동 desc(streak·today 무관)", () => {
+    const rows = [
+      { examKey: "aws/a", snapshot: mk({ hist: { 1: h({}) }, days: { "2026-06-27": 1 } }) },
+      { examKey: "aws/b", snapshot: mk({ hist: { 1: h({}) }, days: { "2026-06-29": 1 } }) },
+      { examKey: "aws/c", snapshot: emptyProgress() }, // 활동 없음 → 제외
+    ];
+    expect(
+      activeExamStats(rows, { "aws/a": 5, "aws/b": 5, "aws/c": 5 }).map((e) => e.examKey),
+    ).toEqual(["aws/b", "aws/a"]);
+  });
+});
+
+describe("buildContinueList", () => {
+  const mk = (over: Partial<Progress>): Progress => ({ ...emptyProgress(), ...over });
+  const ex = (provider: string, slug: string, questionCount = 5): ExamSummary => ({
+    provider,
+    providerName: provider.toUpperCase(),
+    slug,
+    code: `${slug}-CODE`,
+    name: `${slug} name`,
+    questionCount,
+  });
+  const exams: ExamSummary[] = [ex("aws", "a"), ex("aws", "b"), ex("aws", "c")];
+  const active = (day: string) => mk({ hist: { 1: h({}) }, days: { [day]: 1 } });
+
+  it("활동 Exam 을 최근순으로 exam 메타와 함께 싣는다", () => {
+    const rows = [
+      { examKey: "aws/a", snapshot: active("2026-06-27") },
+      { examKey: "aws/b", snapshot: active("2026-06-29") },
+    ];
+    const cont = buildContinueList(rows, exams, 3);
+    expect(cont.map((c) => c.exam.slug)).toEqual(["b", "a"]); // 최근순
+    expect(cont[0].exam.code).toBe("b-CODE"); // 메타 조인
+  });
+
+  it("max 로 자른다", () => {
+    const rows = [
+      { examKey: "aws/a", snapshot: active("2026-06-27") },
+      { examKey: "aws/b", snapshot: active("2026-06-29") },
+    ];
+    expect(buildContinueList(rows, exams, 1).map((c) => c.exam.slug)).toEqual(["b"]);
+  });
+
+  it("카탈로그에 없는 examKey 는 걸러낸다", () => {
+    const rows = [{ examKey: "aws/gone", snapshot: active("2026-06-29") }];
+    expect(buildContinueList(rows, exams, 3)).toEqual([]);
+  });
+
+  it("활동 없는 Exam·빈 rows 는 재개 없음", () => {
+    expect(buildContinueList([], exams, 3)).toEqual([]);
+    expect(buildContinueList([{ examKey: "aws/a", snapshot: emptyProgress() }], exams, 3)).toEqual(
+      [],
+    );
+  });
+
+  it("mastery·mine 을 examStat 정의대로 싣는다", () => {
+    const rows = [
+      {
+        examKey: "aws/a",
+        snapshot: mk({ hist: { 1: h({ last: "O" }) }, wrong: [2], stars: [3], days: { "2026-06-29": 1 } }),
+      },
+    ];
+    const [c] = buildContinueList(rows, exams, 3);
+    expect(c.mastery).toBe(20); // last O 1개 / total 5
+    expect(c.mine).toBe(2); // 오답{2}∪별표{3}
   });
 });
