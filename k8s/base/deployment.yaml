@@ -92,13 +92,27 @@ spec:
                   name: quizdeck-auth
                   key: NAVER_CLIENT_SECRET
                   optional: true
+          # readiness — 앱이 요청 수용 준비됐음(ADR-0018). DB 무관: 공유 외부 DB 로 트래픽을 게이팅하면
+          # replicas:1 에서 DB 순단이 전면 503 이 되고 롤아웃을 wedge 한다. trailingSlash:true 라 슬래시 포함.
+          # 롤아웃 순서 불변식: probe 경로는 현재 도는 이미지에 존재해야 한다. /api/ready 를 도입하는 이
+          # 배포에선 구 이미지가 아직 돌 수 있으므로 readiness 를 구·신 공통 /api/health/ 에 둔다. 새 이미지가
+          # 라이브로 확인된 뒤 후속 커밋에서 /api/ready/ 로 옮긴다(구 이미지엔 /api/ready 부재→404→전면 503).
           readinessProbe:
-            # /api/health/ — Route Handler 토대 증명. trailingSlash:true 라 슬래시 포함이 곧장 200.
             httpGet:
               path: /api/health/
               port: 3000
             initialDelaySeconds: 5
             periodSeconds: 10
+          # liveness — 프로세스 생존만 본다(true hang/deadlock 에만 재시작). DB 무관이라 DB 순단으로
+          # 절대 재시작 안 됨(캐스케이드 방지). replicas:1 이라 flapping·불필요 재시작을 막게 관용
+          # (period 20·failureThreshold 3 ≈ 60s hang 이어야 재시작). Docker HEALTHCHECK 도 /api/health/ 를 문다.
+          livenessProbe:
+            httpGet:
+              path: /api/health/
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            failureThreshold: 3
           resources:
             requests:
               cpu: 50m

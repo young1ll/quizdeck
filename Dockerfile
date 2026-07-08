@@ -24,6 +24,10 @@ RUN addgroup -S nodejs -g 1001 && adduser -S nextjs -u 1001 -G nodejs
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 USER nextjs
+# 배포 sha — CI 가 --build-arg GIT_SHA 로 이미지 태그를 주입하고 /api/health·/api/status 가 노출한다
+# (ADR-0018). runtime 스테이지 끝(무거운 build·COPY 뒤)에 둬 sha 변경이 상위 레이어 캐시를 깨지 않게 한다.
+ARG GIT_SHA=unknown
+ENV BUILD_SHA=$GIT_SHA
 EXPOSE 3000
 # 127.0.0.1 명시 — 서버는 IPv4 0.0.0.0 바인딩이라 localhost(::1) 해석 모호성 회피.
 # trailingSlash:true 이므로 슬래시 포함 경로가 308 없이 곧장 200 을 준다.

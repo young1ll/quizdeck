@@ -51,6 +51,10 @@ jobs:
           tags: |
             ghcr.io/young1ll/quizdeck:${{ steps.meta.outputs.tag }}
             ghcr.io/young1ll/quizdeck:latest
+          # 런타임이 자기 sha 를 알도록 주입 — /api/health·/api/status 가 노출(ADR-0018). .git 은
+          # dockerignore 라 이미지 안에서 git 을 못 읽으므로 빌드 인자로 넣는다.
+          build-args: |
+            GIT_SHA=${{ steps.meta.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
