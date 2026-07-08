@@ -5,6 +5,8 @@
 // Secret/env로 주입한다([[k8s/base/README.md]]). 빌드 시점(env 없음)엔 import만으론 아무 일도
 // 안 일어난다 — 해석/발송은 호출 시점에만.
 
+import { log } from "./log";
+
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 const APP = "QuizDeck";
 
@@ -91,9 +93,12 @@ export async function sendEmail(
     if (env.NODE_ENV === "production") {
       throw new Error(`[email] 누락된 환경변수: ${cfg.missing.join(", ")}`);
     }
-    console.warn(
-      `[email:dev] 발송 건너뜀(${cfg.missing.join(", ")} 없음) → to=${msg.to} | ${msg.subject}\n${msg.text}`,
-    );
+    log.warn("email dev 발송 건너뜀", {
+      missing: cfg.missing,
+      to: msg.to,
+      subject: msg.subject,
+      text: msg.text,
+    });
     return;
   }
 

@@ -3,6 +3,7 @@ import { jwt, admin, genericOAuth } from "better-auth/plugins";
 import { passkey } from "@better-auth/passkey";
 import { dash } from "@better-auth/infra";
 import { pool } from "./db";
+import { log } from "./log";
 import { resolveAuthConfig } from "./auth-config";
 import { naverGenericOAuth } from "./auth-naver";
 import { sendEmail, verificationEmail, resetPasswordEmail } from "./email";
@@ -31,9 +32,7 @@ const naverPlugins = cfg.social.naver
 if (cfg.missing.length > 0) {
   // 빌드 시점(컨테이너 빌드엔 env 없음)엔 정상 — 런타임 요청에서 명확히 실패한다.
   // 런타임(k8s)에선 Secret 주입으로 채워진다.
-  console.warn(
-    `[auth] 누락된 환경변수: ${cfg.missing.join(", ")} — 주입 전까지 인증이 동작하지 않는다.`,
-  );
+  log.warn("auth 환경변수 누락 — 주입 전까지 인증 미동작", { missing: cfg.missing });
 }
 
 export const auth = betterAuth({

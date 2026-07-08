@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { getLearnerSession } from "./learner-server";
 import { getAdminSession, type AdminSession } from "./admin-server";
 import type { LearnerSession } from "./learner";
+import { log } from "./log";
 
 // API/RSC 인가 seam (아키텍처 리뷰). "인증→거절+parse+error" 를 한 곳에. 옛날엔 라우트마다
 // `requireLearner(req)` 의 string|Response 유니온을 `if (x instanceof Response) return x` 로 unwrap(5×)
@@ -43,6 +44,9 @@ export function withLearner(handler: LearnerHandler): (req: Request) => Promise<
       return await handler(req, session.user.id);
     } catch (e) {
       if (e instanceof Response) return e;
+      // 예상 밖 예외(DB 장애·버그)는 여기서만 남는다 — 지금껏 침묵하던 500 에 구조화 로그를 준다
+      // (기대된 실패는 Response 로 throw 돼 위에서 반환되므로 노이즈 없음). 아키텍처 리뷰 후보 B.
+      log.error("api 핸들러 예외", { method: req.method, path: new URL(req.url).pathname, err: e });
       throw e;
     }
   };
@@ -57,6 +61,9 @@ export function withAdmin(handler: AdminHandler): (req: Request) => Promise<Resp
       return await handler(req, admin);
     } catch (e) {
       if (e instanceof Response) return e;
+      // 예상 밖 예외(DB 장애·버그)는 여기서만 남는다 — 지금껏 침묵하던 500 에 구조화 로그를 준다
+      // (기대된 실패는 Response 로 throw 돼 위에서 반환되므로 노이즈 없음). 아키텍처 리뷰 후보 B.
+      log.error("api 핸들러 예외", { method: req.method, path: new URL(req.url).pathname, err: e });
       throw e;
     }
   };
