@@ -94,12 +94,11 @@ spec:
                   optional: true
           # readiness — 앱이 요청 수용 준비됐음(ADR-0018). DB 무관: 공유 외부 DB 로 트래픽을 게이팅하면
           # replicas:1 에서 DB 순단이 전면 503 이 되고 롤아웃을 wedge 한다. trailingSlash:true 라 슬래시 포함.
-          # 롤아웃 순서 불변식: probe 경로는 현재 도는 이미지에 존재해야 한다. /api/ready 를 도입하는 이
-          # 배포에선 구 이미지가 아직 돌 수 있으므로 readiness 를 구·신 공통 /api/health/ 에 둔다. 새 이미지가
-          # 라이브로 확인된 뒤 후속 커밋에서 /api/ready/ 로 옮긴다(구 이미지엔 /api/ready 부재→404→전면 503).
+          # 롤아웃 2단계(2026-07-08): sha-7f786a5(=/api/ready 도입 이미지)가 라이브 확인돼 /api/health/
+          # 에서 /api/ready/ 로 이동 — 도는 이미지에 경로가 존재하므로 안전(순서 불변식 충족).
           readinessProbe:
             httpGet:
-              path: /api/health/
+              path: /api/ready/
               port: 3000
             initialDelaySeconds: 5
             periodSeconds: 10
