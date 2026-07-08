@@ -18,7 +18,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // 인프라 링크 — admin 전용(requireAdminPage 뒤)이라 노출 안전(단순 하이퍼링크, 시크릿 없음). 대상
-// 쪽 자체 인증. 새 탭으로 연다. dash=사용자 관리 위임처(ADR-0017).
+// 쪽 자체 인증. 새 탭으로 연다. dash=사용자 관리 위임처(ADR-0017). 배포 조망은 CI(GitHub Actions)+
+// CD(ArgoCD) 정본 도구를 링크한다 — 인앱 대시보드를 짓지 않는다(ADR-0020). argocd 는 Tailscale
+// tailnet 전용이라 오프-넷 기기에선 안 열림(의도된 인바운드 0).
 const INFRA: { label: string; desc: string; href: string }[] = [
   {
     label: "Better Auth 대시보드",
@@ -27,8 +29,13 @@ const INFRA: { label: string; desc: string; href: string }[] = [
   },
   {
     label: "GitHub 저장소 · Actions",
-    desc: "소스·CI·배포(GitOps)·PR",
+    desc: "소스·CI(Actions)·PR",
     href: "https://github.com/young1ll/quizdeck",
+  },
+  {
+    label: "ArgoCD · 배포(CD)",
+    desc: "sync·롤아웃·롤백·health (Tailscale 전용)",
+    href: "https://argocd.myquizdeck.com",
   },
   { label: "Resend 이메일", desc: "인증·재설정 메일 전송 로그", href: "https://resend.com/emails" },
   { label: "Health · 상태", desc: "라이브 상태 확인", href: "https://myquizdeck.com/api/health" },
