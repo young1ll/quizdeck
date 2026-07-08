@@ -9,8 +9,7 @@ import { Container } from "@/components/ui/Container";
 import { getLearnerSession } from "@/lib/learner-server";
 import { pool } from "@/lib/db";
 import { loadAllProgress } from "@/lib/progress-db";
-import { buildDashboard } from "@/lib/dashboard";
-import { today } from "@/lib/dates";
+import { buildContinueList, type ContinueItem } from "@/lib/dashboard";
 
 // Home — 재개(act) (ADR-0012 결정 2·3). 로그인 Learner 엔 상단 "이어서 학습"(Progress 기반 최근 시험,
 // cross-device 일관, 최대 3) + 카탈로그, 익명엔 카탈로그만. 진도 스코프 사다리의 재개 지점 — 숫자는
@@ -33,20 +32,12 @@ export default async function Home() {
   }
 
   // 로그인 Learner — 최근 학습한 시험(Progress 기반) 이어서 카드. 익명은 세션 없음 → 카탈로그만.
+  // 재개 결정(어떤 시험·Mastery·내 문제함 수)은 buildContinueList(순수·핀됨)가 소유(아키텍처 리뷰 C3).
   const session = await getLearnerSession(await headers());
-  const metaByKey = new Map(exams.map((e) => [`${e.provider}/${e.slug}`, e]));
-  type Cont = { exam: (typeof exams)[number]; mastery: number; mine: number };
-  let cont: Cont[] = [];
+  let cont: ContinueItem[] = [];
   if (session) {
     const rows = await loadAllProgress(pool, session.user.id);
-    const totalByKey: Record<string, number> = {};
-    for (const e of exams) totalByKey[`${e.provider}/${e.slug}`] = e.questionCount;
-    const dash = buildDashboard(rows, totalByKey, today());
-    // mine = 내 문제함(오답∪별표∪메모) 크기 — dashboard 가 시험별로 이미 집계(ADR-0011).
-    cont = dash.exams
-      .slice(0, MAX_CONTINUE)
-      .map((s) => ({ exam: metaByKey.get(s.examKey), mastery: s.mastery, mine: s.mine }))
-      .filter((x): x is Cont => !!x.exam);
+    cont = buildContinueList(rows, exams, MAX_CONTINUE);
   }
 
   return (
