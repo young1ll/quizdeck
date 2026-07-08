@@ -65,7 +65,10 @@ jobs:
       #     추월된 것 → 배포 스킵. 더 최신 run 이 상위 이미지를 배포하므로 다운그레이드·중복 롤아웃 방지.
       #  2) push 가 동시성으로 거부(non-fast-forward)되면 최신 main 에 리베이스 후 재시도.
       #     newTag 같은 줄을 더 최신 배포가 이미 바꿔 충돌나면 = 그 배포가 우선이므로 깨끗이 스킵.
+      # deployed 출력 — 이 빌드가 실제로 태그를 push 해 배포했는지(true) vs 추월·무변경·충돌로 스킵(false).
+      # 롤아웃 게이트가 이 값으로 조건 실행돼, 추월된 구 sha 를 기다리다 오탐 실패하는 걸 막는다.
       - name: Bump image tag
+        id: bump
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -73,17 +76,37 @@ jobs:
           if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ] \
              && git merge-base --is-ancestor HEAD origin/main; then
             echo "더 새로운 커밋이 main 에 반영됨 — 이 빌드는 추월되어 배포를 스킵한다."
+            echo "deployed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           sed -i "s|newTag:.*|newTag: ${{ steps.meta.outputs.tag }}|" k8s/base/kustomization.yaml
           git add k8s/base/kustomization.yaml
-          git diff --cached --quiet && { echo "변경 없음 — 스킵"; exit 0; }
+          git diff --cached --quiet && { echo "변경 없음 — 스킵"; echo "deployed=false" >> "$GITHUB_OUTPUT"; exit 0; }
           git commit -m "ci: deploy ${{ steps.meta.outputs.tag }} [skip ci]"
           for attempt in 1 2 3; do
-            if git push origin HEAD:main; then echo "푸시 완료"; exit 0; fi
+            if git push origin HEAD:main; then echo "푸시 완료"; echo "deployed=true" >> "$GITHUB_OUTPUT"; exit 0; fi
             echo "push 거부(시도 $attempt) — 최신 main 에 리베이스 후 재시도"
             git fetch origin main
-            git rebase origin/main || { echo "리베이스 충돌 — 더 최신 배포가 우선, 스킵"; git rebase --abort; exit 0; }
+            git rebase origin/main || { echo "리베이스 충돌 — 더 최신 배포가 우선, 스킵"; git rebase --abort; echo "deployed=false" >> "$GITHUB_OUTPUT"; exit 0; }
           done
           echo "재시도 후에도 push 실패" >&2
+          exit 1
+
+      # 롤아웃 확정 게이트 (ADR-0018 / 아키텍처 리뷰 후보 C). 파이프라인 인터페이스를 "커밋 push"에서
+      # "롤아웃 확정"까지 넓힌다: 이 빌드가 실제 배포했을 때만, 공개 /api/health 의 sha 가 이 태그로
+      # 바뀔 때까지 폴링해 배포를 자기확정한다. CI 러너는 클러스터 접근이 없어 Argo 자동 sync 를 기다린다
+      # (reconcile ~3min + 롤 → ~6.7min 타임아웃). 타임아웃이면 job 을 빨간 X 로 실패시켜 silent 부분배포를
+      # 드러낸다(새 Secret 없이 CI 상태만으로 알림). end-to-end(CF→ingress→pod)로 라이브 sha 를 검증.
+      - name: Verify rollout live
+        if: steps.bump.outputs.deployed == 'true'
+        run: |
+          EXPECT="${{ steps.meta.outputs.tag }}"
+          echo "라이브(https://myquizdeck.com/api/health/)에 $EXPECT 반영 대기..."
+          for i in $(seq 1 40); do
+            SHA=$(curl -s --max-time 8 https://myquizdeck.com/api/health/ | sed -n 's/.*"sha":"\([^"]*\)".*/\1/p')
+            echo "[$i] live sha=${SHA:-<none>}"
+            if [ "$SHA" = "$EXPECT" ]; then echo "롤아웃 확정: $EXPECT 라이브"; exit 0; fi
+            sleep 10
+          done
+          echo "::error::롤아웃 타임아웃 — $EXPECT 가 ~6.7분 내 라이브에 반영되지 않음(Argo sync·pod 확인 필요)"
           exit 1
