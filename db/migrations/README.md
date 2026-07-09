@@ -104,3 +104,10 @@ psql "$DATABASE_URL" -f db/seed-content.sql
 Exam 페이지가 런타임에 DB 에서 Question·Concept 을 읽으므로(ISR), **마이그레이션+seed 를
 새 앱 배포보다 먼저** 하는 게 안전하다(seed 전엔 문항이 0 으로 보임). diagrams·q2svc·icons·
 meta 는 파일 잔존이라 seed 대상이 아니다.
+
+`0008_collection.sql` — 컬렉션(ADR-0022):
+
+- `collection(id[client uuid], learner_id FK cascade, name, items jsonb[(examKey,qn)…], updated_at)`
+  + `(learner_id)` 인덱스. Learner 큐레이션 cross-Exam 문항 세트 — `/api/collections` 가 모든
+  read/write 를 세션 learner_id 로 스코프한다(annotation 패턴).
+  > ⚠️ **`/api/collections` 가 이 테이블을 읽으므로 0008 을 앱 배포보다 먼저 적용**한다(0005·0007 선례).
