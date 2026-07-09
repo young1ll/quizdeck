@@ -17,7 +17,7 @@
   code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88em;background:#f1f5f9;padding:1px 5px;border-radius:5px}
   h1{font-size:24px;letter-spacing:-.02em;margin:0 0 4px}
   .sub{color:var(--muted);font-size:14px;margin-bottom:20px}
-  .panel{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;box-shadow:0 8px 26px -16px rgba(2,6,23,.35);overflow-x:auto}
+  .panel{position:relative;background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;box-shadow:0 8px 26px -16px rgba(2,6,23,.35);overflow-x:auto}
   svg{display:block;min-width:1080px;width:100%;height:auto;font-family:inherit}
   .legend{display:flex;flex-wrap:wrap;gap:16px 26px;margin:20px 2px 0;font-size:12.5px;color:var(--muted)}
   .legend .grp{display:flex;align-items:center;gap:8px}
@@ -47,6 +47,16 @@
   svg.dim .fl{opacity:.08}
   svg.dim .fl.on{opacity:1}
   svg .fl.on line,svg .fl.on path{stroke-width:3.2}
+  /* 마커 근처 말풍선 — 흐름 hover/클릭 시 도면 위에 설명 표시(인포바보다 인지 강함) */
+  #flowtip{position:absolute;z-index:5;max-width:320px;background:#fff;border:1.5px solid #232F3E;
+    box-shadow:0 10px 24px -10px rgba(2,6,23,.45);padding:8px 11px;font-size:12px;line-height:1.5;
+    color:#334155;pointer-events:none;display:none}
+  #flowtip .k{display:block;font-weight:700;margin-bottom:2px;color:#0f172a}
+  #flowtip .pinhint{color:#94a3b8}
+  #flowtip::after{content:"";position:absolute;left:var(--cx,50%);bottom:-7px;width:12px;height:12px;
+    background:#fff;border-right:1.5px solid #232F3E;border-bottom:1.5px solid #232F3E;
+    transform:translateX(-50%) rotate(45deg)}
+  #flowtip.below::after{bottom:auto;top:-7px;transform:translateX(-50%) rotate(225deg)}
 </style>
 </head>
 <body>
@@ -324,6 +334,7 @@
     <text x="620" y="882" font-size="9.5" fill="#b35a00" text-anchor="middle">db-backup CronJob(ns quizdeck) · 매일 KST 03:00 · pg_dump -Fc → R2 (ADR-0021 · pipefail·512Mi)</text>
     </g>
   </svg>
+  <div id="flowtip" role="tooltip"></div>
   </div>
 
   <div class="legend">
@@ -425,29 +436,53 @@
     git:'GitOps Ⓐ→Ⓓ : push → Actions 빌드 → ghcr → Argo sync → 배포 (+롤아웃 게이트)',
     ops:'운영·백업 : T1 SSH · T2 argocd UI(tailnet 전용) · BK 매일 R2 백업'
   };
-  var IDLE = '다이어그램의 마커(①…Ⓐ…)나 화살표에 마우스를 올리면 설명이 여기 표시됩니다 — 클릭하면 고정, 다시 클릭하면 해제.';
+  var IDLE = '마커(①…Ⓐ…)나 화살표에 마우스를 올리거나 클릭하면 해당 위치에 설명 말풍선이 뜹니다 — 클릭은 고정, 다시 클릭하면 해제.';
   var svg = document.querySelector('.panel svg');
+  var panel = document.querySelector('.panel');
+  var tip = document.getElementById('flowtip');
   var info = document.getElementById('flowinfo');
   var els = Array.prototype.slice.call(svg.querySelectorAll('.fl'));
   var group = 'all', pinned = null;
 
-  function setInfo(k, t, cls){ info.className = cls || ''; info.innerHTML = k ? '<span class="k">'+k+'</span><span>'+t+'</span>' : t; }
+  function setInfo(t, cls){ info.className = cls || ''; info.textContent = t; }
+
+  // 마커(circle) > 라벨(text) > 선(path/line) 순으로 앵커를 잡아 그 근처에 말풍선을 놓는다.
+  function anchorOf(e){ return e.querySelector('circle') || e.querySelector('text') || e.querySelector('path,line') || e; }
+  function showTip(e, isPinned){
+    var f = FLOWS[e.dataset.flow];
+    tip.innerHTML = '<span class="k">' + f.k + '</span>' + f.t
+      + (isPinned ? ' <span class="pinhint">(고정됨 — 다시 클릭해 해제)</span>' : '');
+    tip.style.display = 'block'; tip.style.visibility = 'hidden'; tip.classList.remove('below');
+    var r = anchorOf(e).getBoundingClientRect(), p = panel.getBoundingClientRect();
+    var ax = r.left + r.width/2 - p.left + panel.scrollLeft;   // 앵커 중심 (panel 콘텐츠 좌표)
+    var ayTop = r.top - p.top + panel.scrollTop;
+    var ayBot = ayTop + r.height;
+    var tw = tip.offsetWidth, th = tip.offsetHeight;
+    var left = Math.max(8, Math.min(ax - tw/2, panel.scrollWidth - tw - 8));
+    var top = ayTop - th - 11;                                  // 기본: 앵커 위
+    if (top < 4){ top = ayBot + 11; tip.classList.add('below'); } // 위 공간 부족 시 아래
+    tip.style.left = left + 'px'; tip.style.top = top + 'px';
+    tip.style.setProperty('--cx', Math.max(14, Math.min(ax - left, tw - 14)) + 'px'); // 꼬리를 앵커에 정렬
+    tip.style.visibility = 'visible';
+  }
+  function hideTip(){ tip.style.display = 'none'; }
+
   function apply(){
     var ids = pinned ? [pinned]
       : group === 'all' ? null
       : els.filter(function(e){ return FLOWS[e.dataset.flow].g === group; }).map(function(e){ return e.dataset.flow; });
     if (ids === null){ svg.classList.remove('dim'); els.forEach(function(e){ e.classList.remove('on'); }); }
     else { svg.classList.add('dim'); els.forEach(function(e){ e.classList.toggle('on', ids.indexOf(e.dataset.flow) >= 0); }); }
-    if (pinned){ var f = FLOWS[pinned]; setInfo(f.k, f.t + ' <span style="color:#94a3b8">(고정됨 — 다시 클릭해 해제)</span>'); }
-    else if (group !== 'all'){ setInfo(null, GROUPS[group]); }
-    else { setInfo(null, IDLE, 'idle'); }
+    if (pinned){ showTip(els.filter(function(e){ return e.dataset.flow === pinned; })[0], true); setInfo(FLOWS[pinned].k + ' — ' + FLOWS[pinned].t); }
+    else if (group !== 'all'){ hideTip(); setInfo(GROUPS[group]); }
+    else { hideTip(); setInfo(IDLE, 'idle'); }
   }
   els.forEach(function(e){
     e.addEventListener('mouseenter', function(){
       if (pinned) return;
       svg.classList.add('dim');
       els.forEach(function(x){ x.classList.toggle('on', x === e); });
-      var f = FLOWS[e.dataset.flow]; setInfo(f.k, f.t);
+      showTip(e, false);
     });
     e.addEventListener('mouseleave', function(){ if (!pinned) apply(); });
     e.addEventListener('click', function(ev){
@@ -464,6 +499,10 @@
     });
   });
   svg.addEventListener('click', function(){ if (pinned){ pinned = null; apply(); } });
+  // 마우스 이동 없이 스크롤하면 mouseleave 가 안 떠 hover 강조가 남는다 — 스크롤 시 리셋(고정은 유지).
+  var onScroll = function(){ if (!pinned) apply(); };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  panel.addEventListener('scroll', onScroll, { passive: true });
   apply();
 })();
 </script>
