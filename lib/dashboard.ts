@@ -99,6 +99,13 @@ export interface ContinueItem {
   mine: number; // 내 문제함 크기(오답∪별표∪메모)
 }
 
+// Home '내 문제함' 진입점(한 줄) — 전 시험 내 문제함 합계. /me 롤업(buildDashboard.totalMine)과 같은
+// 정의를 공유해 홈의 숫자와 /me 랜딩이 어긋나지 않는다(ADR-0011: cross-Exam 은 개수 롤업, 목록·풀기는
+// 시험 안). 0 이면 홈이 진입점 자체를 숨긴다 — Home=재개 affordance·숫자 최소(ADR-0012 스코프 규칙).
+export function totalMyProblems(rows: { snapshot: Progress }[]): number {
+  return rows.reduce((s, r) => s + myProblems(r.snapshot).length, 0);
+}
+
 export function buildContinueList(
   rows: { examKey: string; snapshot: Progress }[],
   exams: ExamSummary[],
