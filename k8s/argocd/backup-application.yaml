@@ -1,0 +1,21 @@
+# 오프사이트 DB 백업 CronJob 을 GitOps 로 관리하는 Application (ADR-0021).
+# cloudflared·argocd-server-expose 처럼 concern 하나당 별도 App. quizdeck ns 에 배치해
+# 기존 db-credentials Secret 을 재사용한다(r2-backup Secret 은 git 밖, README 참조).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backup
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/young1ll/quizdeck.git
+    targetRevision: main
+    path: k8s/backup
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: quizdeck
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
