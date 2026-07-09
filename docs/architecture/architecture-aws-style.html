@@ -40,7 +40,7 @@
 <div class="wrap">
   <a class="back" href="../status.html">← 플랫폼 현황으로</a>
   <h1>quizdeck 아키텍처 <span style="color:var(--muted);font-weight:500;font-size:18px">— AWS 스타일</span></h1>
-  <div class="sub">개인 Synology를 AWS reference architecture 관점으로 그린 도면. 중첩 박스 = 경계(Cloud/VPC/Subnet), 색 타일 = 서비스. 실제 구현은 Synology/k3s/Cloudflare, 각 칸의 AWS 아날로그를 함께 표기. · 2026-06-25</div>
+  <div class="sub">개인 Synology를 AWS reference architecture 관점으로 그린 도면. 중첩 박스 = 경계(Cloud/VPC/Subnet), 색 타일 = 서비스. 실제 구현은 Synology/k3s/Cloudflare, 각 칸의 AWS 아날로그를 함께 표기. · 2026-07-09 갱신 — R2 오프사이트 백업(ADR-0021) · ArgoCD UI tailnet 노출 + ACME DNS-01(ADR-0020) · health/롤아웃 게이트(ADR-0018)</div>
 
   <div class="panel">
   <svg viewBox="0 0 1280 940" role="img" aria-label="quizdeck AWS 스타일 아키텍처 다이어그램">
@@ -52,6 +52,8 @@
         <path d="M0,0 L7,3 L0,6 Z" fill="#2D86C9"/></marker>
       <marker id="ahg" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
         <path d="M0,0 L7,3 L0,6 Z" fill="#1FA037"/></marker>
+      <marker id="aho" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+        <path d="M0,0 L7,3 L0,6 Z" fill="#F6821F"/></marker>
       <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
         <feDropShadow dx="0" dy="1.5" stdDeviation="1.6" flood-color="#0f172a" flood-opacity="0.18"/></filter>
 
@@ -114,6 +116,10 @@
       <circle cx="668" cy="90" r="10" fill="#fff" stroke="#2D86C9" stroke-width="1.6"/><text x="668" y="94" font-size="11" font-weight="700" fill="#2D86C9" text-anchor="middle">A</text>
       <line x1="800" y1="90" x2="936" y2="90" stroke="#2D86C9" stroke-width="2" marker-end="url(#ahb)"/>
       <circle cx="868" cy="90" r="10" fill="#fff" stroke="#2D86C9" stroke-width="1.6"/><text x="868" y="94" font-size="11" font-weight="700" fill="#2D86C9" text-anchor="middle">B</text>
+      <!-- rollout gate (ADR-0018 후보 C) -->
+      <text x="1014" y="80" font-size="10" font-weight="700" fill="#1f6aa3">롤아웃 확정 게이트</text>
+      <text x="1014" y="95" font-size="9.5" fill="#475569">배포 후 공개 /api/health 의</text>
+      <text x="1014" y="109" font-size="9.5" fill="#475569">sha 폴링 → 불일치 시 CI 실패</text>
     </g>
 
     <!-- ===================== USER (left) ===================== -->
@@ -132,6 +138,7 @@
       <g transform="translate(193,452)" filter="url(#sh)">
         <rect width="56" height="56" rx="8" fill="#F6821F"/><use href="#g-lock" x="16" y="16" width="24" height="24"/></g>
       <text x="221" y="524" font-size="11" text-anchor="middle" fill="#334155" font-weight="600">Tunnel · 인바운드 0</text>
+      <text x="221" y="541" font-size="9" text-anchor="middle" fill="#8C4FFF">DNS: apex=터널 · argocd=grey→tailnet IP</text>
     </g>
 
     <!-- ===================== SYNOLOGY (AWS Cloud) ===================== -->
@@ -172,7 +179,7 @@
     <g transform="translate(654,446)" filter="url(#sh)">
       <rect width="56" height="56" rx="8" fill="#8C4FFF"/><use href="#g-router" x="16" y="16" width="24" height="24"/></g>
     <text x="682" y="518" font-size="11" text-anchor="middle" fill="#334155" font-weight="600">Traefik ingress</text>
-    <text x="682" y="532" font-size="9.5" text-anchor="middle" fill="#94a3b8">≈ ALB</text>
+    <text x="682" y="532" font-size="9.5" text-anchor="middle" fill="#94a3b8">≈ ALB · ACME DNS-01(LE)</text>
 
     <!-- ns quizdeck (private) -->
     <rect x="784" y="392" width="176" height="214" rx="10" fill="#eef5fb" stroke="#2E73B8" stroke-width="1.3"/>
@@ -182,6 +189,9 @@
       <rect width="56" height="56" rx="8" fill="#ED7100"/><use href="#g-cube" x="16" y="16" width="24" height="24"/></g>
     <text x="872" y="518" font-size="11" text-anchor="middle" fill="#334155" font-weight="600">quizdeck pod</text>
     <text x="872" y="532" font-size="9.5" text-anchor="middle" fill="#94a3b8">Next standalone · :3000</text>
+    <text x="796" y="560" font-size="9" fill="#2E73B8" font-weight="700">+ CronJob db-backup</text>
+    <text x="796" y="573" font-size="9" fill="#5b7da3">매일 03:00 pg_dump→R2</text>
+    <text x="796" y="592" font-size="9" fill="#5b7da3">probe: /api/health·/ready</text>
 
     <!-- ns argocd (mgmt) -->
     <rect x="974" y="392" width="176" height="214" rx="10" fill="#fdf0f7" stroke="#E7157B" stroke-width="1.3"/>
@@ -189,8 +199,9 @@
     <text x="986" y="424" font-size="9.5" fill="#b3477f">control plane</text>
     <g transform="translate(1034,446)" filter="url(#sh)">
       <rect width="56" height="56" rx="8" fill="#E7157B"/><use href="#g-sync" x="16" y="16" width="24" height="24"/></g>
-    <text x="1062" y="518" font-size="11" text-anchor="middle" fill="#334155" font-weight="600">Argo CD</text>
+    <text x="1062" y="518" font-size="11" text-anchor="middle" fill="#334155" font-weight="600">Argo CD · App ×4</text>
     <text x="1062" y="532" font-size="9.5" text-anchor="middle" fill="#94a3b8">GitOps sync</text>
+    <text x="1062" y="545" font-size="8" text-anchor="middle" fill="#b3477f">quizdeck · cloudflared · backup · expose</text>
 
     <!-- ===== db-home VM (separate EC2) — data tier (active) ===== -->
     <rect x="360" y="662" width="868" height="200" rx="14" fill="#fff8f3" stroke="#ED7100" stroke-width="1.7"/>
@@ -231,8 +242,8 @@
     <line x1="712" y1="474" x2="840" y2="474" stroke="#334155" stroke-width="2" marker-end="url(#ah)"/>
     <circle cx="776" cy="474" r="11" fill="#fff" stroke="#334155" stroke-width="1.6"/><text x="776" y="478" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">4</text>
     <!-- 5: quizdeck -> postgres (down, crosses VM boundary) -->
-    <line x1="872" y1="540" x2="872" y2="738" stroke="#334155" stroke-width="2" marker-end="url(#ah)"/>
-    <circle cx="872" cy="652" r="11" fill="#fff" stroke="#334155" stroke-width="1.6"/><text x="872" y="656" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">5</text>
+    <line x1="890" y1="540" x2="890" y2="738" stroke="#334155" stroke-width="2" marker-end="url(#ah)"/>
+    <circle cx="890" cy="652" r="11" fill="#fff" stroke="#334155" stroke-width="1.6"/><text x="890" y="656" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">5</text>
     <text x="968" y="600" font-size="9.5" fill="#64748b" text-anchor="middle">5432 · .55만</text>
 
     <!-- ===== GitOps arrows ===== -->
@@ -259,6 +270,24 @@
     <line x1="98" y1="718" x2="146" y2="718" stroke="#1FA037" stroke-width="2" marker-end="url(#ahg)"/>
     <path d="M208 712 C 300 690, 320 600, 372 560" fill="none" stroke="#1FA037" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ahg)"/>
     <text x="300" y="690" font-size="9.5" fill="#1FA037" text-anchor="middle">관리 접속(SSH)</text>
+
+    <!-- ===== ArgoCD UI · tailnet 전용 노출 (ADR-0020) ===== -->
+    <!-- T2: Tailscale -> Traefik (grey-cloud DNS 가 tailnet IP 를 가리킴 · 인터넷 도달 불가) -->
+    <path d="M 206 700 C 380 636, 560 574, 654 506" fill="none" stroke="#1FA037" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ahg)"/>
+    <text x="500" y="556" font-size="9.5" fill="#1FA037" text-anchor="middle">argocd UI · HTTPS(LE)</text>
+    <!-- Traefik -> argocd-server (IngressRoute, k3s 박스 상단으로 우회) -->
+    <path d="M 700 446 C 800 372, 950 372, 1046 442" fill="none" stroke="#1FA037" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#ahg)"/>
+    <text x="873" y="366" font-size="9.5" fill="#1FA037" text-anchor="middle">IngressRoute · argocd.myquizdeck.com (tailnet 전용)</text>
+
+    <!-- ===== Cloudflare R2 · 오프사이트 백업 (ADR-0021) — Synology 밖 = 다른 실패 도메인 ===== -->
+    <g transform="translate(150,790)" filter="url(#sh)">
+      <rect width="56" height="56" rx="8" fill="#F6821F"/><use href="#g-db" x="16" y="16" width="24" height="24"/></g>
+    <text x="178" y="860" font-size="11" text-anchor="middle" fill="#334155" font-weight="600">Cloudflare R2</text>
+    <text x="178" y="874" font-size="9.5" text-anchor="middle" fill="#94a3b8">quizdeck-backups · 30일 · ≈ S3</text>
+    <text x="178" y="888" font-size="9.5" text-anchor="middle" fill="#F6821F" font-weight="700">오프사이트 · 다른 실패 도메인</text>
+    <!-- 백업 흐름: postgres → (CronJob db-backup, ns quizdeck) → R2 -->
+    <path d="M 840 778 C 710 792, 600 826, 500 842 C 420 856, 290 852, 216 824" fill="none" stroke="#F6821F" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#aho)"/>
+    <text x="620" y="882" font-size="9.5" fill="#b35a00" text-anchor="middle">db-backup CronJob(ns quizdeck) · 매일 KST 03:00 · pg_dump -Fc → R2 (ADR-0021 · pipefail·512Mi)</text>
   </svg>
   </div>
 
@@ -270,7 +299,9 @@
     <div class="grp"><span class="sw priv"></span> private subnet (ns)</div>
     <div class="grp"><span class="sw mgmt"></span> control plane (argocd)</div>
     <div class="grp"><span class="sw priv"></span> data tier · db-home VM (&#8776; RDS)</div>
-    <div class="grp"><span class="num">1</span>–<span class="num">4</span> 요청 경로</div>
+    <div class="grp"><span class="dot" style="background:#F6821F"></span> Cloudflare R2 · 오프사이트 백업 (&#8776; S3)</div>
+    <div class="grp"><span class="dot" style="background:#1FA037"></span> 초록 점선 = Tailscale 관리 경로 (SSH · argocd UI)</div>
+    <div class="grp"><span class="num">1</span>–<span class="num">5</span> 요청 경로</div>
     <div class="grp"><span class="num dev">A</span>–<span class="num dev">D</span> GitOps 흐름</div>
   </div>
 
@@ -288,8 +319,12 @@
       <tr><td>data tier</td><td>postgres 16 — 별도 VM <code>db-home</code> (격리, k3s만 접근)</td><td>RDS (private subnet)</td></tr>
       <tr><td>인증 / 신원</td><td>better-auth(in-app) + JWKS</td><td>Cognito / 자체 IdP + OIDC</td></tr>
       <tr><td>시크릿</td><td>k8s Secret (db-credentials · quizdeck-auth · cloudflared-token, git 밖)</td><td>Secrets Manager / SSM</td></tr>
-      <tr><td>배포 파이프라인</td><td>GitHub Actions → ghcr → Argo CD</td><td>CodePipeline + ECR + (Argo on EKS)</td></tr>
+      <tr><td>배포 파이프라인</td><td>GitHub Actions → ghcr → Argo CD + <b>롤아웃 확정 게이트</b>(공개 <code>/api/health</code> sha 폴링)</td><td>CodePipeline + ECR + (Argo on EKS)</td></tr>
       <tr><td>관리 접속</td><td>Tailscale tailnet</td><td>VPN / SSM Session Manager</td></tr>
+      <tr><td>배포 대시보드(CD)</td><td>ArgoCD UI — <code>argocd.myquizdeck.com</code> (grey-cloud DNS→tailnet IP, <b>인터넷 도달 불가</b>) — ADR-0020</td><td>콘솔(내부 접근)</td></tr>
+      <tr><td>TLS 인증서</td><td>Traefik ACME <b>DNS-01</b> (Let's Encrypt, Cloudflare 토큰)</td><td>ACM</td></tr>
+      <tr><td>오프사이트 백업</td><td>CronJob <code>db-backup</code> → <b>Cloudflare R2</b> <code>quizdeck-backups</code> (매일 · 30일 lifecycle) — ADR-0021</td><td>AWS Backup / S3</td></tr>
+      <tr><td>헬스/관측</td><td><code>/api/health</code>(liveness·sha) · <code>/api/ready</code>(readiness) · <code>/api/status</code>(admin 진단) + 구조화 stdout 로그 — ADR-0018/0019</td><td>ALB health check + CloudWatch(부분)</td></tr>
     </tbody>
   </table>
 
@@ -309,8 +344,16 @@
     <tbody>
       <tr><td><span class="num dev">A</span></td><td><code>git push</code> → GitHub Actions: pnpm test + Docker 빌드</td></tr>
       <tr><td><span class="num dev">B</span></td><td>이미지 → ghcr.io push + kustomize 태그 bump 커밋</td></tr>
-      <tr><td><span class="num dev">C</span></td><td>Argo CD가 main 감시 + ghcr 이미지 pull</td></tr>
-      <tr><td><span class="num dev">D</span></td><td>Argo가 quizdeck 배포(rollout) — Synced/Healthy</td></tr>
+      <tr><td><span class="num dev">C</span></td><td>Argo CD가 main 감시 + ghcr 이미지 pull — <b>App ×4</b>: quizdeck · cloudflared · backup · argocd-server-expose</td></tr>
+      <tr><td><span class="num dev">D</span></td><td>Argo가 quizdeck 배포(rollout) — Synced/Healthy · CI가 공개 <code>/api/health</code> sha 폴링으로 <b>롤아웃 확정</b></td></tr>
+    </tbody>
+  </table>
+  <table style="margin-top:10px">
+    <thead><tr><th>·</th><th>운영 흐름 (관리 · 백업)</th></tr></thead>
+    <tbody>
+      <tr><td>T1</td><td>관리자 → Tailscale → VM SSH (<code>k3s-home</code>=100.81.230.113) — 인터넷 SSH 없음</td></tr>
+      <tr><td>T2</td><td>관리자 → Tailscale → <code>argocd.myquizdeck.com</code> — grey-cloud DNS가 tailnet IP를 가리켜 <b>인터넷 도달 불가</b>, Traefik이 DNS-01 LE 인증서로 종단 → argocd-server(<code>--insecure</code>). 검증: <code>verify-argo-exposure.sh</code> 3단언 (ADR-0020)</td></tr>
+      <tr><td>BK</td><td>CronJob <code>db-backup</code>(ns quizdeck, 매일 KST 03:00) → <code>pg_dump -Fc</code> postgres → <code>mc pipe</code> → R2 <code>quizdeck-backups</code> (30일 롤링 · pipefail · 512Mi). 오프사이트 = 박스 loss 생존 (ADR-0021)</td></tr>
     </tbody>
   </table>
 
@@ -318,7 +361,10 @@
     관련: <a href="../status.html">플랫폼 현황(status.html)</a> ·
     <a href="./platform-roadmap.md">platform-roadmap.md</a> ·
     <a href="./platform-diagram.html">platform-diagram.html</a> ·
-    <a href="./0002-synology-vpc-platform.md">ADR-0002</a>
+    <a href="../adr/0002-synology-vpc-platform.md">ADR-0002</a> ·
+    <a href="../adr/0018-health-status-module.md">ADR-0018</a> ·
+    <a href="../adr/0020-argocd-tailnet-visibility.md">ADR-0020</a> ·
+    <a href="../adr/0021-aws-migration-triggers-and-offsite-backup.md">ADR-0021</a>
   </p>
 </div>
 </body>

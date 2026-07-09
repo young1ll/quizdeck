@@ -18,19 +18,24 @@
 flowchart TB
   U[인터넷 사용자] --> CF[Cloudflare Tunnel<br/>경계 · IGW · 인바운드 0]
   CF -. 아웃바운드 터널 .- CFD
+  ADM[관리자 · Tailscale] -. "argocd.myquizdeck.com<br/>grey-cloud DNS · LE cert · tailnet 전용" .-> TR
   subgraph SYN["Synology · VPC 경계"]
     subgraph K3S["k3s 클러스터 · app tier"]
-      CFD[cloudflared] --> TR[Traefik · ingress]
+      CFD[cloudflared] --> TR[Traefik · ingress<br/>ACME DNS-01]
       TR --> NX[quizdeck · Next pod]
+      TR -. IngressRoute .-> AUI[argocd-server UI]
+      BK[CronJob db-backup<br/>매일 KST 03:00]
     end
     NX --> PG[(postgres · 클러스터 밖<br/>RDS 아날로그)]
-    GIT[Git 레포] --> ARGO[Argo CD · GitOps]
+    BK --> PG
+    GIT[Git 레포] --> ARGO[Argo CD · GitOps<br/>App ×4]
     ARGO -. sync .-> K3S
   end
+  BK -. "pg_dump -Fc" .-> R2[(Cloudflare R2<br/>오프사이트 백업 · 30일)]
   classDef edge fill:#fff7ed,stroke:#f59e0b;
   classDef data fill:#fffbeb,stroke:#f59e0b;
   class CF edge
-  class PG data
+  class PG,R2 data
 ```
 
 ## 진화 로드맵
