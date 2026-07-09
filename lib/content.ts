@@ -34,6 +34,8 @@ export function listExams(): ExamSummary[] {
         slug,
         code: meta.code,
         name: meta.name,
+        icon: meta.icon,
+        track: meta.track,
         questionCount: meta.counts?.questions ?? 0,
       });
     }

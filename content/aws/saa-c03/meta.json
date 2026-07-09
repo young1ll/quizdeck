@@ -5,6 +5,11 @@
   "name": "AWS Certified Solutions Architect - Associate",
   "slug": "saa-c03",
   "language": "ko",
+  "icon": "🏗️",
+  "track": {
+    "id": "aws-solutions-architect",
+    "name": "AWS Solutions Architect"
+  },
   "counts": {
     "questions": 140,
     "concepts": 54,
