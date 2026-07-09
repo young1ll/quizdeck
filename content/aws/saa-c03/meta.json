@@ -1,0 +1,13 @@
+{
+  "provider": "aws",
+  "providerName": "Amazon Web Services",
+  "code": "SAA-C03",
+  "name": "AWS Certified Solutions Architect - Associate",
+  "slug": "saa-c03",
+  "language": "ko",
+  "counts": {
+    "questions": 20,
+    "concepts": 12,
+    "diagrams": 0
+  }
+}
