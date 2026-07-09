@@ -61,8 +61,14 @@
   "23": [
     "보안 그룹 vs NACL"
   ],
+  "24": [
+    "엣지 보안 (WAF · Shield)"
+  ],
   "25": [
     "Amazon Cognito"
+  ],
+  "26": [
+    "AWS Systems Manager"
   ],
   "27": [
     "AWS Certificate Manager(ACM)"
@@ -131,6 +137,9 @@
   "55": [
     "AWS Config"
   ],
+  "56": [
+    "AWS Systems Manager"
+  ],
   "57": [
     "AWS Organizations · SCP"
   ],
@@ -197,5 +206,80 @@
   ],
   "80": [
     "Amazon S3 스토리지 클래스"
+  ],
+  "81": [
+    "IAM Identity Center · 디렉터리 연동"
+  ],
+  "82": [
+    "IAM Identity Center · 디렉터리 연동"
+  ],
+  "83": [
+    "엣지 보안 (WAF · Shield)"
+  ],
+  "84": [
+    "AWS KMS"
+  ],
+  "85": [
+    "AWS Systems Manager"
+  ],
+  "86": [
+    "S3 액세스 포인트"
+  ],
+  "88": [
+    "Amazon DynamoDB"
+  ],
+  "89": [
+    "Amazon DynamoDB"
+  ],
+  "90": [
+    "Amazon DynamoDB"
+  ],
+  "91": [
+    "Amazon MQ"
+  ],
+  "92": [
+    "Amazon ElastiCache"
+  ],
+  "93": [
+    "Amazon Route 53 라우팅 정책"
+  ],
+  "94": [
+    "AWS CloudFormation"
+  ],
+  "95": [
+    "하이브리드 엣지 (Outposts · Local Zones · Wavelength)"
+  ],
+  "96": [
+    "하이브리드 엣지 (Outposts · Local Zones · Wavelength)"
+  ],
+  "97": [
+    "하이브리드 엣지 (Outposts · Local Zones · Wavelength)"
+  ],
+  "98": [
+    "Amazon EFS"
+  ],
+  "99": [
+    "Amazon Kinesis (Streams vs Firehose)"
+  ],
+  "104": [
+    "AWS Glue"
+  ],
+  "105": [
+    "Amazon OpenSearch Service"
+  ],
+  "106": [
+    "Amazon QuickSight"
+  ],
+  "107": [
+    "특수 목적 데이터베이스 (Neptune · DocumentDB · Timestream)"
+  ],
+  "108": [
+    "비용 관리 도구 (Trusted Advisor · Compute Optimizer · Cost Explorer)"
+  ],
+  "109": [
+    "비용 관리 도구 (Trusted Advisor · Compute Optimizer · Cost Explorer)"
+  ],
+  "110": [
+    "AWS CloudFormation"
   ]
 }
