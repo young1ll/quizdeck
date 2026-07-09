@@ -5,6 +5,7 @@ import {
   overallStreak,
   activeExamStats,
   buildContinueList,
+  totalMyProblems,
 } from "./dashboard";
 import { emptyProgress, type Progress, type QHist } from "./progress";
 import type { ExamSummary } from "./types";
@@ -191,5 +192,22 @@ describe("buildContinueList", () => {
     const [c] = buildContinueList(rows, exams, 3);
     expect(c.mastery).toBe(20); // last O 1개 / total 5
     expect(c.mine).toBe(2); // 오답{2}∪별표{3}
+  });
+});
+
+describe("totalMyProblems", () => {
+  const mk = (over: Partial<Progress>): Progress => ({ ...emptyProgress(), ...over });
+
+  it("전 시험 내 문제함(오답∪별표∪메모) 합계 — /me totalMine 과 같은 정의", () => {
+    const rows = [
+      { snapshot: mk({ wrong: [1, 2], stars: [2], memos: { 3: "메모" } }) }, // union {1,2,3}
+      { snapshot: mk({ stars: [7] }) },
+    ];
+    expect(totalMyProblems(rows)).toBe(4);
+  });
+
+  it("빈 rows·활동 없는 Progress 는 0 — 홈이 진입점을 숨기는 조건", () => {
+    expect(totalMyProblems([])).toBe(0);
+    expect(totalMyProblems([{ snapshot: emptyProgress() }])).toBe(0);
   });
 });

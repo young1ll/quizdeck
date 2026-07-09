@@ -9,7 +9,7 @@ import { Container } from "@/components/ui/Container";
 import { getLearnerSession } from "@/lib/learner-server";
 import { pool } from "@/lib/db";
 import { loadAllProgress } from "@/lib/progress-db";
-import { buildContinueList, type ContinueItem } from "@/lib/dashboard";
+import { buildContinueList, totalMyProblems, type ContinueItem } from "@/lib/dashboard";
 
 // Home — 재개(act) (ADR-0012 결정 2·3). 로그인 Learner 엔 상단 "이어서 학습"(Progress 기반 최근 시험,
 // cross-device 일관, 최대 3) + 카탈로그, 익명엔 카탈로그만. 진도 스코프 사다리의 재개 지점 — 숫자는
@@ -35,9 +35,13 @@ export default async function Home() {
   // 재개 결정(어떤 시험·Mastery·내 문제함 수)은 buildContinueList(순수·핀됨)가 소유(아키텍처 리뷰 C3).
   const session = await getLearnerSession(await headers());
   let cont: ContinueItem[] = [];
+  let mineTotal = 0;
   if (session) {
     const rows = await loadAllProgress(pool, session.user.id);
     cont = buildContinueList(rows, exams, MAX_CONTINUE);
+    // '내 문제함' 진입점(한 줄) — 전 시험 합계만(숫자 최소, ADR-0012 스코프 규칙). 시험별 목록·풀기는
+    // /me 롤업 → 시험 my-problems 로 드릴다운(ADR-0011). 0 이면 진입점 자체를 렌더하지 않는다.
+    mineTotal = totalMyProblems(rows);
   }
 
   return (
@@ -97,6 +101,24 @@ export default async function Home() {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {/* 내 문제함 진입점 — 이어서 학습(재개)과 짝인 한 줄 affordance. 카드 하단의 시험별 링크가
+          최근 3개 시험만 커버하므로, 전 시험 합계 한 줄이 /me 롤업(시험별 개수·진입점)으로 잇는다. */}
+      {mineTotal > 0 && (
+        <section className="mb-8">
+          <Link href="/me" className="block">
+            <Card padding={4} interactive>
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-2 font-medium">
+                  <LuFolderOpen className="size-4 text-[var(--accent)]" aria-hidden />내 문제함{" "}
+                  {mineTotal}개
+                </span>
+                <span className="shrink-0 text-sm text-[var(--muted)]">시험별 보기 ›</span>
+              </div>
+            </Card>
+          </Link>
         </section>
       )}
 
