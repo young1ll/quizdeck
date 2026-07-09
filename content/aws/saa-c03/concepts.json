@@ -12,9 +12,11 @@
     "rel": [
       1,
       13,
-      17
+      17,
+      75,
+      80
     ],
-    "reln": 3
+    "reln": 5
   },
   {
     "cat": "스토리지",
@@ -42,9 +44,10 @@
     "cost": "정석 조합: 베이스라인 = SP/RI, 유연 배치 = 스팟, 나머지 = 온디맨드.",
     "rel": [
       9,
-      49
+      76,
+      77
     ],
-    "reln": 2
+    "reln": 3
   },
   {
     "cat": "컴퓨팅",
@@ -57,9 +60,10 @@
     "vs": "대상 추적(목표 지표 유지·기본 추천) vs 단계 조정(세밀 제어) vs 예약 조정(시간표) vs 예측 조정(주기적 패턴 선제 확장).",
     "rel": [
       2,
-      12
+      12,
+      77
     ],
-    "reln": 2
+    "reln": 3
   },
   {
     "cat": "컴퓨팅",
@@ -72,9 +76,10 @@
     "vs": "Lambda(이벤트·15분 미만·유휴 0) vs Fargate(컨테이너·장시간·상시) vs EC2(전체 제어·상시).",
     "rel": [
       16,
-      18
+      18,
+      65
     ],
-    "reln": 2
+    "reln": 3
   },
   {
     "cat": "네트워킹",
@@ -101,9 +106,10 @@
     "trap": "**Global Accelerator 와 혼동** — GA 는 애니캐스트 고정 IP 로 TCP/UDP 경로를 최적화할 뿐 **캐싱이 없다**. '오리진 부하 감소(캐싱)' 요구가 있으면 CloudFront 다.",
     "vs": "CloudFront(HTTP 캐싱·콘텐츠 전달) vs Global Accelerator(TCP/UDP 가속·고정 IP·캐싱 없음) vs Route 53 지연 라우팅(가까운 리전 선택일 뿐 캐싱·가속 없음).",
     "rel": [
-      8
+      8,
+      54
     ],
-    "reln": 1
+    "reln": 2
   },
   {
     "cat": "데이터베이스",
@@ -118,10 +124,9 @@
       4,
       12,
       19,
-      43,
-      48
+      43
     ],
-    "reln": 5
+    "reln": 4
   },
   {
     "cat": "데이터베이스",
@@ -150,9 +155,11 @@
     "rel": [
       6,
       16,
-      33
+      33,
+      63,
+      64
     ],
-    "reln": 3
+    "reln": 5
   },
   {
     "cat": "보안",
@@ -180,9 +187,10 @@
     "vs": "SSE-S3(간편·통제 없음) vs SSE-KMS(정책·감사·로테이션 통제) vs 클라이언트 측 암호화(AWS 밖에서 키 관리).",
     "rel": [
       20,
-      28
+      28,
+      58
     ],
-    "reln": 2
+    "reln": 3
   },
   {
     "cat": "보안",
@@ -194,9 +202,10 @@
     "trap": "'각 계정에 IAM 정책 배포'는 계정 관리자가 수정할 수 있어 강제가 아니다. SCP 는 **예방** 통제 — 탐지(Config·CloudTrail)와 구분하라. 관리 계정에 SCP 가 안 먹는다는 것도 함정 포인트.",
     "vs": "SCP(예방·권한 상한) vs IAM 정책(권한 부여) vs Config 규칙(탐지·평가) vs 권한 경계(permission boundary — 단일 계정 안의 신원 상한).",
     "rel": [
-      21
+      21,
+      57
     ],
-    "reln": 1
+    "reln": 2
   },
   {
     "cat": "보안",
@@ -355,5 +364,179 @@
       41
     ],
     "reln": 1
+  },
+  {
+    "cat": "보안",
+    "svc": "GuardDuty · Inspector · Macie",
+    "abbr": "탐지 3형제",
+    "deff": "AWS 의 세 탐지형 보안 서비스. **GuardDuty** = 위협 '행위' 탐지(비정상 API·악성 IP·크립토마이닝), **Inspector** = EC2·ECR·Lambda 의 소프트웨어 '취약점' 스캔(CVE·네트워크 노출), **Macie** = S3 의 민감 '데이터'(PII·금융정보) 발견·분류.",
+    "key": "GuardDuty 는 CloudTrail·VPC Flow Logs·DNS 로그를 **에이전트 없이** 자동 분석한다. Inspector 는 SSM 에이전트 기반으로 패키지 취약점을 지속 스캔. Macie 는 ML·패턴 매칭으로 버킷을 스캔해 민감 데이터 위치를 보고. 셋 다 '탐지'이며 발견 사항은 Security Hub·EventBridge 로 모아 대응한다.",
+    "when": "위협 모니터링을 켜라(행위) = GuardDuty, 취약점 관리(약점) = Inspector, 규정 준수용 PII 인벤토리(데이터) = Macie.",
+    "trap": "세 서비스의 목적어를 바꿔치기하는 선택지가 표준 함정 — 'S3 의 PII' 에 GuardDuty, '크립토마이닝 탐지' 에 Inspector 를 고르게 유도한다. 목적어(행위/취약점/데이터)로 즉시 판별하라.",
+    "vs": "GuardDuty(행위·로그 분석) vs Inspector(취약점·에이전트 스캔) vs Macie(S3 민감 데이터) vs Security Hub(셋의 발견 사항 집계·표준 점검).",
+    "rel": [
+      51,
+      52
+    ],
+    "reln": 2
+  },
+  {
+    "cat": "모니터링·감사",
+    "svc": "AWS Config",
+    "abbr": "Config",
+    "deff": "리소스 **구성 상태**의 스냅샷·변경 이력을 기록하고, **규칙**로 준수 여부를 지속 평가하며, SSM 자동화와 연계해 **자동 수정(remediation)** 까지 수행하는 구성 감사 서비스.",
+    "key": "관리형 규칙(예: restricted-ssh, encrypted-volumes)과 커스텀 규칙(Lambda)을 제공. '언제 누가 바꿨나'는 CloudTrail 연동으로 연결된다. 조직 단위 집계(aggregator)로 멀티 계정 준수 현황을 한눈에.",
+    "when": "'SG 가 0.0.0.0/0 을 열면 비준수 표시 + 자동 원복', 리소스 구성 변경 타임라인 추적, 규정 준수 증빙 리포트.",
+    "trap": "CloudTrail 과의 구분이 최다 빈출: Config = 리소스 '상태'(무엇이 어떻게 구성돼 있(었)나), CloudTrail = API '행위'(누가 무엇을 호출했나). Config 는 **탐지·수정**이지 SCP 같은 **예방**이 아니라는 것도 포인트.",
+    "vs": "Config(상태·평가·수정) vs CloudTrail(API 기록) vs SCP(예방 가드레일) vs Trusted Advisor(모범 사례 점검 보고).",
+    "rel": [
+      55
+    ],
+    "reln": 1
+  },
+  {
+    "cat": "컴퓨팅",
+    "svc": "Amazon ECS · Fargate · EKS",
+    "abbr": "컨테이너",
+    "deff": "컨테이너 실행의 두 축. **오케스트레이터**: ECS(AWS 네이티브·단순) vs EKS(업스트림 쿠버네티스 호환·이식성). **실행 기반**: EC2(인스턴스 직접 관리) vs **Fargate**(서버리스 — 프로비저닝·패치·스케일링 없음).",
+    "key": "두 축은 조합 가능(ECS+Fargate, EKS+Fargate 등). Fargate 는 태스크/파드 단위 과금으로 유휴 인스턴스가 없다. 이미지는 ECR 에. 쿠버네티스 매니페스트·Helm 재사용 요구 = EKS 확정 신호.",
+    "when": "'서버 관리 0 + AWS 네이티브' = ECS+Fargate. '온프레미스 k8s 이전·매니페스트 재사용·멀티클라우드 이식성' = EKS. 세밀한 인스턴스 제어(GPU·데몬셋·특수 AMI) = EC2 시작 유형.",
+    "trap": "'쿠버네티스 전문성이 없다'는데 EKS 를 고르거나, '기존 k8s 자산 재사용'인데 ECS 재작성을 고르는 게 함정. 오케스트레이터 선택과 실행 기반 선택을 한 덩어리로 섞은 선택지를 분해해 읽어라.",
+    "vs": "ECS(단순·AWS 통합) vs EKS(k8s 표준·이식성) × EC2(제어) vs Fargate(무관리). App Runner 는 그 위의 완전 추상화(웹 서비스 특화).",
+    "rel": [
+      59,
+      60
+    ],
+    "reln": 2
+  },
+  {
+    "cat": "네트워킹",
+    "svc": "ALB vs NLB",
+    "abbr": "ELB",
+    "deff": "두 주력 로드 밸런서. **ALB** = L7(HTTP/HTTPS) — 경로·호스트·헤더 기반 라우팅, WAF 연결, Lambda 대상. **NLB** = L4(TCP/UDP) — 초당 수백만 요청·초저지연, **AZ 당 고정 IP/EIP**, 소스 IP 보존.",
+    "key": "고정 IP 가 필요한 화이트리스트 시나리오는 NLB 만 가능(ALB 는 IP 변동). NLB 는 TLS 종단도 지원. ALB 는 HTTP 계층의 지능형 라우팅(마이크로서비스 경로 분기)·인증(Cognito/OIDC) 통합이 강점. PrivateLink 엔드포인트 서비스의 프런트도 NLB.",
+    "when": "HTTP 마이크로서비스 라우팅·WAF = ALB. 커스텀 TCP/UDP·초저지연·고정 IP·게임/IoT = NLB. 둘을 조합(NLB→ALB)해 고정 IP + L7 라우팅을 동시에 얻는 패턴도 출제된다.",
+    "trap": "'ALB 에 고정 IP 옵션을 켠다'는 선택지는 존재하지 않는 기능 — 대표 함정. UDP 는 ALB 가 아예 불가. L4/L7 층위를 먼저 판정하면 절반은 풀린다.",
+    "vs": "ALB(L7·라우팅·WAF) vs NLB(L4·성능·고정 IP) vs Gateway LB(서드파티 가상 어플라이언스 삽입) vs CLB(레거시).",
+    "rel": [
+      61
+    ],
+    "reln": 1
+  },
+  {
+    "cat": "네트워킹",
+    "svc": "AWS PrivateLink",
+    "abbr": "PrivateLink",
+    "deff": "서비스 제공자가 **NLB 뒤의 서비스를 엔드포인트 서비스로 게시**하고, 소비자가 자기 VPC 의 **인터페이스 엔드포인트(프라이빗 IP·ENI)** 로 접속하는 프라이빗 연결 모델. **네트워크를 결합하지 않고 서비스 단위로만** 노출한다.",
+    "key": "트래픽이 인터넷·피어링 없이 AWS 내부에 머문다. 소비자↔제공자 CIDR 이 겹쳐도 무관(피어링과의 결정적 차이). AWS 서비스용 인터페이스 엔드포인트도 같은 PrivateLink 기술이다.",
+    "when": "SaaS 를 고객 VPC 에 프라이빗 제공, 파트너/계정 간에 특정 API 만 노출(전체 네트워크 연결 없이), 규정상 인터넷 경유 금지 서비스 접근.",
+    "trap": "'네트워크 전체를 잇는가(피어링/TGW), 서비스 하나만 노출하는가(PrivateLink)'를 묻는 문제에서 반대를 고르는 것. CIDR 중복 문구가 나오면 피어링 계열은 즉시 탈락이다.",
+    "vs": "PrivateLink(서비스 단위·단방향·CIDR 무관) vs 피어링(네트워크 결합·비전이) vs TGW(다수 네트워크 허브) vs VPN(온프레미스 암호화 터널).",
+    "rel": [
+      62
+    ],
+    "reln": 1
+  },
+  {
+    "cat": "네트워킹",
+    "svc": "AWS Global Accelerator",
+    "abbr": "GA",
+    "deff": "**정적 애니캐스트 IP 2개**로 전 세계 사용자를 가장 가까운 AWS 엣지에 접속시키고, 이후 구간을 AWS 백본으로 라우팅해 **TCP/UDP** 트래픽의 성능·가용성을 높이는 서비스. **캐싱은 없다.**",
+    "key": "엔드포인트(ALB·NLB·EIP·EC2)의 헬스·가중치 기반으로 **초 단위 리전 장애 조치**(DNS TTL 무관). 고정 IP 라 방화벽 화이트리스트에 적합. 게임·VoIP·IoT 같은 비HTTP 프로토콜의 글로벌 가속 표준.",
+    "when": "커스텀 TCP/UDP 글로벌 서비스, 고정 IP 요구, DNS 캐싱 지연 없는 리전 failover, 멀티 리전 활성-활성의 트래픽 진입점.",
+    "trap": "CloudFront 와의 혼동이 전부다: **캐싱·HTTP = CloudFront, 비HTTP·고정 IP·초단위 failover = GA**. 'UDP' 또는 '고정 IP 2개'가 보이면 GA 확정.",
+    "vs": "Global Accelerator(L4 가속·고정 IP·무캐시) vs CloudFront(HTTP 캐시·콘텐츠) vs Route 53 latency(DNS 선택일 뿐 경로 가속 없음).",
+    "rel": [
+      66
+    ],
+    "reln": 1
+  },
+  {
+    "cat": "스토리지",
+    "svc": "AWS DataSync · Snow 패밀리",
+    "abbr": "전송 도구",
+    "deff": "대량 데이터 이전의 두 경로. **DataSync** = 네트워크 **온라인 전송**(온프레미스↔S3/EFS/FSx, 병렬 가속·증분 스케줄·무결성 검증). **Snow 패밀리** = 대역폭이 부족할 때 **물리 디바이스 오프라인 이전**(Snowball Edge ~80TB/대, 256비트 암호화).",
+    "key": "선택 공식 = **데이터량 ÷ 회선 속도**: 전송이 몇 주 이상 걸리면 Snow, 회선이 충분하고 지속/증분 동기화가 필요하면 DataSync. Snowball Edge 는 엣지 컴퓨팅(로컬 처리)도 겸한다.",
+    "when": "10Gbps 회선 + 매일 증분 동기화 + 전환일까지 유지 = DataSync. 100Mbps 회선 + 페타바이트 일회 이전 = Snowball Edge 여러 대.",
+    "trap": "Storage Gateway 와의 구분 — Gateway 는 앱이 **계속 쓰는 지속 인터페이스**(NFS/SMB+캐시), DataSync 는 **전송 도구**다. '증분 동기화' = DataSync, '앱이 계속 NFS 사용' = Gateway 로 즉시 가른다.",
+    "vs": "DataSync(온라인·증분·검증) vs Snowball Edge(오프라인·대량) vs Storage Gateway(지속 하이브리드 인터페이스) vs Transfer Acceleration(S3 업로드 가속 — 이전 도구 아님).",
+    "rel": [
+      67,
+      68
+    ],
+    "reln": 2
+  },
+  {
+    "cat": "데이터베이스",
+    "svc": "Amazon Aurora",
+    "abbr": "Aurora",
+    "deff": "MySQL/PostgreSQL 호환 클라우드 네이티브 관계형 DB. 컴퓨팅과 분리된 분산 스토리지가 **3개 AZ 에 6중 복제**·**자동 확장**되고, 같은 스토리지를 공유하는 **저지연 복제본 최대 15개**를 붙인다.",
+    "key": "복제본이 스토리지를 공유해 복제 지연이 밀리초급(RDS 비동기 복제와 차별). **Aurora Serverless v2** 는 ACU 단위 초 단위 자동 용량 조정(간헐·가변 부하). **Global Database** 는 리전 간 <1초 복제 + 1분 내 승격(리전 DR).",
+    "when": "MySQL/PostgreSQL 호환 + 고내구성·읽기 확장 = Aurora. 간헐적/가변 부하 개발 DB = Serverless v2. 다중 리전 읽기 + 낮은 RPO/RTO = Global Database.",
+    "trap": "'6중 복제·스토리지 자동 확장·복제본 15개' 키워드에 RDS MySQL 을 고르는 것. 반대로 상용 엔진(Oracle/SQL Server) 요구에 Aurora 를 고르는 것도 오답(호환은 MySQL/PostgreSQL 뿐).",
+    "vs": "Aurora(클라우드 네이티브·공유 스토리지) vs RDS(엔진 그대로 관리형) vs Serverless v2(가변 부하) vs Global Database(리전 DR).",
+    "rel": [
+      48,
+      71
+    ],
+    "reln": 2
+  },
+  {
+    "cat": "데이터베이스",
+    "svc": "AWS DMS",
+    "abbr": "DMS/SCT",
+    "deff": "데이터베이스를 **가동 중에** AWS 로 이전하는 서비스. **전체 로드 + CDC(변경 데이터 캡처) 지속 복제**로 전환 다운타임을 분 단위로 줄인다. 이기종 이전은 **SCT(Schema Conversion Tool)** 가 스키마·코드를 먼저 변환한다.",
+    "key": "동종(MySQL→Aurora MySQL) = DMS 단독, 이기종(Oracle→Aurora PostgreSQL) = **SCT + DMS** 세트. CDC 가 원본 변경을 계속 흘려보내므로 애플리케이션 전환 시점을 자유롭게 고를 수 있다.",
+    "when": "온프레미스/타 클라우드 DB 의 최소 중단 이전, 엔진 교체(탈 Oracle), 지속 복제로 리드 리플리카 성격의 데이터 파이프.",
+    "trap": "'최소 다운타임' DB 이전에 mysqldump/백업 복원(중단 큼)이나 DataSync(파일 도구 — DB 복제 아님)를 고르는 것. 이기종인데 SCT 를 빼먹는 선택지도 함정.",
+    "vs": "DMS(데이터 이동·CDC) + SCT(스키마 변환) vs 네이티브 덤프(중단 큼) vs AWS Backup(같은 엔진 복원만).",
+    "rel": [
+      72
+    ],
+    "reln": 1
+  },
+  {
+    "cat": "데이터·분석",
+    "svc": "Amazon Redshift",
+    "abbr": "Redshift",
+    "deff": "컬럼 지향·MPP(대규모 병렬 처리) **데이터 웨어하우스**. 페타바이트급 정형 데이터의 복잡한 조인·집계를 상시·고빈도로 처리한다(BI 대시보드의 백엔드).",
+    "key": "**Redshift Spectrum** 으로 S3 의 데이터를 로드 없이 확장 쿼리할 수 있고, Serverless 옵션도 있다. 상시 클러스터 비용 vs 쿼리당 과금(Athena)의 트레이드오프가 선택 기준.",
+    "when": "매일 수천 건의 복잡한 BI 쿼리·일관된 응답 시간·페타바이트 정형 데이터 = Redshift. 가끔 애드혹 = Athena 로 충분.",
+    "trap": "Athena 와의 구분: '상시·고빈도·일관 성능' = Redshift, '간헐 애드혹·인프라 0' = Athena. OLTP(RDS)와 OLAP(Redshift)를 섞는 선택지도 고전 함정.",
+    "vs": "Redshift(상시 웨어하우스·MPP) vs Athena(서버리스 애드혹) vs RDS/Aurora(OLTP) vs EMR(커스텀 빅데이터 프레임워크).",
+    "rel": [
+      73
+    ],
+    "reln": 1
+  },
+  {
+    "cat": "모니터링·감사",
+    "svc": "Amazon CloudWatch",
+    "abbr": "CloudWatch",
+    "deff": "지표(metrics)·로그(Logs)·경보(alarms)·대시보드의 관측 허브. EC2 기본 지표는 하이퍼바이저 관점(CPU·네트워크)뿐이고, **메모리·디스크 사용률은 CloudWatch 에이전트**를 설치해야 수집된다.",
+    "key": "**detailed monitoring 은 주기를 5분→1분으로 줄일 뿐 새 지표를 추가하지 않는다**(에이전트와 혼동 금지). CloudWatch Logs 의 **기본 보존은 무기한** — 보존 기간 설정 또는 S3 내보내기로 비용을 관리한다. 경보→SNS/Auto Scaling 액션 연계.",
+    "when": "메모리/디스크 기준 경보(에이전트), 로그 중앙 수집·지표 필터, 비용 관리(보존 기간+S3 아카이브), 경보 기반 자동 조치.",
+    "trap": "'메모리 지표가 없다 → detailed monitoring 켠다'가 대표 함정(답은 에이전트). 'Logs 는 알아서 지워진다'도 거짓(기본 무기한 과금).",
+    "vs": "CloudWatch(지표·로그·경보) vs CloudTrail(API 감사) vs Config(구성 상태) vs X-Ray(분산 추적).",
+    "rel": [
+      70,
+      78
+    ],
+    "reln": 2
+  },
+  {
+    "cat": "비용 최적화",
+    "svc": "비용 관리 도구 (Trusted Advisor · Compute Optimizer · Cost Explorer)",
+    "abbr": "Cost 도구",
+    "deff": "역할이 다른 세 비용 도구. **Trusted Advisor** = 모범 사례 점검 보고(유휴/미사용 리소스·보안·한도), **Compute Optimizer** = ML 기반 **적정 크기(rightsizing) 권장**(EC2·ASG·EBS·Lambda), **Cost Explorer** = 비용 시각화·추세·예측·RI/SP 구매 추천.",
+    "key": "Trusted Advisor 전체 검사는 Business/Enterprise 지원 플랜 필요. Compute Optimizer 는 CloudWatch 지표를 분석해 구체적 대체 인스턴스 타입을 제시. Organizations 통합 결제는 RI/SP 할인 공유 + 사용량 합산 볼륨 할인을 제공한다.",
+    "when": "'미연결 EBS·유휴 EIP 점검' = Trusted Advisor, '과다 프로비저닝 다운사이징 권장' = Compute Optimizer, '어디에 얼마 쓰는지 분석/예측' = Cost Explorer, '계정 간 유휴 RI 활용' = 통합 결제 공유.",
+    "trap": "세 도구의 역할 바꿔치기 — rightsizing 질문에 Trusted Advisor, 유휴 리소스 점검에 Inspector(취약점 도구!)를 고르게 유도한다. 'Inspector 는 보안, 비용 아님'을 기억.",
+    "vs": "Trusted Advisor(점검 보고) vs Compute Optimizer(크기 권장) vs Cost Explorer(분석·예측) vs Budgets(임계 알림).",
+    "rel": [
+      49,
+      79
+    ],
+    "reln": 2
   }
 ]

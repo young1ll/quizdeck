@@ -111,12 +111,91 @@
     "AWS Transit Gateway · VPC 피어링"
   ],
   "48": [
-    "Amazon RDS(Multi-AZ · 읽기 전용 복제본)"
+    "Amazon Aurora"
   ],
   "49": [
-    "EC2 구매 옵션"
+    "비용 관리 도구 (Trusted Advisor · Compute Optimizer · Cost Explorer)"
   ],
   "50": [
     "Amazon DynamoDB"
+  ],
+  "51": [
+    "GuardDuty · Inspector · Macie"
+  ],
+  "52": [
+    "GuardDuty · Inspector · Macie"
+  ],
+  "54": [
+    "Amazon CloudFront"
+  ],
+  "55": [
+    "AWS Config"
+  ],
+  "57": [
+    "AWS Organizations · SCP"
+  ],
+  "58": [
+    "AWS KMS"
+  ],
+  "59": [
+    "Amazon ECS · Fargate · EKS"
+  ],
+  "60": [
+    "Amazon ECS · Fargate · EKS"
+  ],
+  "61": [
+    "ALB vs NLB"
+  ],
+  "62": [
+    "AWS PrivateLink"
+  ],
+  "63": [
+    "Amazon SQS"
+  ],
+  "64": [
+    "Amazon SQS"
+  ],
+  "65": [
+    "AWS Lambda"
+  ],
+  "66": [
+    "AWS Global Accelerator"
+  ],
+  "67": [
+    "AWS DataSync · Snow 패밀리"
+  ],
+  "68": [
+    "AWS DataSync · Snow 패밀리"
+  ],
+  "70": [
+    "Amazon CloudWatch"
+  ],
+  "71": [
+    "Amazon Aurora"
+  ],
+  "72": [
+    "AWS DMS"
+  ],
+  "73": [
+    "Amazon Redshift"
+  ],
+  "75": [
+    "Amazon S3 스토리지 클래스"
+  ],
+  "76": [
+    "EC2 구매 옵션"
+  ],
+  "77": [
+    "EC2 구매 옵션",
+    "Auto Scaling 그룹(ASG)"
+  ],
+  "78": [
+    "Amazon CloudWatch"
+  ],
+  "79": [
+    "비용 관리 도구 (Trusted Advisor · Compute Optimizer · Cost Explorer)"
+  ],
+  "80": [
+    "Amazon S3 스토리지 클래스"
   ]
 }
