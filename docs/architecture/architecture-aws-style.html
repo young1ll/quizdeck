@@ -21,7 +21,7 @@
   svg{display:block;min-width:1080px;width:100%;height:auto;font-family:inherit}
   .legend{display:flex;flex-wrap:wrap;gap:16px 26px;margin:20px 2px 0;font-size:12.5px;color:var(--muted)}
   .legend .grp{display:flex;align-items:center;gap:8px}
-  .sw{width:26px;height:16px;border-radius:4px;flex:0 0 auto}
+  .sw{width:26px;height:16px;flex:0 0 auto}
   .sw.cloud{border:2px solid var(--cloud)} .sw.vpc{border:2px solid var(--green);background:#f4fbf4}
   .sw.pub{border:2px solid #2E8B2E;background:#f1f8f0} .sw.priv{border:2px solid var(--db);background:#eef5fb}
   .sw.mgmt{border:2px solid var(--mgmt);background:#fdf0f7} .sw.plan{border:2px dashed #9aa5b1}
@@ -83,8 +83,8 @@
 
     <!-- ===================== CI/CD PLANE (external, top) ===================== -->
     <g>
-      <rect x="470" y="24" width="700" height="118" rx="12" fill="#f0f8fe" stroke="#2D86C9" stroke-width="1.6"/>
-      <rect x="470" y="24" width="26" height="26" rx="6" fill="#2D86C9"/>
+      <rect x="470" y="24" width="700" height="118" fill="#f0f8fe" stroke="#2D86C9" stroke-width="1.6"/>
+      <rect x="470" y="24" width="26" height="26" fill="#2D86C9"/>
       <use href="#g-gear" x="471" y="25" width="24" height="24"/>
       <rect x="502" y="29" width="430" height="18" fill="#f0f8fe"/>
       <text x="504" y="42" font-size="13" font-weight="700" fill="#1f6aa3">CI/CD · GitHub Actions  —  ≈ CodePipeline + ECR</text>
@@ -120,8 +120,8 @@
 
     <!-- ===================== CLOUDFLARE EDGE ===================== -->
     <g>
-      <rect x="142" y="406" width="158" height="150" rx="12" fill="#f7f3ff" stroke="#8C4FFF" stroke-width="1.6"/>
-      <rect x="142" y="406" width="26" height="26" rx="6" fill="#8C4FFF"/>
+      <rect x="142" y="406" width="158" height="150" fill="#f7f3ff" stroke="#8C4FFF" stroke-width="1.6"/>
+      <rect x="142" y="406" width="26" height="26" fill="#8C4FFF"/>
       <use href="#g-cloud" x="143" y="407" width="24" height="24"/>
       <rect x="174" y="411" width="120" height="18" fill="#f7f3ff"/>
       <text x="176" y="424" font-size="12.5" font-weight="700" fill="#6b34e6">Cloudflare</text>
@@ -133,29 +133,29 @@
     </g>
 
     <!-- ===================== SYNOLOGY (AWS Cloud) ===================== -->
-    <rect x="334" y="194" width="918" height="700" rx="16" fill="#fbfcfd" stroke="#232F3E" stroke-width="2"/>
-    <rect x="334" y="194" width="26" height="26" rx="6" fill="#232F3E"/>
+    <rect x="334" y="194" width="918" height="700" fill="#fbfcfd" stroke="#232F3E" stroke-width="2"/>
+    <rect x="334" y="194" width="26" height="26" fill="#232F3E"/>
     <use href="#g-nas" x="335" y="195" width="24" height="24"/>
     <rect x="366" y="199" width="430" height="18" fill="#fbfcfd"/>
     <text x="368" y="212" font-size="13" font-weight="700" fill="#232F3E">Synology &#8220;zero&#8221; · DSM 7.3  —  AWS Cloud / Region 경계</text>
 
     <!-- VM (EC2) — app tier -->
-    <rect x="360" y="258" width="868" height="384" rx="14" fill="#fffaf4" stroke="#ED7100" stroke-width="1.7"/>
-    <rect x="360" y="258" width="26" height="26" rx="6" fill="#ED7100"/>
+    <rect x="360" y="258" width="868" height="384" fill="#fffaf4" stroke="#ED7100" stroke-width="1.7"/>
+    <rect x="360" y="258" width="26" height="26" fill="#ED7100"/>
     <use href="#g-server" x="361" y="259" width="24" height="24"/>
     <rect x="392" y="263" width="520" height="18" fill="#fffaf4"/>
     <text x="394" y="276" font-size="12.5" font-weight="700" fill="#b35a00">VM k3s-home · 192.168.68.55 · app tier · 커널 6.8  —  EC2 인스턴스 (VMM)</text>
 
     <!-- k3s (VPC) -->
-    <rect x="386" y="322" width="816" height="296" rx="13" fill="#f4fbf4" stroke="#1FA037" stroke-width="1.7"/>
-    <rect x="386" y="322" width="26" height="26" rx="6" fill="#1FA037"/>
+    <rect x="386" y="322" width="816" height="296" fill="#f4fbf4" stroke="#1FA037" stroke-width="1.7"/>
+    <rect x="386" y="322" width="26" height="26" fill="#1FA037"/>
     <use href="#g-cube" x="387" y="323" width="24" height="24"/>
     <rect x="418" y="327" width="360" height="18" fill="#f4fbf4"/>
     <text x="420" y="340" font-size="12.5" font-weight="700" fill="#15772b">k3s 클러스터 · v1.35.5  —  VPC (≈ EKS)</text>
 
     <!-- ===== subnets (namespaces) ===== -->
     <!-- ns cloudflare -->
-    <rect x="404" y="392" width="176" height="214" rx="10" fill="#f1f8f0" stroke="#2E8B2E" stroke-width="1.3" stroke-dasharray="5 4"/>
+    <rect x="404" y="392" width="176" height="214" fill="#f1f8f0" stroke="#2E8B2E" stroke-width="1.3" stroke-dasharray="5 4"/>
     <text x="416" y="410" font-size="11" font-weight="700" fill="#2E8B2E">ns: cloudflare</text>
     <text x="416" y="424" font-size="9.5" fill="#5b8b5b">public subnet</text>
     <g transform="translate(464,446)" filter="url(#sh)">
@@ -164,7 +164,7 @@
     <text x="492" y="532" font-size="9.5" text-anchor="middle" fill="#94a3b8">tunnel connector</text>
 
     <!-- ns kube-system -->
-    <rect x="594" y="392" width="176" height="214" rx="10" fill="#f1f8f0" stroke="#2E8B2E" stroke-width="1.3" stroke-dasharray="5 4"/>
+    <rect x="594" y="392" width="176" height="214" fill="#f1f8f0" stroke="#2E8B2E" stroke-width="1.3" stroke-dasharray="5 4"/>
     <text x="606" y="410" font-size="11" font-weight="700" fill="#2E8B2E">ns: kube-system</text>
     <text x="606" y="424" font-size="9.5" fill="#5b8b5b">public subnet</text>
     <g transform="translate(654,446)" filter="url(#sh)">
@@ -173,7 +173,7 @@
     <text x="682" y="532" font-size="9.5" text-anchor="middle" fill="#94a3b8">≈ ALB · ACME DNS-01(LE)</text>
 
     <!-- ns quizdeck (private) -->
-    <rect x="784" y="392" width="176" height="214" rx="10" fill="#eef5fb" stroke="#2E73B8" stroke-width="1.3"/>
+    <rect x="784" y="392" width="176" height="214" fill="#eef5fb" stroke="#2E73B8" stroke-width="1.3"/>
     <text x="796" y="410" font-size="11" font-weight="700" fill="#2E73B8">ns: quizdeck</text>
     <text x="796" y="424" font-size="9.5" fill="#5b7da3">private subnet</text>
     <g transform="translate(844,446)" filter="url(#sh)">
@@ -185,7 +185,7 @@
     <text x="796" y="592" font-size="9" fill="#5b7da3">probe: /api/health·/ready</text>
 
     <!-- ns argocd (mgmt) -->
-    <rect x="974" y="392" width="176" height="214" rx="10" fill="#fdf0f7" stroke="#E7157B" stroke-width="1.3"/>
+    <rect x="974" y="392" width="176" height="214" fill="#fdf0f7" stroke="#E7157B" stroke-width="1.3"/>
     <text x="986" y="410" font-size="11" font-weight="700" fill="#E7157B">ns: argocd</text>
     <text x="986" y="424" font-size="9.5" fill="#b3477f">control plane</text>
     <g transform="translate(1034,446)" filter="url(#sh)">
@@ -195,14 +195,14 @@
     <text x="1062" y="545" font-size="8" text-anchor="middle" fill="#b3477f">quizdeck · cloudflared · backup · expose</text>
 
     <!-- ===== db-home VM (separate EC2) — data tier (active) ===== -->
-    <rect x="360" y="662" width="868" height="200" rx="14" fill="#fff8f3" stroke="#ED7100" stroke-width="1.7"/>
-    <rect x="360" y="662" width="26" height="26" rx="6" fill="#ED7100"/>
+    <rect x="360" y="662" width="868" height="200" fill="#fff8f3" stroke="#ED7100" stroke-width="1.7"/>
+    <rect x="360" y="662" width="26" height="26" fill="#ED7100"/>
     <use href="#g-server" x="361" y="663" width="24" height="24"/>
     <rect x="392" y="667" width="560" height="18" fill="#fff8f3"/>
     <text x="394" y="680" font-size="12.5" font-weight="700" fill="#b35a00">VM db-home · 192.168.68.52 · data tier — EC2 인스턴스 (별도 VM · 게스트↔게스트 LAN)</text>
 
     <!-- private subnet + postgres (active) -->
-    <rect x="784" y="700" width="176" height="148" rx="10" fill="#eef5fb" stroke="#2E73B8" stroke-width="1.3"/>
+    <rect x="784" y="700" width="176" height="148" fill="#eef5fb" stroke="#2E73B8" stroke-width="1.3"/>
     <text x="796" y="718" font-size="11" font-weight="700" fill="#2E73B8">private subnet</text>
     <text x="796" y="732" font-size="9.5" fill="#5b7da3">ufw + pg_hba</text>
     <g transform="translate(844,742)" filter="url(#sh)">
