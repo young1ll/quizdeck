@@ -22,11 +22,11 @@ export default async function Me() {
   // 전 Exam Progress(동기화된 DB 소스) + 카탈로그 meta(문항 수·이름·링크) → 집계.
   const rows = await loadAllProgress(pool, session.user.id);
   const totalByKey: Record<string, number> = {};
-  const meta: Record<string, { name: string; code: string; href: string }> = {};
+  const meta: Record<string, { name: string; code: string; href: string; icon?: string }> = {};
   for (const e of listExams()) {
     const key = `${e.provider}/${e.slug}`;
     totalByKey[key] = e.questionCount;
-    meta[key] = { name: e.name, code: e.code, href: `/${e.provider}/${e.slug}` };
+    meta[key] = { name: e.name, code: e.code, href: `/${e.provider}/${e.slug}`, icon: e.icon };
   }
   const dashboard = buildDashboard(rows, totalByKey, today());
 

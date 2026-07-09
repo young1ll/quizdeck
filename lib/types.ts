@@ -46,6 +46,13 @@ export interface Diagram {
   svg: string;
 }
 
+/** 시험 트랙(자격 계열) — 카탈로그 묶음. id 는 언어 무관 안정 키(그룹/정렬), name 은 표시 라벨.
+ *  라벨을 그룹 키로 쓰지 않는다(Topic/topicId 와 같은 규칙 — CONTEXT.md). */
+export interface ExamTrack {
+  id: string;
+  name: string;
+}
+
 export interface ExamMeta {
   provider: string;
   providerName: string;
@@ -53,6 +60,10 @@ export interface ExamMeta {
   name: string;
   slug: string;
   language: string;
+  /** 카탈로그·카드 표시용 아이콘(이모지). 없으면 미표시. meta=파일 결정(ADR-0005) 유지 — git 편집. */
+  icon?: string;
+  /** 트랙(자격 계열). 없으면 카탈로그가 provider 묶음으로 폴백. */
+  track?: ExamTrack;
   counts: { questions: number; concepts: number; diagrams: number };
 }
 
@@ -65,5 +76,7 @@ export interface ExamSummary {
   slug: string;
   code: string;
   name: string;
+  icon?: string;
+  track?: ExamTrack;
   questionCount: number;
 }

@@ -13,7 +13,7 @@ export default function Dashboard({
   meta,
 }: {
   data: DashboardData;
-  meta: Record<string, { name: string; code: string; href: string }>;
+  meta: Record<string, { name: string; code: string; href: string; icon?: string }>;
 }) {
   return (
     <Card padding={5}>
@@ -56,7 +56,10 @@ export default function Dashboard({
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0">
                           {m && (
-                            <div className="font-mono text-[10px] text-[var(--accent)]">{m.code}</div>
+                            <div className="font-mono text-[10px] text-[var(--accent)]">
+                              {m.icon && <span className="mr-1">{m.icon}</span>}
+                              {m.code}
+                            </div>
                           )}
                           <div className="truncate text-sm font-medium">{m?.name ?? e.examKey}</div>
                         </div>

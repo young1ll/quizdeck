@@ -5,6 +5,11 @@
   "name": "AWS Certified Solutions Architect - Professional",
   "slug": "sap-c02",
   "language": "ko",
+  "icon": "🏛️",
+  "track": {
+    "id": "aws-solutions-architect",
+    "name": "AWS Solutions Architect"
+  },
   "counts": {
     "questions": 647,
     "concepts": 174,

@@ -10,6 +10,7 @@ import { getLearnerSession } from "@/lib/learner-server";
 import { pool } from "@/lib/db";
 import { loadAllProgress } from "@/lib/progress-db";
 import { buildContinueList, totalMyProblems, type ContinueItem } from "@/lib/dashboard";
+import { groupExams } from "@/lib/catalog";
 
 // Home — 재개(act) (ADR-0012 결정 2·3). 로그인 Learner 엔 상단 "이어서 학습"(Progress 기반 최근 시험,
 // cross-device 일관, 최대 3) + 카탈로그, 익명엔 카탈로그만. 진도 스코프 사다리의 재개 지점 — 숫자는
@@ -23,13 +24,8 @@ const MAX_CONTINUE = 3;
 export default async function Home() {
   const exams = listExams();
 
-  // provider별 그룹화 (카탈로그)
-  const byProvider = new Map<string, typeof exams>();
-  for (const e of exams) {
-    const arr = byProvider.get(e.providerName) ?? [];
-    arr.push(e);
-    byProvider.set(e.providerName, arr);
-  }
+  // 카탈로그 그룹화 — 트랙(자격 계열) 우선, 없으면 provider 폴백(lib/catalog 순수 결정, 데이터 모델 ③).
+  const groups = groupExams(exams);
 
   // 로그인 Learner — 최근 학습한 시험(Progress 기반) 이어서 카드. 익명은 세션 없음 → 카탈로그만.
   // 재개 결정(어떤 시험·Mastery·내 문제함 수)은 buildContinueList(순수·핀됨)가 소유(아키텍처 리뷰 C3).
@@ -66,7 +62,10 @@ export default async function Home() {
                   <Link href={`/${exam.provider}/${exam.slug}/`} className="block p-4">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <div className="font-mono text-xs text-[var(--accent)]">{exam.code}</div>
+                        <div className="font-mono text-xs text-[var(--accent)]">
+                          {exam.icon && <span className="mr-1">{exam.icon}</span>}
+                          {exam.code}
+                        </div>
                         <div className="mt-1 truncate font-medium leading-snug">{exam.name}</div>
                       </div>
                       <span className="shrink-0 text-sm font-semibold text-[var(--accent)]">
@@ -126,19 +125,22 @@ export default async function Home() {
         <EmptyState title="등록된 시험이 없습니다" isCompact />
       ) : (
         <div className="space-y-8">
-          {[...byProvider.entries()].map(([providerName, list]) => (
-            <section key={providerName}>
+          {groups.map((g) => (
+            <section key={g.id}>
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-                {providerName}
+                {g.name}
               </h2>
               <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {list.map((e) => (
+                {g.exams.map((e) => (
                   <li key={`${e.provider}/${e.slug}`}>
                     {/* 카탈로그 카드 — astryx Card 서피스 + Next Link(클라이언트 내비·prefetch 유지, ADR
                         라우팅 보존). ClickableCard 은 plain <a>(풀 리로드)라 미채택. ADR-0014 Phase 3. */}
                     <Link href={`/${e.provider}/${e.slug}/`} className="block">
                       <Card padding={4} interactive>
-                        <div className="font-mono text-xs text-[var(--accent)]">{e.code}</div>
+                        <div className="font-mono text-xs text-[var(--accent)]">
+                          {e.icon && <span className="mr-1">{e.icon}</span>}
+                          {e.code}
+                        </div>
                         <div className="mt-1 font-medium leading-snug">{e.name}</div>
                         <div className="mt-2 text-xs text-[var(--muted)]">문항 {e.questionCount}개</div>
                       </Card>
