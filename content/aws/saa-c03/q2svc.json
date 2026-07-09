@@ -1,19 +1,122 @@
 {
-  "1": ["Amazon S3 스토리지 클래스"],
-  "2": ["Auto Scaling 그룹(ASG)"],
-  "3": ["VPC 엔드포인트"],
-  "4": ["Amazon RDS(Multi-AZ · 읽기 전용 복제본)"],
-  "5": ["IAM 역할 / 인스턴스 프로파일"],
-  "6": ["Amazon SQS"],
-  "7": ["Amazon EFS"],
-  "8": ["Amazon CloudFront"],
-  "9": ["EC2 구매 옵션"],
-  "10": ["Amazon DynamoDB"],
-  "12": ["Auto Scaling 그룹(ASG)", "Amazon RDS(Multi-AZ · 읽기 전용 복제본)"],
-  "13": ["Amazon S3 스토리지 클래스"],
-  "16": ["Amazon SQS", "AWS Lambda"],
-  "17": ["Amazon S3 스토리지 클래스"],
-  "18": ["AWS Lambda"],
-  "19": ["Amazon RDS(Multi-AZ · 읽기 전용 복제본)"],
-  "20": ["AWS KMS"]
+  "1": [
+    "Amazon S3 스토리지 클래스"
+  ],
+  "2": [
+    "Auto Scaling 그룹(ASG)"
+  ],
+  "3": [
+    "VPC 엔드포인트"
+  ],
+  "4": [
+    "Amazon RDS(Multi-AZ · 읽기 전용 복제본)"
+  ],
+  "5": [
+    "IAM 역할 / 인스턴스 프로파일"
+  ],
+  "6": [
+    "Amazon SQS"
+  ],
+  "7": [
+    "Amazon EFS"
+  ],
+  "8": [
+    "Amazon CloudFront"
+  ],
+  "9": [
+    "EC2 구매 옵션"
+  ],
+  "10": [
+    "Amazon DynamoDB"
+  ],
+  "12": [
+    "Auto Scaling 그룹(ASG)",
+    "Amazon RDS(Multi-AZ · 읽기 전용 복제본)"
+  ],
+  "13": [
+    "Amazon S3 스토리지 클래스"
+  ],
+  "16": [
+    "Amazon SQS",
+    "AWS Lambda"
+  ],
+  "17": [
+    "Amazon S3 스토리지 클래스"
+  ],
+  "18": [
+    "AWS Lambda"
+  ],
+  "19": [
+    "Amazon RDS(Multi-AZ · 읽기 전용 복제본)"
+  ],
+  "20": [
+    "AWS KMS"
+  ],
+  "21": [
+    "AWS Organizations · SCP"
+  ],
+  "22": [
+    "IAM 역할 / 인스턴스 프로파일"
+  ],
+  "23": [
+    "보안 그룹 vs NACL"
+  ],
+  "25": [
+    "Amazon Cognito"
+  ],
+  "27": [
+    "AWS Certificate Manager(ACM)"
+  ],
+  "28": [
+    "AWS KMS"
+  ],
+  "30": [
+    "DR 전략 (RTO·RPO)"
+  ],
+  "31": [
+    "Amazon Route 53 라우팅 정책",
+    "DR 전략 (RTO·RPO)"
+  ],
+  "32": [
+    "DR 전략 (RTO·RPO)"
+  ],
+  "33": [
+    "Amazon SQS"
+  ],
+  "35": [
+    "Amazon API Gateway"
+  ],
+  "37": [
+    "DR 전략 (RTO·RPO)"
+  ],
+  "39": [
+    "Amazon FSx 패밀리"
+  ],
+  "41": [
+    "AWS Storage Gateway"
+  ],
+  "42": [
+    "Amazon ElastiCache"
+  ],
+  "43": [
+    "Amazon RDS(Multi-AZ · 읽기 전용 복제본)"
+  ],
+  "44": [
+    "Amazon Kinesis (Streams vs Firehose)"
+  ],
+  "46": [
+    "AWS Transit Gateway · VPC 피어링"
+  ],
+  "47": [
+    "AWS Transit Gateway · VPC 피어링"
+  ],
+  "48": [
+    "Amazon RDS(Multi-AZ · 읽기 전용 복제본)"
+  ],
+  "49": [
+    "EC2 구매 옵션"
+  ],
+  "50": [
+    "Amazon DynamoDB"
+  ]
 }
