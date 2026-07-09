@@ -40,7 +40,9 @@ spec:
               command: ["/bin/sh", "-c"]
               args:
                 - |
-                  set -eu
+                  set -euo pipefail
+                  # pipefail 필수: pg_dump(파이프 왼쪽)가 실패해도 mc pipe 만 성공하면 0바이트 덤프가
+                  # "성공"으로 보인다 — pipefail 이 파이프 어느 쪽 실패든 잡 실패로 만든다.
                   # mc(minio client, 단일 정적 바이너리)로 R2 에 스트림 업로드 — aws-cli community
                   # repo 가정 없이 alpine main 의 curl+ca-certificates 만으로 확실히 동작.
                   apk add --no-cache ca-certificates curl >/dev/null
@@ -74,6 +76,8 @@ spec:
               resources:
                 requests:
                   cpu: 50m
-                  memory: 64Mi
+                  memory: 128Mi
+                # mc 정적 바이너리(~25MB) + pg_dump|mc 스트림 버퍼 + Go GC 헤드룸에 256Mi 는 빠듯해
+                # 첫 시도가 OOMKilled 됐다(2026-07-09 검증). 512Mi 로 헤드룸 확보.
                 limits:
-                  memory: 256Mi
+                  memory: 512Mi
