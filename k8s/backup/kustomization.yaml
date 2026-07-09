@@ -1,0 +1,6 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: quizdeck
+resources:
+  - cronjob.yaml
+# README.md 는 매니페스트가 아니라 kustomize 가 무시한다(R2 설정·복원 런북은 명령형 bootstrap).

@@ -1,0 +1,79 @@
+# 오프사이트 논리 백업 (ADR-0021 결정 A). 매일 pg_dump -Fc → Cloudflare R2.
+#
+# 왜 오프사이트: data tier 백업 3계층(pg_dump·VM 스냅샷·/volume1)이 전부 같은 Synology 위라
+# 박스 하나가 죽으면 DB 와 모든 백업이 동시 소실한다. R2(다른 실패 도메인)로 밀어 그 구멍을 닫는다.
+# 이 덤프는 durability(지금) + 관리형 postgres 이전 리허설/seam 증명(나중)을 겸한다.
+#
+# 자격:
+#   - DATABASE_URL: 기존 db-credentials Secret 재사용(quizdeck ns).
+#   - r2-backup Secret: R2 버킷·엔드포인트·액세스키(git 밖). 생성법은 k8s/backup/README.md.
+# 보관(30일 롤링)은 이 잡이 아니라 R2 버킷 lifecycle 규칙으로 둔다(README).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-backup
+  namespace: quizdeck
+  labels:
+    app: db-backup
+spec:
+  schedule: "0 18 * * *" # 매일 UTC 18:00 = KST 03:00(한산한 시간)
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid # 이전 잡이 안 끝났으면 건너뛴다(중복 덤프 방지)
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800 # 30분 내 못 끝내면 실패(hang 방지)
+      template:
+        metadata:
+          labels:
+            app: db-backup
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: dump
+              # pg_dump 포함. client major ≥ server major 여야 함(DB VM=Ubuntu 24.04→pg16;
+              # pg17 client 는 pg16 서버를 덤프할 수 있다). 서버를 올리면 이 태그도 함께 올린다.
+              image: postgres:17-alpine
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  # mc(minio client, 단일 정적 바이너리)로 R2 에 스트림 업로드 — aws-cli community
+                  # repo 가정 없이 alpine main 의 curl+ca-certificates 만으로 확실히 동작.
+                  apk add --no-cache ca-certificates curl >/dev/null
+                  curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc
+                  chmod +x /tmp/mc
+                  ts=$(date -u +%Y%m%dT%H%M%SZ)
+                  key="quizdeck-${ts}.dump"
+                  /tmp/mc alias set r2 "$R2_ENDPOINT" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" >/dev/null
+                  echo "dumping → r2/${R2_BUCKET}/${key}"
+                  # -Fc = custom format(압축·pg_restore 로 선택복원). 파이프로 임시파일 없이 스트림.
+                  pg_dump -Fc "$DATABASE_URL" | /tmp/mc pipe "r2/${R2_BUCKET}/${key}"
+                  echo "backup ok: r2/${R2_BUCKET}/${key}"
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-credentials
+                      key: DATABASE_URL
+                - name: R2_BUCKET
+                  valueFrom:
+                    secretKeyRef: { name: r2-backup, key: R2_BUCKET }
+                - name: R2_ENDPOINT
+                  valueFrom:
+                    secretKeyRef: { name: r2-backup, key: R2_ENDPOINT }
+                - name: R2_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef: { name: r2-backup, key: R2_ACCESS_KEY_ID }
+                - name: R2_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef: { name: r2-backup, key: R2_SECRET_ACCESS_KEY }
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi

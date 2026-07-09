@@ -86,9 +86,12 @@ infra/db-vm/
   `pg_dump -Fc quizdeck > /var/backups/quizdeck-$(date +%F).dump`. 4GB급 데이터엔 충분.
   보관 로테이션은 `find /var/backups -mtime +14 -delete` 수준.
 - **VM 스냅샷:** DSM VMM의 VM 스냅샷으로 디스크 전체를 시점 보존(빠른 롤백용).
-- **오프박스 사본:** 덤프를 Synology `/volume1`(여유 1.4T)로 주기 복사 → DSM Hyper Backup
-  대상에 포함. 복구 리허설은 별도 시점에.
-- 자동화/PITR(`pg_basebackup` + WAL 아카이브)은 가치 > 비용일 때 후속 도입.
+- **⚠️ 오프사이트 사본(정본):** 위 세 계층(pg_dump·VM 스냅샷·`/volume1`)은 **전부 같은 물리
+  Synology 위**라 박스 loss(디스크·정전·도난·화재)엔 무력하다 — `/volume1` 은 오프박스가 **아니다**.
+  진짜 오프사이트는 **다른 실패 도메인(Cloudflare R2)** 으로 밀어야 한다: `k8s/backup/` CronJob 이
+  매일 `pg_dump -Fc` 를 R2 로 업로드한다([ADR-0021](../../docs/adr/0021-aws-migration-triggers-and-offsite-backup.md)).
+  DSM Hyper Backup 을 *진짜 오프사이트 대상*으로 설정하면 병행 가능(박스 통째 사본).
+- 자동화/PITR(`pg_basebackup` + WAL 아카이브)은 가치 > 비용일 때 후속 도입(ADR-0021 러ung 1 트리거).
 
 ## Acceptance criteria 매핑
 
