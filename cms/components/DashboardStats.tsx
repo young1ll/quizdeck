@@ -16,20 +16,42 @@ const num: React.CSSProperties = { fontSize: "1.6rem", fontWeight: 700, lineHeig
 const label: React.CSSProperties = { fontSize: "0.75rem", color: "var(--theme-elevation-600)" };
 
 export default async function DashboardStats({ payload }: ServerProps) {
-  const [exams, questions, concepts, learners, active] = await Promise.all([
-    payload.count({ collection: "exams", overrideAccess: true }),
-    payload.count({ collection: "questions", overrideAccess: true }),
-    payload.count({ collection: "concepts", overrideAccess: true }),
-    pool.query<{ n: string }>(`select count(*) n from "user"`),
-    pool.query<{ n: string }>(
-      `select count(distinct "learner_id") n from "progress" where "updated_at" > now() - interval '7 days'`,
-    ),
-  ]);
+  const [exams, questions, concepts, qDrafts, cDrafts, recent, learners, active] =
+    await Promise.all([
+      payload.count({ collection: "exams", overrideAccess: true }),
+      payload.count({ collection: "questions", overrideAccess: true }),
+      payload.count({ collection: "concepts", overrideAccess: true }),
+      payload.count({
+        collection: "questions",
+        where: { _status: { not_equals: "published" } },
+        overrideAccess: true,
+      }),
+      payload.count({
+        collection: "concepts",
+        where: { _status: { not_equals: "published" } },
+        overrideAccess: true,
+      }),
+      // 최근 수정 문항 5 — draft 포함(작업 중인 것이 먼저 보여야 하는 표면), 문제집 코드 표시용 depth 1
+      payload.find({
+        collection: "questions",
+        sort: "-updatedAt",
+        limit: 5,
+        depth: 1,
+        draft: true,
+        overrideAccess: true,
+      }),
+      pool.query<{ n: string }>(`select count(*) n from "user"`),
+      pool.query<{ n: string }>(
+        `select count(distinct "learner_id") n from "progress" where "updated_at" > now() - interval '7 days'`,
+      ),
+    ]);
 
+  const draftTotal = qDrafts.totalDocs + cDrafts.totalDocs;
   const stats = [
     { label: "문제집", value: exams.totalDocs },
     { label: "문항", value: questions.totalDocs },
     { label: "개념 카드", value: concepts.totalDocs },
+    { label: "미게시 초안", value: draftTotal },
     { label: "학습자(전체)", value: learners.rows[0]?.n ?? "0" },
     { label: "활동 학습자(7일)", value: active.rows[0]?.n ?? "0" },
   ];
@@ -40,20 +62,48 @@ export default async function DashboardStats({ payload }: ServerProps) {
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
         {stats.map((s) => (
           <div key={s.label} style={card}>
-            <div style={num}>{s.value}</div>
+            <div style={{ ...num, ...(s.label === "미게시 초안" && Number(s.value) > 0 ? { color: "var(--theme-warning-500, #b45309)" } : {}) }}>
+              {s.value}
+            </div>
             <div style={label}>{s.label}</div>
           </div>
         ))}
       </div>
+
+      {recent.docs.length > 0 && (
+        <div style={{ marginTop: "1rem" }}>
+          <h3 style={{ fontSize: "0.85rem", margin: "0 0 0.4rem" }}>최근 수정 문항</h3>
+          <ul style={{ margin: 0, paddingLeft: "1.1rem", fontSize: "0.85rem", lineHeight: 1.8 }}>
+            {recent.docs.map((d) => {
+              const exam = d.exam as { code?: string } | number;
+              const code = typeof exam === "object" ? (exam.code ?? "?") : "?";
+              return (
+                <li key={d.id}>
+                  <a href={`/admin/collections/questions/${d.id}`}>
+                    {code} · Q{d.qn}
+                  </a>{" "}
+                  <span style={label}>
+                    {d._status !== "published" ? "· 초안 " : ""}·{" "}
+                    {String(d.updatedAt).slice(0, 16).replace("T", " ")}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
       <p style={{ ...label, marginTop: "0.8rem" }}>
         배포: <code>{process.env.BUILD_SHA ?? "dev"}</code>
+        {" · "}
+        <a href="/admin/globals/site-config">사이트 설정</a>
         {" · "}
         <a href="https://myquizdeck.com" target="_blank" rel="noreferrer">
           사이트 열기 ↗
         </a>
         {" · "}
         <a href="https://dash.better-auth.com" target="_blank" rel="noreferrer">
-          인증 대시보드(사용자 밴·롤) ↗
+          인증 대시보드 ↗
         </a>
       </p>
     </div>

@@ -20,7 +20,7 @@ describe("examRoutes (exam URL 단일 출처)", () => {
     expect(examRoutes(meta)).toEqual({
       hub: "/aws/sap-c02",
       search: "/aws/sap-c02/search",
-      admin: "/admin/collections/questions",
+      admin: "/admin/collections/questions?where[exam.examKey][equals]=aws%2Fsap-c02",
     });
   });
 });
@@ -53,7 +53,7 @@ describe("buildHeaderModel (3단 적응 결정)", () => {
     });
     expect(buildHeaderModel(ctx({ isAdmin: true })).kind).toBe("exam");
     expect((buildHeaderModel(ctx({ isAdmin: true })) as { adminHref: string }).adminHref).toBe(
-      "/admin/collections/questions",
+      "/admin/collections/questions?where[exam.examKey][equals]=aws%2Fsap-c02",
     );
   });
 });
