@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Diagram, ExamMeta, ExamSummary } from "./types";
-import { pool } from "./db";
-import { loadConceptsLocalized, loadQuestionsLocalized } from "./content-db";
-import { availableLangs, type LocalizedExamData } from "./content-localize";
+import { pool } from "./db.ts";
+import { loadConceptsLocalized, loadQuestionsLocalized } from "./content-db.ts";
+import { availableLangs, type LocalizedExamData } from "./content-localize.ts";
 
 // 콘텐츠 로더 (하이브리드 — ADR-0005 A). Question·Concept 은 DB, 나머지(diagrams·q2svc·icons·
 // meta)는 repo 의 content/ 파일. 카탈로그(listExams)는 파일 meta 라 빌드-세이프(DB 불요).

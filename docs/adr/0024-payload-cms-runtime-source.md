@@ -66,6 +66,24 @@
   payload migrate 동시 적용)로 스모크 — home/exam/health 200(회귀 없음), `/cms`·`/cms/login` 200
   (better-auth 로그인 안내 렌더), 두 스키마 공존 확인.
 
+## 애던덤 — 2단계 이관 완료 (2026-07-10)
+
+- 코드: `cms/migrate-content.ts`(멱등 이관) · `cms/verify-content.ts`(구==신 diff) · `cms/read.ts`
+  (Payload→구 로더 출력형 투영 — 3단계 서빙 로더의 토대) · `db/payload-migrations/20260710_044432_*`
+- **컬렉션 확장**: questions.page/deeplink, concepts.detail/cost/rel/reln — 초기 정의가 타입
+  (`lib/types.ts`)의 선택 필드를 누락했었다(실데이터: sap-c02 문항 647개가 page/deeplink 보유,
+  개념 228개 전부 rel/reln/cost 보유). 언어 무관 필드는 투영이 모든 로케일 슬롯에 되돌린다.
+- **이관 결과**: 문제집 2·문항 787·개념 228, 운영 데이터는 **ko 단일 로케일**. 리허설(임시 DB)과
+  운영 모두 "구 로더 출력 == 신 투영 출력" 전 섹션 일치(카탈로그·meta·questions·concepts·
+  diagrams·q2svc·icons·availableLangs). 재실행 멱등 확인.
+- **R2 연기**: `exam_icon_override` 0행(이미지 아이콘 없음) — media 이관 대상이 없어 R2 버킷/키는
+  미디어 실사용 시점으로 미룬다. migrate 스크립트는 이미지 행 발견 시 **중단**하게 방어해 뒀다.
+- **운영 적용 방식**: k3s-home 엔 node/repo 가 없어 payload 마이그레이션은 up() SQL 추출→psql
+  (+`payload_migrations` 북키핑 INSERT), 데이터 이관은 **SSH 터널**(dev→k3s-home→DB VM)로
+  로컬에서 `payload run` — pg_hba 는 k3s-home 발신으로 인식한다.
+- 스크립트 실행 제약: tsx 는 확장자 없는 상대 TS import 를 못 풀어 lib 체인의 **런타임** 상대
+  import(content·content-db)에 `.ts` 를 명시했다(타입 전용은 소거되므로 그대로).
+
 ## 기각 대안 (재제안 방지)
 
 - **저작 도구 + publish 동기화** — 리스크는 작지만 이중 소스(Payload+구 테이블) 유지 비용이 상시.

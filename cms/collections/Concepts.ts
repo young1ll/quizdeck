@@ -62,5 +62,11 @@ export const Concepts: CollectionConfig = {
     { name: "when", type: "textarea", localized: true, admin: { description: "언제 쓰나" } },
     { name: "trap", type: "textarea", localized: true, admin: { description: "함정" } },
     { name: "vs", type: "textarea", localized: true, admin: { description: "비교" } },
+    { name: "detail", type: "textarea", localized: true, admin: { description: "상세(선택)" } },
+    { name: "cost", type: "textarea", localized: true, admin: { description: "비용 특성(선택)" } },
+    // 언어 무관 참조 필드 — 관련 문항 번호(rel: 표시분, reln: 총 개수). Questions 의 page/deeplink 와
+    // 같은 규칙으로 투영이 모든 로케일 슬롯에 되돌린다.
+    { name: "rel", type: "number", hasMany: true, admin: { description: "관련 문항 번호(표시분)" } },
+    { name: "reln", type: "number", admin: { description: "관련 문항 총 개수" } },
   ],
 };

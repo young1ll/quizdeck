@@ -7,7 +7,7 @@ import {
   toQuestionSlot,
   type LocalizedConcept,
   type LocalizedQuestion,
-} from "./content-localize";
+} from "./content-localize.ts";
 
 // Question·Concept 의 DB 적재/조회 (이슈 #26 / ADR-0005 A·C). 서버 전용(pg).
 // 언어 무관 식별/필드는 컬럼, 언어 의존 텍스트는 content jsonb 의 언어 슬롯. seed(db/seed-content.mjs)·
