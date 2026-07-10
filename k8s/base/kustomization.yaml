@@ -8,4 +8,4 @@ resources:
   - ingress.yaml
 images:
   - name: ghcr.io/young1ll/quizdeck
-    newTag: sha-f50a66e
+    newTag: sha-636c793
