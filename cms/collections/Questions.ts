@@ -30,7 +30,9 @@ const uniqueExamQn: CollectionBeforeValidateHook = async ({ data, originalDoc, r
 
 export const Questions: CollectionConfig = {
   slug: "questions",
+  labels: { singular: "문항", plural: "문항" },
   admin: {
+    group: "콘텐츠",
     defaultColumns: ["exam", "qn", "topic", "updatedAt"],
     listSearchableFields: ["q", "topic"],
   },
@@ -46,13 +48,14 @@ export const Questions: CollectionConfig = {
     afterDelete: [revalidateExamContentOnDelete],
   },
   fields: [
-    { name: "exam", type: "relationship", relationTo: "exams", required: true, index: true },
-    { name: "qn", type: "number", required: true, min: 1, admin: { description: "문항 번호 — 문제집 내 유일" } },
-    { name: "topic", type: "text", localized: true, admin: { description: "예: 📦 스토리지" } },
-    { name: "q", type: "textarea", required: true, localized: true, admin: { description: "지문 — **굵게** 마크업 허용(현행 렌더러 규칙)" } },
+    { name: "exam", type: "relationship", label: "문제집", relationTo: "exams", required: true, index: true },
+    { name: "qn", type: "number", label: "문항 번호", required: true, min: 1, admin: { description: "문항 번호 — 문제집 내 유일" } },
+    { name: "topic", type: "text", label: "주제", localized: true, admin: { description: "예: 📦 스토리지" } },
+    { name: "q", type: "textarea", label: "지문", required: true, localized: true, admin: { description: "지문 — **굵게** 마크업 허용(현행 렌더러 규칙)" } },
     {
       name: "options",
       type: "array",
+      label: "보기",
       required: true,
       minRows: 2,
       admin: { description: "보기 — key(A,B,…)는 언어 무관, text 만 언어별" },
@@ -64,12 +67,13 @@ export const Questions: CollectionConfig = {
     {
       name: "answer",
       type: "text",
+      label: "정답",
       hasMany: true,
       required: true,
       admin: { description: "정답 key 목록 — 보기 key 의 부분집합(예: A / A,C)" },
     },
-    { name: "explanation", type: "textarea", localized: true },
-    { name: "tip", type: "textarea", localized: true },
+    { name: "explanation", type: "textarea", label: "해설", localized: true },
+    { name: "tip", type: "textarea", label: "팁", localized: true },
     // 언어 무관 참조 필드 — 구 슬롯엔 언어별로 저장됐지만 의미는 중립(덤프 페이지·원문 링크).
     // 투영(cms/read.ts)이 존재하는 모든 로케일 슬롯에 같은 값을 되돌린다.
     { name: "page", type: "number", admin: { description: "덤프 문서 페이지 번호" } },

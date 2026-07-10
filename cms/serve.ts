@@ -26,6 +26,32 @@ export async function loadExamLocalizedCms(
   return loadExamLocalizedFromPayload(await getPayload({ config }), provider, slug);
 }
 
+// 사이트 설정 Global (확장 D) — 미저장/빈 필드는 기존 하드코딩 문구로 폴백해 렌더가 항상 성립한다.
+export interface SiteConfigView {
+  tagline: string;
+  footerText: string;
+  notice: { enabled: boolean; text: string; tone: "info" | "warning" };
+}
+
+const SITE_DEFAULTS = {
+  tagline: "자격·기술 시험 대비 퀴즈 · 학습",
+  footerText: "QuizDeck · self-hosted",
+};
+
+export async function getSiteConfigCms(): Promise<SiteConfigView> {
+  const payload = await getPayload({ config });
+  const g = await payload.findGlobal({ slug: "site-config", depth: 0, overrideAccess: true });
+  return {
+    tagline: g?.tagline || SITE_DEFAULTS.tagline,
+    footerText: g?.footerText || SITE_DEFAULTS.footerText,
+    notice: {
+      enabled: Boolean(g?.notice?.enabled && g?.notice?.text?.trim()),
+      text: g?.notice?.text ?? "",
+      tone: g?.notice?.tone === "warning" ? "warning" : "info",
+    },
+  };
+}
+
 export async function loadQuestionsByKeysCms(
   items: { examKey: string; qn: number }[],
 ): Promise<{ examKey: string; qn: number; answer: string[]; content: LocalizedQuestion["content"] }[]> {
