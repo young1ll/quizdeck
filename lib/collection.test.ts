@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  parseQnSet,
   parseCollection,
   addItem,
   removeItem,
@@ -89,5 +90,20 @@ describe("groupItemsByExam (시험별 그룹 — S1 시험별 풀기·S2 혼합 
 
   it("빈 items 는 빈 그룹", () => {
     expect(groupItemsByExam([])).toEqual([]);
+  });
+});
+
+describe("parseQnSet (/quiz?set= 딥엔트리 경계)", () => {
+  it("쉼표 목록을 정수 배열로 — 순서 보존·중복 제거", () => {
+    expect(parseQnSet("7,20,33")).toEqual([7, 20, 33]);
+    expect(parseQnSet("7, 20 ,7")).toEqual([7, 20]);
+  });
+  it("불량 조각(비수·0·음수·소수)은 버린다", () => {
+    expect(parseQnSet("a,0,-1,1.5,3")).toEqual([3]);
+  });
+  it("빈/누락 입력은 빈 배열", () => {
+    expect(parseQnSet("")).toEqual([]);
+    expect(parseQnSet(null)).toEqual([]);
+    expect(parseQnSet(undefined)).toEqual([]);
   });
 });

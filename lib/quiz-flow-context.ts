@@ -15,6 +15,8 @@ export interface QuizFlowValue {
   setupMode: Mode;
   /** 허브: 모드 시작 — 연습 게이트 후 setup 단계로 /quiz 진입. */
   startMode: (mode: Mode) => void;
+  /** 컬렉션 딥엔트리(/quiz?set=…, ADR-0022 S1.5): 게이트 후 qn 목록 일회성 학습을 곧장 시작. */
+  startSet: (qns: number[]) => void;
   /** 허브: 진행 중 세션 이어하기 → /quiz active. */
   resume: () => void;
   /** 허브: 진행 중 세션 버리기. */

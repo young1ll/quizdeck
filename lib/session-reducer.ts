@@ -10,6 +10,7 @@ import { setsEqual } from "./session";
 export type SessionAction =
   | { type: "start"; queue: number[]; mode: Mode; exam: boolean; limit?: number; now: number }
   | { type: "studyOne"; qn: number; now: number }
+  | { type: "studySet"; qns: number[]; now: number }
   | { type: "resume"; active: SessionState; now: number }
   | { type: "select"; key: string; multi: boolean }
   | { type: "submit"; answer: string[] }
@@ -40,6 +41,20 @@ export function sessionReducer(
     case "studyOne":
       return {
         queue: [action.qn],
+        idx: 0,
+        mode: "study",
+        exam: false,
+        answers: {},
+        flags: [],
+        start: action.now,
+        elapsed: 0,
+      };
+
+    // studyOne 의 목록판 — 컬렉션 '이 시험에서 풀기'(ADR-0022 S1.5)가 임의 qn 목록을 큐로 학습.
+    // 빈 목록 가드는 컨트롤러(studySet — byQn 존재 필터 후 empty→false)가 소유, 여기선 전이만.
+    case "studySet":
+      return {
+        queue: action.qns,
         idx: 0,
         mode: "study",
         exam: false,
