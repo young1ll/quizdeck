@@ -7,7 +7,7 @@ import { dayKey } from "./dates";
 // dashboard·store 의 streak 도출이 같은 정의를 공유한다. 공개 표면 유지를 위해 재노출.
 export { dayKey };
 
-export type Mode = "study" | "smart" | "exam" | "wrong" | "star" | "mine" | "memo";
+export type Mode = "study" | "smart" | "exam" | "wrong" | "star" | "mine" | "memo" | "collection";
 
 export interface QHist {
   seen: number;

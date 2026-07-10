@@ -38,6 +38,7 @@ export const MODE_LABEL: Record<Mode, string> = {
   star: "즐겨찾기",
   mine: "내 문제함",
   memo: "메모",
+  collection: "컬렉션", // 혼합 큐 컬렉션 풀기(ADR-0022 S2)
 };
 
 export interface AnswerRec {
@@ -67,7 +68,7 @@ const ACTIVE_PREFIX = "quizdeck:active:"; // 진행 중 Session(기기-국소)
 const LEGACY_PREFIX = "quizdeck:store:"; // Phase 2 통짜 blob (active 복구용)
 
 // ── Context ───────────────────────────────────────────────────
-interface StoreCtx {
+export interface StoreCtx {
   store: Store;
   loaded: boolean;
   /** 동기화 상태(composite 주입 시). 익명(localStorage 단독)이면 null — 표시 안 함. */

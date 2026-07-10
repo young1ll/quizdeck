@@ -98,17 +98,17 @@ export async function upsertConcept(
 export async function loadQuestionsByKeys(
   pool: Pool,
   items: { examKey: string; qn: number }[],
-): Promise<{ examKey: string; qn: number; content: Record<string, { q?: string; topic?: string }> }[]> {
+): Promise<{ examKey: string; qn: number; answer: string[]; content: LocalizedQuestion["content"] }[]> {
   if (!items.length) return [];
   const values = items.map((_, i) => `($${i * 2 + 1}, $${i * 2 + 2}::int)`).join(",");
   const params = items.flatMap((i) => [i.examKey, i.qn]);
-  const r = await pool.query<{ exam_key: string; qn: number; content: Record<string, { q?: string; topic?: string }> }>(
-    `select q."exam_key", q."qn", q."content"
+  const r = await pool.query<{ exam_key: string; qn: number; answer: string[]; content: LocalizedQuestion["content"] }>(
+    `select q."exam_key", q."qn", q."answer", q."content"
        from "question" q
        join (values ${values}) v(ek, qn) on q."exam_key" = v.ek and q."qn" = v.qn`,
     params,
   );
-  return r.rows.map((row) => ({ examKey: row.exam_key, qn: row.qn, content: row.content }));
+  return r.rows.map((row) => ({ examKey: row.exam_key, qn: row.qn, answer: row.answer, content: row.content }));
 }
 
 export async function deleteQuestion(pool: Pool, examKey: string, qn: number): Promise<void> {

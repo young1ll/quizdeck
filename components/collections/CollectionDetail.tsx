@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LuPlay, LuTrash2, LuX } from "react-icons/lu";
+import { LuPlay, LuTrash2, LuX, LuLayers } from "react-icons/lu";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -80,15 +80,25 @@ export default function CollectionDetail({
             문항 {collection.items.length}개 · 시험 {groups.length}개
           </p>
         </div>
-        <Button
-          variant="dangerOutline"
-          size="sm"
-          icon={<LuTrash2 className="size-3.5" />}
-          onClick={() => void destroy()}
-          disabled={busy}
-        >
-          삭제
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* 혼합 큐 풀기 (ADR-0022 S2) — 여러 시험 문항을 한 세션으로. 시험별 풀기는 각 그룹에. */}
+          {collection.items.length > 0 && (
+            <Link href={`/me/collections/${collection.id}/quiz`}>
+              <Button variant="primary" size="sm" icon={<LuLayers className="size-3.5" />}>
+                전체 풀기
+              </Button>
+            </Link>
+          )}
+          <Button
+            variant="dangerOutline"
+            size="sm"
+            icon={<LuTrash2 className="size-3.5" />}
+            onClick={() => void destroy()}
+            disabled={busy}
+          >
+            삭제
+          </Button>
+        </div>
       </header>
       {err && <p className="text-xs text-red-500">{err}</p>}
 

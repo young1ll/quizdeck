@@ -26,5 +26,18 @@
 
 - 새 보안 경계 1(API — withLearner + WHERE 가드), 새 테이블 1(0008 — **앱 배포 전 선적용**, 0005/0007 선례).
 - ADR-0011 은 내 문제함(파생)에 대해 **여전히 유효** — 재개봉된 것은 "큐레이션 엔티티 부재"와 "혼합 큐 금지"뿐. 내 문제함이 컬렉션으로 바뀌는 게 아니다.
-- S2(혼합 큐)는 세션 복합키·다중 Progress 기록·콘텐츠 배치 로드 설계를 확정하는 후속 그릴링이 선행돼야 한다 — 이 ADR 은 방향만 고정한다.
+- S2(혼합 큐)는 세션 복합키·다중 Progress 기록·콘텐츠 배치 로드 설계를 확정하는 후속 그릴링이 선행돼야 한다 — 이 ADR 은 방향만 고정한다. → **애던덤에서 확정(2026-07-10)**.
 - CONTEXT.md 갱신(컬렉션 추가, 내 문제함 avoid 조정).
+
+## 애던덤 — S2 혼합 큐 설계 확정 (그릴링 2026-07-10)
+
+- 코드: `lib/mixed-session.ts`(순수) · `lib/use-mixed-quiz.ts` · `components/collections/MixedQuizClient.tsx` · `app/(learner)/me/collections/[id]/quiz/page.tsx` · Mode `"collection"`(progress/store/mode-icons)
+
+1. **기록 = 완전 기록.** 혼합 세션의 문항 제출은 **소속 시험의 Progress** 에 기록된다(이력·오답·활동일 — 시험 안 풀기와 동일). 무기록 스크래치 모드는 기각 — 컬렉션 복습이 학습 시스템(오답→내 문제함→mastery) 밖의 연습장이 되는 것을 거부.
+2. **멀티스토어 = StoreBridge 패턴.** 시험당 렌더되는 브릿지 컴포넌트가 기존 `useStoreState`(composite local+remote LWW)를 호출해 ctx 를 부모로 보고 — 시험 목록이 마운트 시 고정이라 훅 규칙과 무충돌, store 로직 신설 0. 별표·메모도 같은 라우팅.
+3. **세션 코어 = 인덱스 큐로 무변경 재사용.** 큐를 아이템 배열 **인덱스**(0..n-1)로 돌려 `sessionReducer`·`currentView`·`computeResult` 를 그대로 쓰고, `(examKey, qn)` 은 기록 경계에서만 번역(`lib/mixed-session`). SAA q7/SAP q7 충돌이 원천 소거 — 제네릭화·병렬 reducer 모두 불필요해짐.
+4. **UI = 경량 전용 뷰(결정 B).** 문항·채점·해설·진행 + 별표·메모. 주석·개념 링크·주제 칩은 v1 제외(완전한 형태는 S1.5 '이 시험에서 풀기'가 소유). **기존 Quiz.tsx 무변경**(회귀 0) — 재사용+컨텍스트 스와핑은 orderCache qn 충돌·시험 전체 페이로드 문제로 기각.
+5. **일회성.** 영속(setActive) 없음 — 나가면 세션 종료, 제출분은 이미 기록됨. 로컬 resume 은 컬렉션 편집-정합 문제가 따라와 v1 에 사지 않음.
+6. **세션 기록 = 시험별 분할 + Mode `"collection"`.** 종료 시 각 시험 Progress.sessions 에 (n=그 시험 문항, ok=정답, sec=문항수 비례 배분) 기록. enum·라벨·아이콘 additive. mode 를 study 로 위장하는 안은 데이터 정직성 때문에 기각.
+7. **study 흐름 전용.** 타이머·시험 모드 없음 — exam 모드는 per-exam 풀기가 소유.
+8. **콘텐츠 = 참조 문항만 배치 로드.** `loadQuestionsByKeys` 가 answer 컬럼 포함 풀 콘텐츠를 IN 조회로 — 시험 전체 로드 없음(재개봉 근거 유지).

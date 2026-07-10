@@ -7,6 +7,7 @@ import {
   LuStar,
   LuFolderOpen,
   LuStickyNote,
+  LuLayers,
 } from "react-icons/lu";
 import type { Mode } from "@/lib/store";
 
@@ -20,4 +21,5 @@ export const MODE_ICON: Record<Mode, IconType> = {
   star: LuStar,
   mine: LuFolderOpen,
   memo: LuStickyNote,
+  collection: LuLayers, // 컬렉션 혼합 풀기(ADR-0022 S2)
 };
