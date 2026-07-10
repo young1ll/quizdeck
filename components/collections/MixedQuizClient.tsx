@@ -15,6 +15,7 @@ import { TextArea } from "@astryxdesign/core/TextArea";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import Markdown from "@/components/Markdown";
+import ExamIcon from "@/components/ui/ExamIcon";
 import { useStoreState, type StoreCtx } from "@/lib/store";
 import { localStorageProgressStore } from "@/lib/progress-store";
 import { compositeProgressStore } from "@/lib/progress-store-composite";
@@ -133,7 +134,7 @@ function MixedQuizView({
             {summary.map((s) => (
               <li key={s.examKey} className="flex items-center justify-between">
                 <span className="font-mono text-xs text-[var(--accent)]">
-                  {examMeta[s.examKey]?.icon && <span className="mr-1">{examMeta[s.examKey].icon}</span>}
+                  <ExamIcon icon={examMeta[s.examKey]?.icon} className="mr-1" />
                   {examMeta[s.examKey]?.code ?? s.examKey}
                 </span>
                 <span className="font-medium">{s.ok}/{s.n}</span>
@@ -184,7 +185,7 @@ function MixedQuizView({
       {/* 시험 배지 + 문항 번호 — 혼합 큐에서 '지금 어느 시험인지'가 1급 정보 */}
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-xs text-[var(--accent)]">
-          {meta?.icon && <span className="mr-1">{meta.icon}</span>}
+          <ExamIcon icon={meta?.icon} className="mr-1" />
           {meta?.code ?? it.examKey} · Q{it.qn}
         </span>
         <button

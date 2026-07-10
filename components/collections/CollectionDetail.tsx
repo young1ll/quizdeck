@@ -8,6 +8,7 @@ import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import IconPicker from "@/components/ui/IconPicker";
+import ExamIcon from "@/components/ui/ExamIcon";
 import { removeItem, type Collection } from "@/lib/collection";
 
 // 컬렉션 상세 (ADR-0022 S1.5). RSC(page)가 로드한 컬렉션 + 시험별 그룹 뷰데이터를 받아 편집(빼기·
@@ -160,7 +161,7 @@ export default function CollectionDetail({
           <section key={g.examKey}>
             <div className="mb-2 flex items-center justify-between gap-2">
               <h2 className="flex items-center gap-1.5 text-sm font-semibold text-[var(--muted)]">
-                {g.icon && <span>{g.icon}</span>}
+                <ExamIcon icon={g.icon} />
                 <span className="font-mono">{g.code}</span>
                 <span className="font-normal">· 문항 {g.items.length}개</span>
               </h2>

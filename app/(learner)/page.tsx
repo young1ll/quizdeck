@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { LuFolderOpen } from "react-icons/lu";
 import { Card } from "@/components/ui/Card";
+import ExamIcon from "@/components/ui/ExamIcon";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { listExams } from "@/lib/content";
@@ -64,7 +65,7 @@ export default async function Home() {
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
                         <div className="font-mono text-xs text-[var(--accent)]">
-                          {exam.icon && <span className="mr-1">{exam.icon}</span>}
+                          <ExamIcon icon={exam.icon} className="mr-1" />
                           {exam.code}
                         </div>
                         <div className="mt-1 truncate font-medium leading-snug">{exam.name}</div>
@@ -139,7 +140,7 @@ export default async function Home() {
                     <Link href={`/${e.provider}/${e.slug}/`} className="block">
                       <Card padding={4} interactive>
                         <div className="font-mono text-xs text-[var(--accent)]">
-                          {e.icon && <span className="mr-1">{e.icon}</span>}
+                          <ExamIcon icon={e.icon} className="mr-1" />
                           {e.code}
                         </div>
                         <div className="mt-1 font-medium leading-snug">{e.name}</div>
