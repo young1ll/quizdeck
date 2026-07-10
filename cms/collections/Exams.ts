@@ -12,6 +12,9 @@ export const Exams: CollectionConfig = {
   admin: {
     group: "콘텐츠",
     useAsTitle: "name",
+    // 게시본 보기 — 학습 화면 새 탭(초안 프리뷰 아님: 서빙은 게시본만).
+    preview: (doc) =>
+      doc?.provider && doc?.slug ? `/${doc.provider as string}/${doc.slug as string}` : null,
     defaultColumns: ["name", "examKey", "code", "language"],
   },
   access: {
@@ -20,6 +23,9 @@ export const Exams: CollectionConfig = {
     update: cmsUser,
     delete: adminOnly, // 문제집 삭제 = 파괴적(하위 문항 고아화) — admin 만
   },
+  // 드래프트·버전 (확장 C — WordPress 초안→게시·리비전의 등가). 서빙(cms/read.ts)은
+  // _status=published 만 읽는다. autosave 로 편집 유실 방지, 리비전은 문서당 20개 캡.
+  versions: { drafts: { autosave: true }, maxPerDoc: 20 },
   hooks: {
     afterChange: [revalidateExamDoc],
     afterDelete: [revalidateExamDocOnDelete],

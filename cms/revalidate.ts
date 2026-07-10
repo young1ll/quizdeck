@@ -35,8 +35,16 @@ async function examPath(payload: Payload, exam: unknown): Promise<string | null>
   return doc ? `/${doc.provider}/${doc.slug}` : null;
 }
 
+/** draft 저장(autosave 포함)은 게시본 불변 — 게시/게시본 갱신·게시 해제 때만 무효화한다. */
+function touchesPublished(doc: unknown, previousDoc: unknown): boolean {
+  const cur = (doc as { _status?: string })?._status;
+  const prev = (previousDoc as { _status?: string })?._status;
+  return cur === "published" || prev === "published";
+}
+
 /** questions·concepts 공용 — 소속 시험 레이아웃 무효화. */
-export const revalidateExamContent: CollectionAfterChangeHook = async ({ doc, req }) => {
+export const revalidateExamContent: CollectionAfterChangeHook = async ({ doc, previousDoc, req }) => {
+  if (!touchesPublished(doc, previousDoc)) return doc;
   const p = await examPath(req.payload, (doc as { exam: unknown }).exam);
   if (p) await revalidateExam([p]);
   return doc;
@@ -50,6 +58,7 @@ export const revalidateExamContentOnDelete: CollectionAfterDeleteHook = async ({
 
 /** exams 자신 — meta·diagrams·q2svc·icons 가 레이아웃 데이터. slug 변경 시 새·구 경로 모두. */
 export const revalidateExamDoc: CollectionAfterChangeHook = async ({ doc, previousDoc }) => {
+  if (!touchesPublished(doc, previousDoc)) return doc;
   const d = doc as { provider: string; slug: string };
   const paths = [`/${d.provider}/${d.slug}`];
   const prev = previousDoc as { provider?: string; slug?: string } | undefined;
