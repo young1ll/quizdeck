@@ -34,7 +34,7 @@ export const Questions: CollectionConfig = {
   labels: { singular: "문항", plural: "문항" },
   admin: {
     group: "콘텐츠",
-    defaultColumns: ["exam", "qn", "topic", "updatedAt"],
+    defaultColumns: ["exam", "qn", "topic", "_status", "updatedAt"],
     listSearchableFields: ["q", "topic"],
   },
   access: {
@@ -51,43 +51,93 @@ export const Questions: CollectionConfig = {
     afterChange: [revalidateExamContent],
     afterDelete: [revalidateExamContentOnDelete],
   },
+  // 편집 화면 구성(화면 고도화): 무명 tabs·position:sidebar 는 순수 표현 계층 — 데이터 형태·
+  // 스키마 불변(리허설 migrate:create 로 no-diff 확인). 식별·참조(언어 무관)는 사이드바,
+  // 본문은 "내용"/"해설·팁" 탭.
   fields: [
-    { name: "exam", type: "relationship", label: "문제집", relationTo: "exams", required: true, index: true },
-    { name: "qn", type: "number", label: "문항 번호", required: true, min: 1, admin: { description: "문항 번호 — 문제집 내 유일" } },
-    { name: "topic", type: "text", label: "주제", localized: true, admin: { description: "예: 📦 스토리지" } },
-    { name: "q", type: "textarea", label: "지문", required: true, localized: true, admin: { description: "지문 — **굵게** 마크업 허용(현행 렌더러 규칙)" } },
+    // ── 사이드바: 식별·참조 (언어 무관) ──
     {
-      name: "options",
-      type: "array",
-      label: "보기",
+      name: "exam",
+      type: "relationship",
+      label: "문제집",
+      relationTo: "exams",
       required: true,
-      minRows: 2,
-      admin: { description: "보기 — key(A,B,…)는 언어 무관, text 만 언어별" },
-      fields: [
-        { name: "key", type: "text", required: true },
-        { name: "text", type: "textarea", required: true, localized: true },
+      index: true,
+      admin: { position: "sidebar" },
+    },
+    {
+      name: "qn",
+      type: "number",
+      label: "문항 번호",
+      required: true,
+      min: 1,
+      admin: { position: "sidebar", description: "문제집 내 유일" },
+    },
+    {
+      name: "page",
+      type: "number",
+      label: "페이지",
+      admin: { position: "sidebar", description: "덤프 문서 페이지 번호" },
+    },
+    {
+      name: "deeplink",
+      type: "text",
+      label: "딥링크",
+      admin: { position: "sidebar", description: "원문 링크(예: marginnote4app://…)" },
+    },
+    // ── 본문 탭 ──
+    {
+      type: "tabs",
+      tabs: [
+        {
+          label: "내용",
+          fields: [
+            { name: "topic", type: "text", label: "주제", localized: true, admin: { description: "예: 📦 스토리지" } },
+            {
+              name: "q",
+              type: "textarea",
+              label: "지문",
+              required: true,
+              localized: true,
+              admin: { description: "**굵게** 마크업 허용(현행 렌더러 규칙)" },
+            },
+            {
+              name: "image",
+              type: "upload",
+              relationTo: "media",
+              label: "지문 이미지",
+              admin: { description: "지문 아래 표시 — 선택 (ADR-0024 확장 F)" },
+            },
+            {
+              name: "options",
+              type: "array",
+              label: "보기",
+              required: true,
+              minRows: 2,
+              admin: { description: "key(A,B,…)는 언어 무관, text 만 언어별" },
+              fields: [
+                { name: "key", type: "text", required: true },
+                { name: "text", type: "textarea", required: true, localized: true },
+              ],
+            },
+            {
+              name: "answer",
+              type: "text",
+              label: "정답",
+              hasMany: true,
+              required: true,
+              admin: { description: "정답 key 목록 — 보기 key 의 부분집합(예: A / A,C)" },
+            },
+          ],
+        },
+        {
+          label: "해설·팁",
+          fields: [
+            { name: "explanation", type: "textarea", label: "해설", localized: true },
+            { name: "tip", type: "textarea", label: "팁", localized: true },
+          ],
+        },
       ],
     },
-    {
-      name: "answer",
-      type: "text",
-      label: "정답",
-      hasMany: true,
-      required: true,
-      admin: { description: "정답 key 목록 — 보기 key 의 부분집합(예: A / A,C)" },
-    },
-    {
-      name: "image",
-      type: "upload",
-      relationTo: "media",
-      label: "지문 이미지",
-      admin: { description: "지문 아래 표시 — 선택 (ADR-0024 확장 F)" },
-    },
-    { name: "explanation", type: "textarea", label: "해설", localized: true },
-    { name: "tip", type: "textarea", label: "팁", localized: true },
-    // 언어 무관 참조 필드 — 구 슬롯엔 언어별로 저장됐지만 의미는 중립(덤프 페이지·원문 링크).
-    // 투영(cms/read.ts)이 존재하는 모든 로케일 슬롯에 같은 값을 되돌린다.
-    { name: "page", type: "number", admin: { description: "덤프 문서 페이지 번호" } },
-    { name: "deeplink", type: "text", admin: { description: "원문 딥링크(예: marginnote4app://…)" } },
   ],
 };

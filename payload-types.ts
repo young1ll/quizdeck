@@ -255,19 +255,31 @@ export interface Question {
   id: number;
   exam: number | Exam;
   /**
-   * 문항 번호 — 문제집 내 유일
+   * 문제집 내 유일
    */
   qn: number;
+  /**
+   * 덤프 문서 페이지 번호
+   */
+  page?: number | null;
+  /**
+   * 원문 링크(예: marginnote4app://…)
+   */
+  deeplink?: string | null;
   /**
    * 예: 📦 스토리지
    */
   topic?: string | null;
   /**
-   * 지문 — **굵게** 마크업 허용(현행 렌더러 규칙)
+   * **굵게** 마크업 허용(현행 렌더러 규칙)
    */
   q: string;
   /**
-   * 보기 — key(A,B,…)는 언어 무관, text 만 언어별
+   * 지문 아래 표시 — 선택 (ADR-0024 확장 F)
+   */
+  image?: (number | null) | Media;
+  /**
+   * key(A,B,…)는 언어 무관, text 만 언어별
    */
   options: {
     key: string;
@@ -278,20 +290,8 @@ export interface Question {
    * 정답 key 목록 — 보기 key 의 부분집합(예: A / A,C)
    */
   answer: string[];
-  /**
-   * 지문 아래 표시 — 선택 (ADR-0024 확장 F)
-   */
-  image?: (number | null) | Media;
   explanation?: string | null;
   tip?: string | null;
-  /**
-   * 덤프 문서 페이지 번호
-   */
-  page?: number | null;
-  /**
-   * 원문 딥링크(예: marginnote4app://…)
-   */
-  deeplink?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -304,57 +304,33 @@ export interface Concept {
   id: number;
   exam: number | Exam;
   /**
-   * 서비스/개념 식별자 — q2svc 조인 키(언어 무관), 예: Amazon S3 스토리지 클래스
-   */
-  svc: string;
-  /**
-   * 목록 순서 — 편집으로 재배열되지 않게 명시 보관(0003 ord 계승)
+   * 목록 순서 — 편집으로 재배열되지 않게 명시 보관
    */
   ord: number;
-  /**
-   * 분류, 예: 스토리지
-   */
-  cat?: string | null;
-  /**
-   * 축약 표기, 예: S3 Classes
-   */
-  abbr?: string | null;
-  /**
-   * 정의
-   */
-  deff: string;
-  /**
-   * 핵심 포인트
-   */
-  key?: string | null;
-  /**
-   * 언제 쓰나
-   */
-  when?: string | null;
-  /**
-   * 함정
-   */
-  trap?: string | null;
-  /**
-   * 비교
-   */
-  vs?: string | null;
-  /**
-   * 상세(선택)
-   */
-  detail?: string | null;
-  /**
-   * 비용 특성(선택)
-   */
-  cost?: string | null;
   /**
    * 관련 문항 번호(표시분)
    */
   rel?: number[] | null;
-  /**
-   * 관련 문항 총 개수
-   */
   reln?: number | null;
+  /**
+   * q2svc 조인 키(언어 무관), 예: Amazon S3 스토리지 클래스
+   */
+  svc: string;
+  /**
+   * 예: 스토리지
+   */
+  cat?: string | null;
+  /**
+   * 예: S3 Classes
+   */
+  abbr?: string | null;
+  deff: string;
+  key?: string | null;
+  when?: string | null;
+  trap?: string | null;
+  vs?: string | null;
+  detail?: string | null;
+  cost?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -487,8 +463,11 @@ export interface ExamsSelect<T extends boolean = true> {
 export interface QuestionsSelect<T extends boolean = true> {
   exam?: T;
   qn?: T;
+  page?: T;
+  deeplink?: T;
   topic?: T;
   q?: T;
+  image?: T;
   options?:
     | T
     | {
@@ -497,11 +476,8 @@ export interface QuestionsSelect<T extends boolean = true> {
         id?: T;
       };
   answer?: T;
-  image?: T;
   explanation?: T;
   tip?: T;
-  page?: T;
-  deeplink?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -512,8 +488,10 @@ export interface QuestionsSelect<T extends boolean = true> {
  */
 export interface ConceptsSelect<T extends boolean = true> {
   exam?: T;
-  svc?: T;
   ord?: T;
+  rel?: T;
+  reln?: T;
+  svc?: T;
   cat?: T;
   abbr?: T;
   deff?: T;
@@ -523,8 +501,6 @@ export interface ConceptsSelect<T extends boolean = true> {
   vs?: T;
   detail?: T;
   cost?: T;
-  rel?: T;
-  reln?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

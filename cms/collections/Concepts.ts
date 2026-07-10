@@ -34,7 +34,7 @@ export const Concepts: CollectionConfig = {
   admin: {
     group: "콘텐츠",
     useAsTitle: "svc",
-    defaultColumns: ["exam", "svc", "cat", "ord"],
+    defaultColumns: ["exam", "svc", "cat", "ord", "_status"],
     listSearchableFields: ["svc", "abbr"],
   },
   access: {
@@ -51,33 +51,75 @@ export const Concepts: CollectionConfig = {
     afterChange: [revalidateExamContent],
     afterDelete: [revalidateExamContentOnDelete],
   },
+  // 편집 화면 구성(화면 고도화) — Questions 와 같은 규칙: 식별·참조는 사이드바, 본문은 탭.
   fields: [
-    { name: "exam", type: "relationship", label: "문제집", relationTo: "exams", required: true, index: true },
+    // ── 사이드바: 식별·참조 (언어 무관) ──
     {
-      name: "svc",
-      type: "text",
+      name: "exam",
+      type: "relationship",
+      label: "문제집",
+      relationTo: "exams",
       required: true,
       index: true,
-      admin: { description: "서비스/개념 식별자 — q2svc 조인 키(언어 무관), 예: Amazon S3 스토리지 클래스" },
+      admin: { position: "sidebar" },
     },
     {
       name: "ord",
       type: "number",
+      label: "순서",
       required: true,
-      admin: { description: "목록 순서 — 편집으로 재배열되지 않게 명시 보관(0003 ord 계승)" },
+      admin: { position: "sidebar", description: "목록 순서 — 편집으로 재배열되지 않게 명시 보관" },
     },
-    { name: "cat", type: "text", localized: true, admin: { description: "분류, 예: 스토리지" } },
-    { name: "abbr", type: "text", localized: true, admin: { description: "축약 표기, 예: S3 Classes" } },
-    { name: "deff", type: "textarea", required: true, localized: true, admin: { description: "정의" } },
-    { name: "key", type: "textarea", localized: true, admin: { description: "핵심 포인트" } },
-    { name: "when", type: "textarea", localized: true, admin: { description: "언제 쓰나" } },
-    { name: "trap", type: "textarea", localized: true, admin: { description: "함정" } },
-    { name: "vs", type: "textarea", localized: true, admin: { description: "비교" } },
-    { name: "detail", type: "textarea", localized: true, admin: { description: "상세(선택)" } },
-    { name: "cost", type: "textarea", localized: true, admin: { description: "비용 특성(선택)" } },
-    // 언어 무관 참조 필드 — 관련 문항 번호(rel: 표시분, reln: 총 개수). Questions 의 page/deeplink 와
-    // 같은 규칙으로 투영이 모든 로케일 슬롯에 되돌린다.
-    { name: "rel", type: "number", hasMany: true, admin: { description: "관련 문항 번호(표시분)" } },
-    { name: "reln", type: "number", admin: { description: "관련 문항 총 개수" } },
+    {
+      name: "rel",
+      type: "number",
+      hasMany: true,
+      label: "관련 문항",
+      admin: { position: "sidebar", description: "관련 문항 번호(표시분)" },
+    },
+    {
+      name: "reln",
+      type: "number",
+      label: "관련 문항 총 개수",
+      admin: { position: "sidebar" },
+    },
+    // ── 본문 ──
+    {
+      name: "svc",
+      type: "text",
+      label: "서비스/개념 식별자",
+      required: true,
+      index: true,
+      admin: { description: "q2svc 조인 키(언어 무관), 예: Amazon S3 스토리지 클래스" },
+    },
+    {
+      type: "tabs",
+      tabs: [
+        {
+          label: "정의·핵심",
+          fields: [
+            {
+              type: "row",
+              fields: [
+                { name: "cat", type: "text", label: "분류", localized: true, admin: { description: "예: 스토리지" } },
+                { name: "abbr", type: "text", label: "축약", localized: true, admin: { description: "예: S3 Classes" } },
+              ],
+            },
+            { name: "deff", type: "textarea", label: "정의", required: true, localized: true },
+            { name: "key", type: "textarea", label: "핵심 포인트", localized: true },
+            { name: "when", type: "textarea", label: "언제 쓰나", localized: true },
+          ],
+        },
+        {
+          label: "함정·비교",
+          fields: [
+            { name: "trap", type: "textarea", label: "함정", localized: true },
+            { name: "vs", type: "textarea", label: "비교", localized: true },
+            { name: "detail", type: "textarea", label: "상세(선택)", localized: true },
+            { name: "cost", type: "textarea", label: "비용 특성(선택)", localized: true },
+          ],
+        },
+      ],
+    },
   ],
 };

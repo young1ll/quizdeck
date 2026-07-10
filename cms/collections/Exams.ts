@@ -15,7 +15,7 @@ export const Exams: CollectionConfig = {
     // 게시본 보기 — 학습 화면 새 탭(초안 프리뷰 아님: 서빙은 게시본만).
     preview: (doc) =>
       doc?.provider && doc?.slug ? `/${doc.provider as string}/${doc.slug as string}` : null,
-    defaultColumns: ["name", "examKey", "code", "language"],
+    defaultColumns: ["name", "examKey", "code", "language", "_status"],
   },
   access: {
     read: cmsUser,
@@ -52,10 +52,11 @@ export const Exams: CollectionConfig = {
     {
       name: "language",
       type: "select",
+      label: "기본 언어",
       options: ["ko", "en"],
       defaultValue: "ko",
       required: true,
-      admin: { description: "문제집의 기본 표시 언어(meta.language)" },
+      admin: { position: "sidebar", description: "문제집의 기본 표시 언어(meta.language)" },
     },
     {
       name: "icon",
@@ -63,9 +64,9 @@ export const Exams: CollectionConfig = {
       label: "아이콘(이모지)",
       validate: (value: string | null | undefined) =>
         !value || value.trim().length <= ICON_MAX || `이모지 ${ICON_MAX} UTF-16 유닛 이하`,
-      admin: { description: "이모지 — 이미지 아이콘은 iconImage(둘 다 있으면 이미지 우선)" },
+      admin: { position: "sidebar", description: "이모지 — 이미지 아이콘은 iconImage(둘 다 있으면 이미지 우선)" },
     },
-    { name: "iconImage", type: "upload", relationTo: "media" },
+    { name: "iconImage", type: "upload", label: "아이콘 이미지", relationTo: "media", admin: { position: "sidebar" } },
     // track — 자격 계열(카탈로그 그룹핑 키, 없으면 provider 폴백). group 이 아닌 평탄 필드인
     // 이유: Payload 는 "id" 가 예약 필드명이라(group 안에서도) track.id 를 표현할 수 없다 —
     // 조용히 드롭되는 함정. 로더(3단계)가 { id: trackId, name: trackName } 으로 재조립한다.
@@ -75,9 +76,17 @@ export const Exams: CollectionConfig = {
       admin: { description: "자격 계열 안정 id, 예: aws-solutions-architect — 없으면 provider 로 그룹핑" },
     },
     { name: "trackName", type: "text", admin: { description: "자격 계열 표시명" } },
-    // 코드성 산출물 — 개발자가 만드는 구조화 JSON. CMS 편집 UX 는 없지만 단일 소스는 지킨다(ADR-0024).
-    { name: "diagrams", type: "json", admin: { description: "diagrams.json 원형" } },
-    { name: "q2svc", type: "json", admin: { description: "q2svc.json 원형 — qn → svc[]" } },
-    { name: "svcIcons", type: "json", admin: { description: "icons.json 원형 — svc → 아이콘" } },
+    // 코드성 산출물 — 개발자가 만드는 구조화 JSON. CMS 편집 UX 는 없지만 단일 소스는 지킨다
+    // (ADR-0024). collapsible = 순수 표현 계층 — 평소 접어 편집 화면 소음을 줄인다.
+    {
+      type: "collapsible",
+      label: "코드성 산출물 (diagrams · q2svc · icons)",
+      admin: { initCollapsed: true },
+      fields: [
+        { name: "diagrams", type: "json", admin: { description: "diagrams.json 원형" } },
+        { name: "q2svc", type: "json", admin: { description: "q2svc.json 원형 — qn → svc[]" } },
+        { name: "svcIcons", type: "json", admin: { description: "icons.json 원형 — svc → 아이콘" } },
+      ],
+    },
   ],
 };
