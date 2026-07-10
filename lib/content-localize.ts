@@ -75,7 +75,7 @@ export function availableLangs(items: { content: Record<string, unknown> }[]): s
   return [...set];
 }
 
-// 언어 표시 라벨 — LangToggle·ContentEditor 공용.
+// 언어 표시 라벨 — LangToggle 이 쓴다.
 export const LANG_LABEL: Record<string, string> = { ko: "한국어", en: "English" };
 
 // 어드민 편집용 — 폴백 없이 **그 언어 슬롯만**(없으면 빈 텍스트). 미번역을 드러내 채우게 한다.

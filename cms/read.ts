@@ -112,6 +112,48 @@ function conceptEnvelope(doc: Concept): LocalizedConcept {
   return { svc: doc.svc, content };
 }
 
+/**
+ * loadQuestionsByKeys()(임의 (examKey,qn) 배치 조회 — 컬렉션 상세/혼합 큐, ADR-0022) 의 Payload
+ * 등가. 반환 순서는 구 함수처럼 비보장 — 소비부가 키로 매핑한다.
+ */
+export async function loadQuestionsByKeysFromPayload(
+  payload: Payload,
+  items: { examKey: string; qn: number }[],
+): Promise<{ examKey: string; qn: number; answer: string[]; content: LocalizedQuestion["content"] }[]> {
+  if (!items.length) return [];
+  const byExam = new Map<string, number[]>();
+  for (const it of items) {
+    const qns = byExam.get(it.examKey) ?? [];
+    qns.push(it.qn);
+    byExam.set(it.examKey, qns);
+  }
+  const exams = await payload.find({
+    collection: "exams",
+    where: { examKey: { in: [...byExam.keys()] } },
+    pagination: false,
+    depth: 0,
+    overrideAccess: true,
+  });
+  const out: { examKey: string; qn: number; answer: string[]; content: LocalizedQuestion["content"] }[] = [];
+  for (const exam of exams.docs) {
+    const qns = byExam.get(exam.examKey!) ?? [];
+    if (!qns.length) continue;
+    const qRes = await payload.find({
+      collection: "questions",
+      where: { and: [{ exam: { equals: exam.id } }, { qn: { in: qns } }] },
+      locale: "all",
+      pagination: false,
+      depth: 0,
+      overrideAccess: true,
+    });
+    for (const doc of qRes.docs) {
+      const env = questionEnvelope(doc);
+      out.push({ examKey: exam.examKey!, qn: env.qn, answer: env.answer, content: env.content });
+    }
+  }
+  return out;
+}
+
 /** loadExamLocalized()(파일 meta + public 스키마) 의 Payload 등가. 미존재 examKey 는 null. */
 export async function loadExamLocalizedFromPayload(
   payload: Payload,

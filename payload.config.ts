@@ -12,9 +12,8 @@ import { Media } from "./cms/collections/Media.ts";
 
 // Payload CMS 설정 (ADR-0024) — 콘텐츠(문제집·문항·개념·미디어)의 런타임 소스.
 //
-// - 배치: 같은 Next 앱 embed(admin /cms, REST /api/cms), 같은 postgres 의 "payload" 스키마.
-//   /admin(기존 커스텀 어드민)·/api/collections(학습자 컬렉션)와 경로 충돌을 피한 배치 —
-//   기존 어드민 제거(3단계)까지 /cms 로 공존한다.
+// - 배치: 같은 Next 앱 embed(admin /admin — 3단계에서 구 커스텀 어드민을 제거하며 이양,
+//   REST /api/cms — /api/collections(학습자 컬렉션) 충돌 회피), 같은 postgres 의 "payload" 스키마.
 // - 인증: better-auth 세션 전략(cms/auth-strategy) — 로컬 인증 없음, PAYLOAD_SECRET 은
 //   Payload 내부 토큰 서명용으로만 쓰인다(k8s Secret 주입 — 빌드 시점 부재는 정상,
 //   BETTER_AUTH_SECRET 과 같은 규칙: 런타임 요청에서 비로소 필요).
@@ -45,7 +44,9 @@ const r2 =
 
 export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || "",
-  routes: { admin: "/cms", api: "/api/cms" },
+  // 3단계: 커스텀 어드민 제거와 함께 /admin 이양(Q8 합의). REST 는 /api/cms 유지 —
+  // /api/admin/* 은 제거된 구 표면이고, /api/collections(학습자 컬렉션) 충돌 회피는 그대로.
+  routes: { admin: "/admin", api: "/api/cms" },
   admin: {
     user: CmsUsers.slug,
     importMap: { baseDir: dirname },

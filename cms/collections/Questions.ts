@@ -1,5 +1,6 @@
 import { APIError, type CollectionBeforeValidateHook, type CollectionConfig } from "payload";
 import { adminOnly, cmsUser } from "../access.ts";
+import { revalidateExamContent, revalidateExamContentOnDelete } from "../revalidate.ts";
 
 // 문항 (ADR-0024) — 기존 question(exam_key, qn, answer[], content jsonb{ko,en}) 테이블의 이관.
 // 언어 의존 텍스트는 Payload 네이티브 localization(localized: true — ko/en, config 폴백)으로,
@@ -39,7 +40,11 @@ export const Questions: CollectionConfig = {
     update: cmsUser,
     delete: adminOnly,
   },
-  hooks: { beforeValidate: [uniqueExamQn] },
+  hooks: {
+    beforeValidate: [uniqueExamQn],
+    afterChange: [revalidateExamContent],
+    afterDelete: [revalidateExamContentOnDelete],
+  },
   fields: [
     { name: "exam", type: "relationship", relationTo: "exams", required: true, index: true },
     { name: "qn", type: "number", required: true, min: 1, admin: { description: "문항 번호 — 문제집 내 유일" } },

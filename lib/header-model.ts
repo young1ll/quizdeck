@@ -17,7 +17,8 @@ export function examRoutes(meta: { provider: string; slug: string }): ExamRoutes
   return {
     hub: base,
     search: `${base}/search`,
-    admin: `/admin/content/${meta.provider}/${meta.slug}`,
+    // Payload admin(ADR-0024 3단계) — 시험별 편집 화면이 따로 없어 문항 컬렉션 목록으로 보낸다.
+    admin: "/admin/collections/questions",
   };
 }
 

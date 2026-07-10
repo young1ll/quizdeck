@@ -4,11 +4,9 @@ import { requireLearnerPage } from "@/lib/route-guards";
 import { Container } from "@/components/ui/Container";
 import { pool } from "@/lib/db";
 import { getCollection } from "@/lib/collection-db";
-import { loadQuestionsByKeys } from "@/lib/content-db";
 import { groupItemsByExam } from "@/lib/collection";
-import { listExams } from "@/lib/content";
-import { applyIconOverrides } from "@/lib/catalog";
-import { loadIconOverrides } from "@/lib/exam-icon-db";
+import { listExamsCms, loadQuestionsByKeysCms } from "@/cms/serve";
+import type { ExamSummary } from "@/lib/types";
 import CollectionDetail, {
   type CollectionGroupView,
 } from "@/components/collections/CollectionDetail";
@@ -32,11 +30,11 @@ export default async function CollectionPage({ params }: { params: Promise<{ id:
   const col = await getCollection(pool, session.user.id, id);
   if (!col) notFound();
 
-  const exams = applyIconOverrides(listExams(), await loadIconOverrides(pool));
-  const metaByKey = new Map<string, ReturnType<typeof listExams>[number]>(
+  const exams = await listExamsCms();
+  const metaByKey = new Map<string, ExamSummary>(
     exams.map((e) => [`${e.provider}/${e.slug}`, e]),
   );
-  const rows = await loadQuestionsByKeys(pool, col.items);
+  const rows = await loadQuestionsByKeysCms(col.items);
   const byKey = new Map<string, (typeof rows)[number]["content"]>(
     rows.map((r) => [`${r.examKey}#${r.qn}`, r.content]),
   );

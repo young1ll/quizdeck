@@ -5,14 +5,13 @@ import { Card } from "@/components/ui/Card";
 import ExamIcon from "@/components/ui/ExamIcon";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
-import { listExams } from "@/lib/content";
 import { Container } from "@/components/ui/Container";
 import { getLearnerSession } from "@/lib/learner-server";
 import { pool } from "@/lib/db";
 import { loadAllProgress } from "@/lib/progress-db";
 import { buildContinueList, totalMyProblems, type ContinueItem } from "@/lib/dashboard";
-import { applyIconOverrides, groupExams } from "@/lib/catalog";
-import { loadIconOverrides } from "@/lib/exam-icon-db";
+import { groupExams } from "@/lib/catalog";
+import { listExamsCms } from "@/cms/serve";
 
 // Home — 재개(act) (ADR-0012 결정 2·3). 로그인 Learner 엔 상단 "이어서 학습"(Progress 기반 최근 시험,
 // cross-device 일관, 최대 3) + 카탈로그, 익명엔 카탈로그만. 진도 스코프 사다리의 재개 지점 — 숫자는
@@ -24,7 +23,7 @@ export const dynamic = "force-dynamic";
 const MAX_CONTINUE = 3;
 
 export default async function Home() {
-  const exams = applyIconOverrides(listExams(), await loadIconOverrides(pool));
+  const exams = await listExamsCms();
 
   // 카탈로그 그룹화 — 트랙(자격 계열) 우선, 없으면 provider 폴백(lib/catalog 순수 결정, 데이터 모델 ③).
   const groups = groupExams(exams);

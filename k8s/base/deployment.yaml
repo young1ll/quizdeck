@@ -93,7 +93,7 @@ spec:
                   key: NAVER_CLIENT_SECRET
                   optional: true
             # Payload CMS(ADR-0024) 내부 토큰 서명 키 — git 밖 quizdeck-auth Secret.
-            # optional:true — 키 부재에도 파드는 기동하고 /cms 요청만 명확히 실패한다
+            # optional:true — 키 부재에도 파드는 기동하고 /admin(CMS) 요청만 명확히 실패한다
             # (BETTER_AUTH_SECRET 과 같은 규칙). 생성: k8s/base/README.md
             - name: PAYLOAD_SECRET
               valueFrom:

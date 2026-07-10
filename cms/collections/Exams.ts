@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { adminOnly, cmsUser } from "../access.ts";
+import { revalidateExamDoc, revalidateExamDocOnDelete } from "../revalidate.ts";
 import { ICON_MAX } from "../../lib/catalog.ts";
 
 // 문제집(Exam) 카탈로그 (ADR-0024) — content/<provider>/<slug>/meta.json 의 DB 이관.
@@ -16,6 +17,10 @@ export const Exams: CollectionConfig = {
     create: cmsUser,
     update: cmsUser,
     delete: adminOnly, // 문제집 삭제 = 파괴적(하위 문항 고아화) — admin 만
+  },
+  hooks: {
+    afterChange: [revalidateExamDoc],
+    afterDelete: [revalidateExamDocOnDelete],
   },
   fields: [
     { name: "provider", type: "text", required: true, admin: { description: "예: aws" } },
