@@ -38,6 +38,8 @@ export interface QuizController {
   timeLeft: number | null; // 시험 모드 남은 초
   start: (mode: Mode, opts: StartOpts) => boolean;
   studyOne: (qn: number) => void;
+  /** 임의 qn 목록 일회성 학습(컬렉션 '이 시험에서 풀기', ADR-0022). 존재 문항만 남겨 시작, 없으면 false. */
+  studySet: (qns: number[]) => boolean;
   resume: () => void;
   discard: () => void;
   quit: () => void;
@@ -125,6 +127,21 @@ export function useQuizController(
       goQuiz();
     },
     [dispatch, setActive, goQuiz],
+  );
+
+  // studyOne 의 목록판(ADR-0022 S1.5) — 컬렉션 항목 중 이 시험에 실재하는 문항만 큐로. 컬렉션이
+  // 가리키던 문항이 삭제됐을 수 있으므로 byQn 존재 필터가 경계 가드다(전부 사라졌으면 false).
+  const studySet = useCallback(
+    (qns: number[]): boolean => {
+      const valid = qns.filter((qn) => byQn.has(qn));
+      if (!valid.length) return false;
+      dispatch({ type: "studySet", qns: valid, now: Date.now() });
+      setActive(null); // studyOne 과 같은 일회성 시맨틱 — 이어하기로 영속하지 않는다
+      setTimeLeft(null);
+      goQuiz();
+      return true;
+    },
+    [byQn, dispatch, setActive, goQuiz],
   );
 
   const resume = useCallback(() => {
@@ -268,6 +285,7 @@ export function useQuizController(
     timeLeft,
     start,
     studyOne,
+    studySet,
     resume,
     discard,
     quit,

@@ -38,6 +38,13 @@ export default async function Me() {
         <div className="flex items-center gap-3">
           {/* admin(role=admin)에게만 보이는 보조 진입 — 일반 Learner 엔 렌더 안 됨(ADR-0012 결정 10). */}
           <AdminLink />
+          {/* 컬렉션 — 큐레이션 cross-Exam 세트(ADR-0022). /me 계열 스포크. */}
+          <Link
+            href="/me/collections"
+            className="flex min-h-[44px] items-center text-sm text-[var(--muted)] hover:text-[var(--fg)]"
+          >
+            내 컬렉션 ›
+          </Link>
           <Link
             href="/me/account"
             className="flex min-h-[44px] items-center text-sm text-[var(--muted)] hover:text-[var(--fg)]"

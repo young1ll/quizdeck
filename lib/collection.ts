@@ -69,6 +69,21 @@ export function hasItem(items: CollectionItem[], item: CollectionItem): boolean 
   return items.some((i) => itemKey(i) === k);
 }
 
+/** /quiz?set=7,20,33 파라미터 파싱 — 딥엔트리 경계 검증(정수>0, 중복 제거, 순서 보존). 불량은 버린다. */
+export function parseQnSet(s: string | null | undefined): number[] {
+  if (!s) return [];
+  const seen = new Set<number>();
+  const out: number[] = [];
+  for (const part of s.split(",")) {
+    const n = Number(part.trim());
+    if (Number.isInteger(n) && n > 0 && !seen.has(n)) {
+      seen.add(n);
+      out.push(n);
+    }
+  }
+  return out;
+}
+
 /** 시험별 그룹(첫 등장 순) — 상세 화면 표시·시험별 풀기 진입(S1)·혼합 큐 조립(S2)이 공유. */
 export function groupItemsByExam(items: CollectionItem[]): { examKey: string; qns: number[] }[] {
   const byExam = new Map<string, number[]>();

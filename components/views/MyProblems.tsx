@@ -10,6 +10,7 @@ import { useQuizFlow } from "@/lib/quiz-flow-context";
 import { useNav } from "@/lib/nav-context";
 import { myProblems } from "@/lib/progress";
 import { Button } from "@/components/ui/Button";
+import AddToCollection from "@/components/collections/AddToCollection";
 
 // 내 문제함 뷰 (ADR-0011). 오답∪별표∪메모의 파생 union 을 필터 탭으로 브라우즈하고, 묶음 풀기(세션) 또는
 // 개별 학습(studyOne)으로 진입한다. 컨텍스트(store·exam·quizFlow·nav)는 exam layout 이 이미 제공한다.
@@ -31,7 +32,7 @@ const FILTER_MODE: Record<Filter, Mode> = {
 };
 
 export default function MyProblems() {
-  const { byQn } = useExam();
+  const { byQn, meta } = useExam();
   const { store } = useStore();
   const { startMode } = useQuizFlow();
   const { studyOne } = useNav();
@@ -68,14 +69,20 @@ export default function MyProblems() {
           <LuFolderOpen className="size-5 text-[var(--accent)]" aria-hidden /> 내 문제함
         </h1>
         {qns.length > 0 && (
-          <Button
-            variant="primary"
-            size="sm"
-            icon={<LuPlay className="size-3.5" />}
-            onClick={() => startMode(batchMode)}
-          >
-            이 묶음 풀기
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* 현재 필터 묶음을 컬렉션으로 — cross-Exam 큐레이션의 담기 진입점(ADR-0022 S1.5). */}
+            <AddToCollection
+              items={qns.map((qn) => ({ examKey: `${meta.provider}/${meta.slug}`, qn }))}
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<LuPlay className="size-3.5" />}
+              onClick={() => startMode(batchMode)}
+            >
+              이 묶음 풀기
+            </Button>
+          </div>
         )}
       </header>
 

@@ -45,6 +45,22 @@ export async function upsertCollection(
   );
 }
 
+/** 단건 조회 — 상세 페이지(RSC)용. learner 스코프라 타인 id 는 null. */
+export async function getCollection(
+  pool: Pool,
+  learnerId: string,
+  id: string,
+): Promise<Collection | null> {
+  const r = await pool.query<Row>(
+    `select "id","name","items","updated_at"
+       from "collection" where "learner_id" = $1 and "id" = $2`,
+    [learnerId, id],
+  );
+  const row = r.rows[0];
+  if (!row) return null;
+  return { id: row.id, name: row.name, items: row.items, updatedAt: row.updated_at.getTime() };
+}
+
 export async function deleteCollection(pool: Pool, learnerId: string, id: string): Promise<void> {
   await pool.query(`delete from "collection" where "learner_id" = $1 and "id" = $2`, [
     learnerId,

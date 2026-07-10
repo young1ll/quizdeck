@@ -92,6 +92,25 @@ export async function upsertConcept(
   );
 }
 
+// 임의 (exam_key, qn) 목록의 문항을 한 번에 — 컬렉션 상세(ADR-0022 S1.5)가 cross-Exam 미리보기에
+// 쓴다. ADR-0011 이 기각했던 "cross-exam 전체 로드"가 아니라 참조된 문항만 골라 읽는 배치 조회(수십
+// 행)라 값싸다(ADR-0022 재개봉 근거). 반환은 언어 슬롯 그대로 — 호출부가 미리보기 투영.
+export async function loadQuestionsByKeys(
+  pool: Pool,
+  items: { examKey: string; qn: number }[],
+): Promise<{ examKey: string; qn: number; content: Record<string, { q?: string; topic?: string }> }[]> {
+  if (!items.length) return [];
+  const values = items.map((_, i) => `($${i * 2 + 1}, $${i * 2 + 2}::int)`).join(",");
+  const params = items.flatMap((i) => [i.examKey, i.qn]);
+  const r = await pool.query<{ exam_key: string; qn: number; content: Record<string, { q?: string; topic?: string }> }>(
+    `select q."exam_key", q."qn", q."content"
+       from "question" q
+       join (values ${values}) v(ek, qn) on q."exam_key" = v.ek and q."qn" = v.qn`,
+    params,
+  );
+  return r.rows.map((row) => ({ examKey: row.exam_key, qn: row.qn, content: row.content }));
+}
+
 export async function deleteQuestion(pool: Pool, examKey: string, qn: number): Promise<void> {
   await pool.query(`delete from "question" where "exam_key" = $1 and "qn" = $2`, [examKey, qn]);
 }

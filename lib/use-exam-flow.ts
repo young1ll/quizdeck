@@ -59,6 +59,12 @@ export function useExamFlow({
           setPhase("setup");
           navigate(`${base}/quiz`);
         }),
+      // 컬렉션 딥엔트리(/quiz?set=…, ADR-0022 S1.5) — 이미 /quiz 라우트에 있으므로 navigate 없이
+      // 게이트 후 곧장 시작(studySet 이 goQuiz 로 phase 전환). 유효 문항이 없으면 setup 에 머문다.
+      startSet: (qns: number[]) =>
+        requireLearner(() => {
+          quiz.studySet(qns);
+        }),
       // 허브: 진행 중 세션 이어하기 → goQuiz(active) + /quiz.
       resume: () =>
         requireLearner(() => {

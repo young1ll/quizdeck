@@ -124,3 +124,25 @@ describe("sessionReducer — 순수 상태 전이", () => {
     expect(stampElapsed(examSession({ start: T0 }), T0 + 65_400).elapsed).toBe(65);
   });
 });
+
+describe("studySet (컬렉션 시험별 풀기, ADR-0022 S1.5)", () => {
+  it("임의 qn 목록을 큐로 study 일회성 세션을 연다(studyOne 의 목록판)", () => {
+    const s = sessionReducer(null, { type: "studySet", qns: [7, 20, 33], now: 1000 });
+    expect(s).toMatchObject({
+      queue: [7, 20, 33],
+      idx: 0,
+      mode: "study",
+      exam: false,
+      answers: {},
+      flags: [],
+      start: 1000,
+      elapsed: 0,
+    });
+  });
+
+  it("진행 중 세션이 있어도 새 세트로 대체한다(딥엔트리 시맨틱)", () => {
+    const prev = sessionReducer(null, { type: "studyOne", qn: 1, now: 500 });
+    const s = sessionReducer(prev, { type: "studySet", qns: [2, 3], now: 1000 });
+    expect(s?.queue).toEqual([2, 3]);
+  });
+});
