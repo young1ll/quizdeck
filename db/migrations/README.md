@@ -105,6 +105,22 @@ Exam 페이지가 런타임에 DB 에서 Question·Concept 을 읽으므로(ISR)
 새 앱 배포보다 먼저** 하는 게 안전하다(seed 전엔 문항이 0 으로 보임). diagrams·q2svc·icons·
 meta 는 파일 잔존이라 seed 대상이 아니다.
 
+## Payload CMS 마이그레이션 (`db/payload-migrations/` — ADR-0024)
+
+Payload 컬렉션 스키마(`payload` postgres 스키마 소유)는 수기 SQL 이 아니라 Payload 가
+생성·적용한다 — **규율은 동일: 배포 전에 수동 적용**. 스키마 변경(컬렉션/필드 수정) 시:
+
+```sh
+# 1) 생성 — 로컬 임시 postgres(docker)를 향해 diff 를 뽑는다 (dev push 는 로컬 전용)
+DATABASE_URL=postgres://… PAYLOAD_SECRET=dev-only pnpm payload migrate:create <이름>
+# 2) 커밋 후, 배포 전에 DB VM 을 향해 적용 (kubectl 호스트 — node+repo 필요)
+DATABASE_URL="$DATABASE_URL" PAYLOAD_SECRET=any pnpm payload migrate
+```
+
+첫 마이그레이션(`20260710_…_initial`)이 `CREATE SCHEMA IF NOT EXISTS "payload"` 를
+포함한다(generator 는 스키마 생성을 만들어주지 않아 손으로 추가 — 재생성 시 유의).
+적용 이력은 `payload.payload_migrations` 테이블이 추적한다(재실행 안전).
+
 `0008_collection.sql` — 컬렉션(ADR-0022):
 
 - `collection(id[client uuid], learner_id FK cascade, name, items jsonb[(examKey,qn)…], updated_at)`
