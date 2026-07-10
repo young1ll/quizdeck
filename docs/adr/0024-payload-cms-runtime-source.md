@@ -104,6 +104,20 @@
 - lib/content.ts·content-db.ts·content-localize.ts 의 구 로더는 **verify/migrate 스크립트 전용**으로
   잔존 — 4단계에서 구 테이블 drop 과 함께 정리한다.
 
+## 애던덤 — 4단계 폐기 완료 (2026-07-10)
+
+- 코드: `db/migrations/0011_drop_legacy_content.sql`
+- 훅 revalidate 라이브 확인(사용자 /admin 편집 → 학습 화면 즉시 반영) 후 착수. 제거:
+  `content/` 파일 트리 · `db/seed-content.*` · 구 로더(`lib/content.ts`·`content-db.ts`·
+  `exam-icon-db.ts`) · 이관/검증 스크립트(`cms/migrate-content.ts`·`verify-content.ts`) ·
+  `content-localize` 의 저장측 함수(to*Slot·*ForLang — 투영측 project*·availableLangs 는
+  클라 토글·cms/read 가 계속 쓴다) · `catalog.applyIconOverrides`.
+- **0011 은 순서가 반대**: 추가형(선적용)과 달리 4단계 앱 배포 확인 **후** drop — 남은 구
+  이미지가 구 테이블을 읽는 창을 없앤다. 이로써 콘텐츠의 유일한 소스 = payload 스키마,
+  신규 문제집 추가 = /admin 에서 생성(배포 불요 — 동기 ② 달성).
+- 전환 전체 리스크 대비책이었던 구 테이블·파일은 이 시점까지 3단계 라이브 검증(사용자 편집
+  왕복 포함)을 통과해 폐기 조건(결정 8)을 충족했다.
+
 ## 기각 대안 (재제안 방지)
 
 - **저작 도구 + publish 동기화** — 리스크는 작지만 이중 소스(Payload+구 테이블) 유지 비용이 상시.

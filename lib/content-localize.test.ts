@@ -3,11 +3,7 @@ import type { Concept, Question } from "./types";
 import {
   projectQuestion,
   projectConcept,
-  toQuestionSlot,
-  toConceptSlot,
   availableLangs,
-  questionForLang,
-  conceptForLang,
   type LocalizedQuestion,
   type LocalizedConcept,
 } from "./content-localize";
@@ -78,106 +74,6 @@ describe("projectConcept", () => {
       rel: [1, 2],
       reln: 5,
     });
-  });
-});
-
-describe("toQuestionSlot / toConceptSlot (역방향 split — 저장 슬롯, 리뷰 content-envelope)", () => {
-  it("컬럼(qn·answer)과 파생(topicId)을 떨구고 언어별 슬롯만 남긴다", () => {
-    const q: Question = {
-      qn: 7,
-      answer: ["A"], // 컬럼
-      topicId: "스토리지", // 파생(비저장)
-      topic: "storage",
-      q: "본문",
-      options: { A: "a" },
-      explanation: "e",
-      tip: "t",
-      page: 3,
-      deeplink: "d",
-    };
-    const slot = toQuestionSlot(q);
-    expect(slot).toEqual({
-      topic: "storage",
-      q: "본문",
-      options: { A: "a" },
-      explanation: "e",
-      tip: "t",
-      page: 3,
-      deeplink: "d",
-    });
-    expect("qn" in slot).toBe(false);
-    expect("answer" in slot).toBe(false);
-    expect("topicId" in slot).toBe(false); // 파생 topicId 가 저장 슬롯에 새지 않음(핵심)
-  });
-
-  it("projectQuestion 의 역방향 — 되돌리면 topicId 없는 원 슬롯", () => {
-    const stored = { topic: "스토리지", q: "S3", options: { A: "에이" }, explanation: "해설" };
-    const lqOne: LocalizedQuestion = { qn: 7, answer: ["A"], content: { ko: stored } };
-    const projected = projectQuestion(lqOne, "ko"); // topicId 얹힘
-    expect(projected.topicId).toBe("스토리지");
-    expect(toQuestionSlot(projected)).toEqual(stored); // 역방향은 파생 제거 → 원 슬롯과 동일
-  });
-
-  it("toConceptSlot — svc(컬럼)만 떨구고 나머지 보존(Concept 엔 파생 없음)", () => {
-    const c: Concept = {
-      svc: "S3",
-      cat: "스토리지",
-      deff: "정의",
-      key: "핵심",
-      when: "언제",
-      trap: "함정",
-      vs: "비교",
-      rel: [1],
-      reln: 2,
-    };
-    const slot = toConceptSlot(c);
-    expect(slot).toEqual({
-      cat: "스토리지",
-      deff: "정의",
-      key: "핵심",
-      when: "언제",
-      trap: "함정",
-      vs: "비교",
-      rel: [1],
-      reln: 2,
-    });
-    expect("svc" in slot).toBe(false);
-  });
-});
-
-describe("questionForLang (어드민 — 폴백 없음)", () => {
-  it("그 언어 슬롯이 있으면 그대로 쓴다", () => {
-    const ko = questionForLang(lq, "ko");
-    expect(ko.q).toBe("S3 한글");
-    expect(ko.answer).toEqual(["A", "B"]);
-  });
-
-  it("미번역 슬롯이면 다른 언어의 보기 키를 빈 값으로 시드하고 qn·answer 를 보존한다", () => {
-    const koOnly: LocalizedQuestion = {
-      qn: 3,
-      answer: ["A", "B"],
-      content: { ko: { topic: "t", q: "q", options: { A: "가", B: "나", C: "다" } } },
-    };
-    const en = questionForLang(koOnly, "en"); // en 슬롯 없음
-    expect(en.qn).toBe(3);
-    expect(en.answer).toEqual(["A", "B"]); // 정답 보존
-    expect(en.q).toBe(""); // 미번역 — 빈 텍스트
-    expect(Object.keys(en.options)).toEqual(["A", "B", "C"]); // 다른 슬롯 키 시드 → 정답 ⊂ options 유지
-    expect(Object.values(en.options)).toEqual(["", "", ""]); // 값은 비움
-  });
-
-  it("슬롯이 하나도 없으면(완전 신규) 보기 A 하나", () => {
-    const blank: LocalizedQuestion = { qn: 9, answer: [], content: {} };
-    expect(Object.keys(questionForLang(blank, "ko").options)).toEqual(["A"]);
-  });
-});
-
-describe("conceptForLang (어드민 — 폴백 없음)", () => {
-  it("미번역 슬롯이면 svc 만 보존하고 텍스트는 빈다", () => {
-    const c = conceptForLang(lc, "en"); // en 없음
-    expect(c.svc).toBe("S3");
-    expect(c.deff).toBe("");
-    expect(c.cat).toBe("");
   });
 });
 
