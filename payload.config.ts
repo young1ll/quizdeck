@@ -57,9 +57,15 @@ export default buildConfig({
     components: {
       beforeLogin: ["@/cms/components/CmsLoginLink"],
       beforeDashboard: ["@/cms/components/DashboardStats"],
+      afterNavLinks: ["@/cms/components/UsersNavLink"],
       graphics: {
         Logo: "@/cms/components/Logo",
         Icon: "@/cms/components/LogoIcon",
+      },
+      // 사용자 관리 커스텀 뷰 (확장 B — ADR-0017 부분 재개봉): 밴·롤 변경 인앱화,
+      // 파괴 조작(삭제·세션)은 hosted 대시보드 유지.
+      views: {
+        users: { Component: "@/cms/components/UsersView", path: "/users" },
       },
     },
   },

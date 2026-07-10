@@ -51,3 +51,12 @@ better-auth `admin()` 플러그인의 client 짝(`adminClient`)을 붙여 목록
   (revalidatePath 대상)·AdminLink(→ 허브)는 무영향. `header-model` admin URL 만 갱신.
 - CONTEXT.md 무변경 — admin 표면·편집기·인프라는 운영 구현이라 학습 글로서리 밖('문제 CMS'는
   인앱 편집기의 구어 별칭일 뿐).
+
+## 애던덤 — 부분 재개봉: 밴·롤 변경 인앱화 (2026-07-10, ADR-0024 확장 B)
+
+커스텀 어드민이 Payload CMS(/admin)로 대체(ADR-0024)된 뒤, 사용자 관리 중 **고빈도 2종
+(롤 변경·밴/해제)** 을 Payload 커스텀 뷰(/admin/users, admin 전용)로 인앱화했다 —
+author 롤 운영(ADR-0024 결정 4)이 생기면서 롤 부여가 SQL 수동 작업이 되는 게 비합리적이라서.
+UI 는 better-auth admin API(/api/auth/admin/*)를 호출할 뿐 보안 경계는 여전히 서버 플러그인.
+**계정 삭제·세션 강제 종료·가장(impersonate)은 이 결정대로 hosted 대시보드 소유 유지** —
+전면 재구현이 아니라 표면 최소 확장이다.

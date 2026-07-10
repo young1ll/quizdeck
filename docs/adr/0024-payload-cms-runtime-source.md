@@ -118,6 +118,22 @@
 - 전환 전체 리스크 대비책이었던 구 테이블·파일은 이 시점까지 3단계 라이브 검증(사용자 편집
   왕복 포함)을 통과해 폐기 조건(결정 8)을 충족했다.
 
+## 애던덤 — admin 패널 강화 (2026-07-10, 사용자 4트랙 승인)
+
+전환 완결 후 "WordPress 급 admin" 요구로 확장. 승인 트랙: E+D+A(#113) · C(#114) · B · F(대기).
+
+- **E+D+A**: admin UI 한국어 기본(i18n)·라벨·nav 그룹·브랜딩 / 사이트 설정 Global
+  (`site-config` — 태그라인·푸터·공지 배너, afterChange 가 루트 layout revalidate, admin 전용
+  수정) / 운영 대시보드(beforeDashboard — 콘텐츠·학습자·활동·배포 sha). 마이그레이션 #3.
+- **C 드래프트·버전**: 콘텐츠 3종 versions+drafts(autosave, 리비전 20 캡). 서빙은
+  `draft:false` + `_status=published` 이중 명시, draft 저장은 revalidate skip. 마이그레이션 #4 —
+  **기존 행 published 백필 수동 추가**(누락 시 전 콘텐츠 서빙 소실). 유일성 훅은 draft 포함.
+- **B 사용자 관리**: /admin/users 커스텀 뷰(admin 전용) — 밴·롤 변경 인앱화(ADR-0017 애던덤).
+- **push:false**: dev push 전면 금지 — `payload run` 스크립트가 터널로 운영을 가리킬 때
+  조용한 스키마 push 와 `payload_migrations` 'dev' 마커(migrate 인터랙티브 정지 원인)를 차단.
+  스키마 변경은 로컬 dev 포함 항상 마이그레이션 파일로.
+- **F 미디어(R2)**: 사용자의 버킷·토큰 발급 대기 — 발급 후 R2_MEDIA_* 주입 + 지문 이미지 필드.
+
 ## 기각 대안 (재제안 방지)
 
 - **저작 도구 + publish 동기화** — 리스크는 작지만 이중 소스(Payload+구 테이블) 유지 비용이 상시.
