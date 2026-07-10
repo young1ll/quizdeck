@@ -6,6 +6,7 @@ import { default as default_4b8ca4bebcfc3b6fe0b091e9f47e324d } from '@/cms/compo
 import { default as default_e5e397131de5d4edff19ad21de30eed6 } from '@/cms/components/UsersView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
+/** @type import('payload').ImportMap */
 export const importMap = {
   "@/cms/components/LogoIcon#default": default_82ac47377d9b983b4f453d7fee5715a0,
   "@/cms/components/Logo#default": default_b32d1b744b22d641571f8ba1beec24d5,

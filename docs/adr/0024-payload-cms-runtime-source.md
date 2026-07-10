@@ -134,6 +134,16 @@
   스키마 변경은 로컬 dev 포함 항상 마이그레이션 파일로.
 - **F 미디어(R2)**: 사용자의 버킷·토큰 발급 대기 — 발급 후 R2_MEDIA_* 주입 + 지문 이미지 필드.
 
+## 애던덤 — Next 16 + Payload 3.85 동반 상향 (2026-07-10)
+
+구현 노트의 "버전 고정" 해제 경로 이행: Next 15.5.19→**16.2.10**, Payload 전 패키지
+3.75.0→**3.85.2**. 리허설(운영 덤프) 결과 **스키마 diff 없음**(마이그레이션 불요) ·
+드래프트 시맨틱 재검증 통과 · trailingSlash+skipTrailingSlashRedirect 의 better-auth
+비-슬래시 매칭(핵심 핵) Next 16 에서도 유효. 빌드는 Turbopack 기본으로 8.6s(webpack 18s).
+`next lint` 스크립트 제거(16 에서 명령 삭제 — eslint 설정도 없던 스크립트). 함정:
+pnpm 업그레이드 후 `.pnpm` 에 구 버전 @payloadcms/ui 빌드가 잔존해 dependencyChecker 가
+"Mismatching versions" 로 죽는다 — `rm -rf node_modules && pnpm install` 로 해소.
+
 ## 기각 대안 (재제안 방지)
 
 - **저작 도구 + publish 동기화** — 리스크는 작지만 이중 소스(Payload+구 테이블) 유지 비용이 상시.
