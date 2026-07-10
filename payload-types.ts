@@ -100,6 +100,9 @@ export interface Config {
     'site-config': SiteConfigSelect<false> | SiteConfigSelect<true>;
   };
   locale: 'ko' | 'en';
+  widgets: {
+    collections: CollectionsWidget;
+  };
   user: CmsUser;
   jobs: {
     tasks: unknown;
@@ -623,6 +626,16 @@ export interface SiteConfigSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collections_widget".
+ */
+export interface CollectionsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
