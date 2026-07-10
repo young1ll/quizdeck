@@ -7,6 +7,8 @@ import { getCollection } from "@/lib/collection-db";
 import { loadQuestionsByKeys } from "@/lib/content-db";
 import { groupItemsByExam } from "@/lib/collection";
 import { listExams } from "@/lib/content";
+import { applyIconOverrides } from "@/lib/catalog";
+import { loadIconOverrides } from "@/lib/exam-icon-db";
 import CollectionDetail, {
   type CollectionGroupView,
 } from "@/components/collections/CollectionDetail";
@@ -30,8 +32,9 @@ export default async function CollectionPage({ params }: { params: Promise<{ id:
   const col = await getCollection(pool, session.user.id, id);
   if (!col) notFound();
 
+  const exams = applyIconOverrides(listExams(), await loadIconOverrides(pool));
   const metaByKey = new Map<string, ReturnType<typeof listExams>[number]>(
-    listExams().map((e) => [`${e.provider}/${e.slug}`, e]),
+    exams.map((e) => [`${e.provider}/${e.slug}`, e]),
   );
   const rows = await loadQuestionsByKeys(pool, col.items);
   const byKey = new Map<string, (typeof rows)[number]["content"]>(

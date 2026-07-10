@@ -55,11 +55,13 @@ function StoreBridge({
 export default function MixedQuizClient({
   collectionId,
   collectionName,
+  collectionIcon,
   items,
   examMeta,
 }: {
   collectionId: string;
   collectionName: string;
+  collectionIcon?: string;
   items: MixedItem[];
   examMeta: Record<string, MixedExamMeta>;
 }) {
@@ -79,6 +81,7 @@ export default function MixedQuizClient({
         <MixedQuizView
           collectionId={collectionId}
           collectionName={collectionName}
+          collectionIcon={collectionIcon}
           items={items}
           examMeta={examMeta}
           stores={stores}
@@ -93,12 +96,14 @@ export default function MixedQuizClient({
 function MixedQuizView({
   collectionId,
   collectionName,
+  collectionIcon,
   items,
   examMeta,
   stores,
 }: {
   collectionId: string;
   collectionName: string;
+  collectionIcon?: string;
   items: MixedItem[];
   examMeta: Record<string, MixedExamMeta>;
   stores: Record<string, StoreCtx>;
@@ -116,7 +121,10 @@ function MixedQuizView({
     const summary = quiz.examSummary;
     return (
       <div className="mx-auto max-w-xl space-y-5 py-8">
-        <h1 className="text-xl font-bold">결과 — {collectionName}</h1>
+        <h1 className="text-xl font-bold">
+          결과 — {collectionIcon && <span>{collectionIcon} </span>}
+          {collectionName}
+        </h1>
         <Card padding={5}>
           <div className="text-3xl font-bold">
             {r.okCount}/{r.total} <span className="text-lg text-[var(--muted)]">({r.pct}%)</span>
@@ -161,6 +169,7 @@ function MixedQuizView({
       {/* focus chrome — 진행 · 나가기(일회성이라 확인 없이 종료, 제출분은 이미 기록됨) */}
       <header className="flex items-center justify-between gap-3">
         <div className="text-sm text-[var(--muted)]">
+          {collectionIcon && <span className="mr-1">{collectionIcon}</span>}
           {collectionName} · 진행 {c.idx + 1} / {c.total}
         </div>
         <Link

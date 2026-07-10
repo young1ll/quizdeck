@@ -7,23 +7,27 @@ import type { Collection, CollectionItem } from "./collection";
 interface Row {
   id: string;
   name: string;
+  icon: string | null;
   items: CollectionItem[];
   updated_at: Date;
 }
 
+const toCollection = (row: Row): Collection => ({
+  id: row.id,
+  name: row.name,
+  ...(row.icon ? { icon: row.icon } : {}),
+  items: row.items,
+  updatedAt: row.updated_at.getTime(),
+});
+
 export async function listCollections(pool: Pool, learnerId: string): Promise<Collection[]> {
   const r = await pool.query<Row>(
-    `select "id","name","items","updated_at"
+    `select "id","name","icon","items","updated_at"
        from "collection" where "learner_id" = $1
       order by "updated_at" desc`,
     [learnerId],
   );
-  return r.rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    items: row.items,
-    updatedAt: row.updated_at.getTime(),
-  }));
+  return r.rows.map(toCollection);
 }
 
 // upsert — id 충돌 시 **기존 행이 같은 learner 일 때만** 갱신(WHERE 가드, annotation-db 와 동일).
@@ -34,14 +38,15 @@ export async function upsertCollection(
   c: Collection,
 ): Promise<void> {
   await pool.query(
-    `insert into "collection" ("id","learner_id","name","items","updated_at")
-          values ($1, $2, $3, $4::jsonb, now())
+    `insert into "collection" ("id","learner_id","name","icon","items","updated_at")
+          values ($1, $2, $3, $4, $5::jsonb, now())
      on conflict ("id") do update
             set "name" = excluded."name",
+                "icon" = excluded."icon",
                 "items" = excluded."items",
                 "updated_at" = now()
           where "collection"."learner_id" = $2`,
-    [c.id, learnerId, c.name, JSON.stringify(c.items)],
+    [c.id, learnerId, c.name, c.icon ?? null, JSON.stringify(c.items)],
   );
 }
 
@@ -52,13 +57,13 @@ export async function getCollection(
   id: string,
 ): Promise<Collection | null> {
   const r = await pool.query<Row>(
-    `select "id","name","items","updated_at"
+    `select "id","name","icon","items","updated_at"
        from "collection" where "learner_id" = $1 and "id" = $2`,
     [learnerId, id],
   );
   const row = r.rows[0];
   if (!row) return null;
-  return { id: row.id, name: row.name, items: row.items, updatedAt: row.updated_at.getTime() };
+  return toCollection(row);
 }
 
 export async function deleteCollection(pool: Pool, learnerId: string, id: string): Promise<void> {

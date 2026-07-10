@@ -117,7 +117,10 @@ export default function AddToCollection({ items }: { items: CollectionItem[] }) 
                     onClick={() => addTo(c)}
                     className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm hover:bg-[var(--border)] disabled:opacity-50"
                   >
-                    <span className="truncate">{c.name}</span>
+                    <span className="truncate">
+                      {c.icon && <span className="mr-1">{c.icon}</span>}
+                      {c.name}
+                    </span>
                     {doneId === c.id ? (
                       <LuCheck className="size-4 shrink-0 text-green-500" aria-label="담김" />
                     ) : (

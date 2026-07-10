@@ -3,6 +3,8 @@
 // (no pg) — 경계 검증(parseCollection)과 아이템 결정(add/remove/group)을 API·UI 양쪽이 공유한다
 // (annotation 의 parseAnnotation, content 의 parseContentCommand 와 같은 결).
 
+import { parseIcon } from "./catalog";
+
 export interface CollectionItem {
   examKey: string; // "provider/slug" — Progress·question 과 같은 키
   qn: number;
@@ -11,6 +13,7 @@ export interface CollectionItem {
 export interface Collection {
   id: string; // client 생성 uuid — 기기 간 같은 컬렉션을 식별(annotation 선례)
   name: string;
+  icon?: string; // 이모지 등 짧은 표시 문자(ADR-0023) — 없으면 미표시
   items: CollectionItem[]; // 담은 순서 보존, (examKey, qn) 중복 없음
   updatedAt: number; // ms epoch
 }
@@ -39,6 +42,8 @@ export function parseCollection(raw: unknown): Collection | null {
   if (typeof o.id !== "string" || !o.id) return null;
   const name = typeof o.name === "string" ? o.name.trim() : "";
   if (!name || name.length > COLLECTION_NAME_MAX) return null;
+  const icon = parseIcon(o.icon);
+  if (icon === undefined) return null; // 비문자열·한도 초과 — name 과 같은 strict 거부
   if (!Array.isArray(o.items) || o.items.length > COLLECTION_ITEMS_MAX) return null;
   if (!o.items.every(isItem)) return null;
   // (examKey, qn) 중복은 거부하지 않고 정규화(첫 등장 순서 보존) — 클라 버그가 서버 상태를 더럽히지 않게.
@@ -51,7 +56,7 @@ export function parseCollection(raw: unknown): Collection | null {
     items.push({ examKey: it.examKey, qn: it.qn });
   }
   const updatedAt = typeof o.updatedAt === "number" ? o.updatedAt : Date.now();
-  return { id: o.id, name, items, updatedAt };
+  return { id: o.id, name, ...(icon ? { icon } : {}), items, updatedAt };
 }
 
 /** 담기 — 이미 있으면 그대로(중복 없음 불변식), 새 항목은 끝에(담은 순서 보존). */

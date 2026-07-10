@@ -12,6 +12,35 @@ export interface CatalogGroup {
   exams: ExamSummary[];
 }
 
+/** 아이콘 최대 길이(UTF-16 유닛) — ZWJ 조합 이모지(예: 👨‍👩‍👧‍👦 = 11)까지 수용하는 여유치. */
+export const ICON_MAX = 16;
+
+/**
+ * 아이콘 경계 검증 (ADR-0023) — 컬렉션·문제집 오버라이드가 공유. trim 후 빈 값은 null(= 아이콘
+ * 없음/제거 의도), 한도 초과·비문자열은 undefined(불량 — 호출부가 거부).
+ */
+export function parseIcon(raw: unknown): string | null | undefined {
+  if (raw === undefined || raw === null) return null;
+  if (typeof raw !== "string") return undefined;
+  const s = raw.trim();
+  if (!s) return null;
+  return s.length <= ICON_MAX ? s : undefined;
+}
+
+/**
+ * 문제집 아이콘 오버라이드 병합 (ADR-0023) — 카탈로그(파일 meta, 빌드-세이프)는 그대로 두고
+ * 표시 직전에 DB 오버라이드를 얹는다. 오버라이드 없는 시험은 파일 아이콘 유지.
+ */
+export function applyIconOverrides(
+  exams: ExamSummary[],
+  overrides: Record<string, string>,
+): ExamSummary[] {
+  return exams.map((e) => {
+    const icon = overrides[`${e.provider}/${e.slug}`];
+    return icon ? { ...e, icon } : e;
+  });
+}
+
 export function groupExams(exams: ExamSummary[]): CatalogGroup[] {
   const byId = new Map<string, CatalogGroup>();
   for (const e of exams) {
