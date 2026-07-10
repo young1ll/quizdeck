@@ -76,6 +76,13 @@ export const Questions: CollectionConfig = {
       required: true,
       admin: { description: "정답 key 목록 — 보기 key 의 부분집합(예: A / A,C)" },
     },
+    {
+      name: "image",
+      type: "upload",
+      relationTo: "media",
+      label: "지문 이미지",
+      admin: { description: "지문 아래 표시 — 선택 (ADR-0024 확장 F)" },
+    },
     { name: "explanation", type: "textarea", label: "해설", localized: true },
     { name: "tip", type: "textarea", label: "팁", localized: true },
     // 언어 무관 참조 필드 — 구 슬롯엔 언어별로 저장됐지만 의미는 중립(덤프 페이지·원문 링크).

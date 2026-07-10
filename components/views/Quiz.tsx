@@ -141,6 +141,15 @@ export default function Quiz({ quiz }: { quiz: QuizController }) {
         <p className="leading-relaxed">
           <AnnotatableText qn={qn} field="q" text={d.q} />
         </p>
+        {d.image && (
+          // 지문 이미지 (ADR-0024 확장 F) — CMS media(R2) 서빙, 문항 전환마다 lazy
+          <img
+            src={d.image}
+            alt="지문 이미지"
+            loading="lazy"
+            className="mt-3 max-w-full rounded border border-[var(--border)]"
+          />
+        )}
 
         <ul className="mt-5 space-y-2">
           {optOrder.map((letter) => {

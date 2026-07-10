@@ -275,6 +275,10 @@ export interface Question {
    * 정답 key 목록 — 보기 key 의 부분집합(예: A / A,C)
    */
   answer: string[];
+  /**
+   * 지문 아래 표시 — 선택 (ADR-0024 확장 F)
+   */
+  image?: (number | null) | Media;
   explanation?: string | null;
   tip?: string | null;
   /**
@@ -490,6 +494,7 @@ export interface QuestionsSelect<T extends boolean = true> {
         id?: T;
       };
   answer?: T;
+  image?: T;
   explanation?: T;
   tip?: T;
   page?: T;

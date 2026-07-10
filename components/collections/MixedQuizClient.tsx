@@ -204,6 +204,14 @@ function MixedQuizView({
       <Card padding={5}>
         {multi && <div className="mb-2 text-xs text-[var(--muted)]">정답 {it.question.answer.length}개</div>}
         <Markdown text={it.question.q} className="text-[15px] leading-relaxed" />
+        {it.question.image && (
+          <img
+            src={it.question.image}
+            alt="지문 이미지"
+            loading="lazy"
+            className="mt-3 max-w-full rounded border border-[var(--border)]"
+          />
+        )}
         <ul className="mt-4 space-y-2">
           {Object.entries(it.question.options).map(([k, text]) => {
             const selected = c.selected.includes(k);
