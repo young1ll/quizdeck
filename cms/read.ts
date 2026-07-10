@@ -36,6 +36,8 @@ function toTrack(doc: Pick<Exam, "trackId" | "trackName">): ExamTrack | undefine
 export async function listExamsFromPayload(payload: Payload): Promise<ExamSummary[]> {
   const { docs } = await payload.find({
     collection: "exams",
+    where: { _status: { equals: "published" } },
+    draft: false,
     pagination: false,
     depth: 0,
     overrideAccess: true,
@@ -44,7 +46,7 @@ export async function listExamsFromPayload(payload: Payload): Promise<ExamSummar
   for (const doc of docs) {
     const { totalDocs } = await payload.count({
       collection: "questions",
-      where: { exam: { equals: doc.id } },
+      where: { and: [{ exam: { equals: doc.id } }, { _status: { equals: "published" } }] },
       overrideAccess: true,
     });
     out.push(
@@ -129,7 +131,8 @@ export async function loadQuestionsByKeysFromPayload(
   }
   const exams = await payload.find({
     collection: "exams",
-    where: { examKey: { in: [...byExam.keys()] } },
+    where: { and: [{ examKey: { in: [...byExam.keys()] } }, { _status: { equals: "published" } }] },
+    draft: false,
     pagination: false,
     depth: 0,
     overrideAccess: true,
@@ -140,7 +143,10 @@ export async function loadQuestionsByKeysFromPayload(
     if (!qns.length) continue;
     const qRes = await payload.find({
       collection: "questions",
-      where: { and: [{ exam: { equals: exam.id } }, { qn: { in: qns } }] },
+      where: {
+        and: [{ exam: { equals: exam.id } }, { qn: { in: qns } }, { _status: { equals: "published" } }],
+      },
+      draft: false,
       locale: "all",
       pagination: false,
       depth: 0,
@@ -163,7 +169,8 @@ export async function loadExamLocalizedFromPayload(
   const examKey = `${provider}/${slug}`;
   const found = await payload.find({
     collection: "exams",
-    where: { examKey: { equals: examKey } },
+    where: { and: [{ examKey: { equals: examKey } }, { _status: { equals: "published" } }] },
+    draft: false,
     limit: 1,
     depth: 0,
     overrideAccess: true,
@@ -174,7 +181,8 @@ export async function loadExamLocalizedFromPayload(
   const [qRes, cRes] = await Promise.all([
     payload.find({
       collection: "questions",
-      where: { exam: { equals: exam.id } },
+      where: { and: [{ exam: { equals: exam.id } }, { _status: { equals: "published" } }] },
+      draft: false,
       locale: "all",
       sort: "qn",
       pagination: false,
@@ -183,7 +191,8 @@ export async function loadExamLocalizedFromPayload(
     }),
     payload.find({
       collection: "concepts",
-      where: { exam: { equals: exam.id } },
+      where: { and: [{ exam: { equals: exam.id } }, { _status: { equals: "published" } }] },
+      draft: false,
       locale: "all",
       sort: "ord",
       pagination: false,

@@ -21,6 +21,7 @@ const uniqueExamSvc: CollectionBeforeValidateHook = async ({ data, originalDoc, 
       ],
     },
     limit: 1,
+    draft: true,
     overrideAccess: true,
   });
   if (dup.totalDocs > 0) throw new APIError(`이미 존재하는 개념입니다: svc=${svc}`, 400);
@@ -42,6 +43,9 @@ export const Concepts: CollectionConfig = {
     update: cmsUser,
     delete: adminOnly,
   },
+  // 드래프트·버전 (확장 C — WordPress 초안→게시·리비전의 등가). 서빙(cms/read.ts)은
+  // _status=published 만 읽는다. autosave 로 편집 유실 방지, 리비전은 문서당 20개 캡.
+  versions: { drafts: { autosave: true }, maxPerDoc: 20 },
   hooks: {
     beforeValidate: [uniqueExamSvc],
     afterChange: [revalidateExamContent],

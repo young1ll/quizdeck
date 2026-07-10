@@ -74,6 +74,10 @@ export default buildConfig({
     pool: { connectionString: process.env.DATABASE_URL },
     schemaName: "payload",
     migrationDir: path.resolve(dirname, "db/payload-migrations"),
+    // dev push 금지 — 스키마 변경은 항상 마이그레이션 파일로(관례). 특히 payload run 스크립트가
+    // 터널로 운영 DB 를 가리킬 때 조용한 push·payload_migrations 'dev' 마커(이후 migrate 가
+    // 인터랙티브 프롬프트로 멈추는 원인)를 차단한다. 로컬 dev 도 pnpm payload migrate 로 적용.
+    push: false,
   }),
   graphQL: { disable: true },
   typescript: { outputFile: path.resolve(dirname, "payload-types.ts") },
