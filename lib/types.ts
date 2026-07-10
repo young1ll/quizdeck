@@ -16,6 +16,8 @@ export interface Question {
   answer: string[];
   explanation?: string;
   tip?: string;
+  /** 지문 이미지 URL(Payload media — /api/cms/media/file/…). 언어 무관. (ADR-0024 확장 F) */
+  image?: string;
   page?: number | string;
   deeplink?: string;
 }

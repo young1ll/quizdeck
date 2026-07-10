@@ -73,6 +73,9 @@ function pick<T>(v: T | AllLocales<T> | null | undefined, locale: string): T | u
 
 function questionEnvelope(doc: Question): LocalizedQuestion {
   const qMap = doc.q as unknown as AllLocales<string>;
+  // 지문 이미지 — depth:1 조회라 media 객체(url 포함). 언어 무관 필드(page 규칙과 동일).
+  const image =
+    doc.image && typeof doc.image === "object" ? (doc.image.url ?? undefined) : undefined;
   const content: Record<string, QuestionSlot> = {};
   for (const locale of Object.keys(qMap)) {
     const options: Record<string, string> = {};
@@ -86,6 +89,7 @@ function questionEnvelope(doc: Question): LocalizedQuestion {
       options,
       explanation: pick(doc.explanation as unknown, locale),
       tip: pick(doc.tip as unknown, locale),
+      image,
       page: doc.page ?? undefined,
       deeplink: doc.deeplink ?? undefined,
     }) as QuestionSlot;
@@ -149,7 +153,7 @@ export async function loadQuestionsByKeysFromPayload(
       draft: false,
       locale: "all",
       pagination: false,
-      depth: 0,
+      depth: 1, // 지문 이미지(media.url) 채움
       overrideAccess: true,
     });
     for (const doc of qRes.docs) {
@@ -186,7 +190,7 @@ export async function loadExamLocalizedFromPayload(
       locale: "all",
       sort: "qn",
       pagination: false,
-      depth: 0,
+      depth: 1, // 지문 이미지(media.url) 채움
       overrideAccess: true,
     }),
     payload.find({
