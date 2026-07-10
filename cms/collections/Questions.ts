@@ -65,5 +65,9 @@ export const Questions: CollectionConfig = {
     },
     { name: "explanation", type: "textarea", localized: true },
     { name: "tip", type: "textarea", localized: true },
+    // 언어 무관 참조 필드 — 구 슬롯엔 언어별로 저장됐지만 의미는 중립(덤프 페이지·원문 링크).
+    // 투영(cms/read.ts)이 존재하는 모든 로케일 슬롯에 같은 값을 되돌린다.
+    { name: "page", type: "number", admin: { description: "덤프 문서 페이지 번호" } },
+    { name: "deeplink", type: "text", admin: { description: "원문 딥링크(예: marginnote4app://…)" } },
   ],
 };

@@ -272,6 +272,14 @@ export interface Question {
   answer: string[];
   explanation?: string | null;
   tip?: string | null;
+  /**
+   * 덤프 문서 페이지 번호
+   */
+  page?: number | null;
+  /**
+   * 원문 딥링크(예: marginnote4app://…)
+   */
+  deeplink?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -318,6 +326,22 @@ export interface Concept {
    * 비교
    */
   vs?: string | null;
+  /**
+   * 상세(선택)
+   */
+  detail?: string | null;
+  /**
+   * 비용 특성(선택)
+   */
+  cost?: string | null;
+  /**
+   * 관련 문항 번호(표시분)
+   */
+  rel?: number[] | null;
+  /**
+   * 관련 문항 총 개수
+   */
+  reln?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -460,6 +484,8 @@ export interface QuestionsSelect<T extends boolean = true> {
   answer?: T;
   explanation?: T;
   tip?: T;
+  page?: T;
+  deeplink?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -478,6 +504,10 @@ export interface ConceptsSelect<T extends boolean = true> {
   when?: T;
   trap?: T;
   vs?: T;
+  detail?: T;
+  cost?: T;
+  rel?: T;
+  reln?: T;
   updatedAt?: T;
   createdAt?: T;
 }
