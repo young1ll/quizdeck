@@ -47,6 +47,14 @@ describe("parseCollection (경계 검증)", () => {
     expect(parseCollection({ ...valid, items: many })).toBeNull();
   });
 
+  it("icon — 유효하면 보존, 빈 값·누락은 필드 없음, 불량(비문자열·한도 초과)은 null (ADR-0023)", () => {
+    expect(parseCollection({ ...valid, icon: " 🔥 " })?.icon).toBe("🔥");
+    expect(parseCollection({ ...valid, icon: "" })?.icon).toBeUndefined();
+    expect(parseCollection(valid)?.icon).toBeUndefined();
+    expect(parseCollection({ ...valid, icon: 7 })).toBeNull();
+    expect(parseCollection({ ...valid, icon: "x".repeat(17) })).toBeNull();
+  });
+
   it("(examKey, qn) 중복은 첫 등장만 남겨 정규화 — 같은 qn 이라도 다른 시험이면 별개", () => {
     const c = parseCollection({
       ...valid,

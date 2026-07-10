@@ -39,7 +39,10 @@ export default async function CollectionsPage() {
                 <Card padding={4} interactive>
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="truncate font-medium">{c.name}</div>
+                      <div className="truncate font-medium">
+                        {c.icon && <span className="mr-1.5">{c.icon}</span>}
+                        {c.name}
+                      </div>
                       <div className="mt-0.5 text-xs text-[var(--muted)]">
                         문항 {c.items.length}개 · 시험 {examCount}개
                       </div>

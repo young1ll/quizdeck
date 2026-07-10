@@ -3,6 +3,8 @@ import { requireLearnerPage } from "@/lib/route-guards";
 import { Container } from "@/components/ui/Container";
 import { pool } from "@/lib/db";
 import { listExams } from "@/lib/content";
+import { applyIconOverrides } from "@/lib/catalog";
+import { loadIconOverrides } from "@/lib/exam-icon-db";
 import { loadAllProgress } from "@/lib/progress-db";
 import { buildDashboard } from "@/lib/dashboard";
 import { today } from "@/lib/dates";
@@ -23,7 +25,8 @@ export default async function Me() {
   const rows = await loadAllProgress(pool, session.user.id);
   const totalByKey: Record<string, number> = {};
   const meta: Record<string, { name: string; code: string; href: string; icon?: string }> = {};
-  for (const e of listExams()) {
+  const exams = applyIconOverrides(listExams(), await loadIconOverrides(pool));
+  for (const e of exams) {
     const key = `${e.provider}/${e.slug}`;
     totalByKey[key] = e.questionCount;
     meta[key] = { name: e.name, code: e.code, href: `/${e.provider}/${e.slug}`, icon: e.icon };

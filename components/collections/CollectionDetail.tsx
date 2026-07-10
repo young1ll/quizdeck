@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LuPlay, LuTrash2, LuX, LuLayers } from "react-icons/lu";
+import { LuPlay, LuTrash2, LuX, LuLayers, LuSmile } from "react-icons/lu";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import IconPicker from "@/components/ui/IconPicker";
 import { removeItem, type Collection } from "@/lib/collection";
 
 // 컬렉션 상세 (ADR-0022 S1.5). RSC(page)가 로드한 컬렉션 + 시험별 그룹 뷰데이터를 받아 편집(빼기·
@@ -33,6 +34,8 @@ export default function CollectionDetail({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [iconOpen, setIconOpen] = useState(false);
+  const [iconDraft, setIconDraft] = useState(collection.icon ?? "");
 
   const put = async (next: Collection): Promise<boolean> => {
     const res = await fetch("/api/collections", {
@@ -71,14 +74,45 @@ export default function CollectionDetail({
     }
   };
 
+  // 아이콘 편집 (ADR-0023) — 컬렉션 전체 upsert(PUT)로 저장, 빈 값 = 제거.
+  const saveIcon = async () => {
+    setBusy(true);
+    setErr(null);
+    const trimmed = iconDraft.trim();
+    const next: Collection = {
+      ...collection,
+      ...(trimmed ? { icon: trimmed } : { icon: undefined }),
+      updatedAt: Date.now(),
+    };
+    if (await put(next)) {
+      setIconOpen(false);
+      router.refresh();
+    } else setErr("아이콘 저장에 실패했습니다.");
+    setBusy(false);
+  };
+
   return (
     <div className="space-y-5">
       <header className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold">{collection.name}</h1>
-          <p className="mt-0.5 text-xs text-[var(--muted)]">
-            문항 {collection.items.length}개 · 시험 {groups.length}개
-          </p>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setIconOpen((v) => !v);
+              setIconDraft(collection.icon ?? "");
+            }}
+            aria-label="컬렉션 아이콘 변경"
+            aria-expanded={iconOpen}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--panel)] text-xl"
+          >
+            {collection.icon ?? <LuSmile className="size-4 text-[var(--muted)]" aria-hidden />}
+          </button>
+          <div>
+            <h1 className="text-xl font-bold">{collection.name}</h1>
+            <p className="mt-0.5 text-xs text-[var(--muted)]">
+              문항 {collection.items.length}개 · 시험 {groups.length}개
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {/* 혼합 큐 풀기 (ADR-0022 S2) — 여러 시험 문항을 한 세션으로. 시험별 풀기는 각 그룹에. */}
@@ -100,6 +134,19 @@ export default function CollectionDetail({
           </Button>
         </div>
       </header>
+      {iconOpen && (
+        <div className="space-y-2 rounded-lg border border-[var(--border)] p-3">
+          <IconPicker value={iconDraft} onChange={setIconDraft} />
+          <div className="flex gap-2">
+            <Button variant="primary" size="sm" onClick={() => void saveIcon()} disabled={busy}>
+              저장
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setIconOpen(false)} disabled={busy}>
+              취소
+            </Button>
+          </div>
+        </div>
+      )}
       {err && <p className="text-xs text-red-500">{err}</p>}
 
       {groups.length === 0 ? (

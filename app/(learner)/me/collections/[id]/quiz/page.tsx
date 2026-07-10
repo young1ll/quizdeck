@@ -6,6 +6,8 @@ import { getCollection } from "@/lib/collection-db";
 import { loadQuestionsByKeys } from "@/lib/content-db";
 import { projectQuestion } from "@/lib/content-localize";
 import { listExams } from "@/lib/content";
+import { applyIconOverrides } from "@/lib/catalog";
+import { loadIconOverrides } from "@/lib/exam-icon-db";
 import type { MixedItem } from "@/lib/mixed-session";
 import MixedQuizClient, { type MixedExamMeta } from "@/components/collections/MixedQuizClient";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
@@ -41,7 +43,8 @@ export default async function CollectionQuizPage({
   }
 
   const examMeta: Record<string, MixedExamMeta> = {};
-  for (const e of listExams()) examMeta[`${e.provider}/${e.slug}`] = { code: e.code, icon: e.icon };
+  const exams = applyIconOverrides(listExams(), await loadIconOverrides(pool));
+  for (const e of exams) examMeta[`${e.provider}/${e.slug}`] = { code: e.code, icon: e.icon };
 
   return (
     <Container size="lg" className="py-2">
@@ -57,6 +60,7 @@ export default async function CollectionQuizPage({
         <MixedQuizClient
           collectionId={col.id}
           collectionName={col.name}
+          collectionIcon={col.icon}
           items={items}
           examMeta={examMeta}
         />
