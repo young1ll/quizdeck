@@ -6,11 +6,13 @@ import { adminOnly, selfOrAdmin } from "../access.ts";
 // 않는다(auth-strategy 가 세션에서 find-or-create·동기화). 비밀번호 컬럼 없음(로컬 인증 OFF).
 export const CmsUsers: CollectionConfig = {
   slug: "cms-users",
+  labels: { singular: "CMS 사용자", plural: "CMS 사용자" },
   auth: {
     disableLocalStrategy: true,
     strategies: [betterAuthStrategy],
   },
   admin: {
+    group: "시스템",
     useAsTitle: "email",
     description:
       "better-auth 세션 미러 — 직접 만들지 않는다. 접근 부여는 user.role 에 admin|author 지정.",

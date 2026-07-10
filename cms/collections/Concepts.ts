@@ -29,7 +29,9 @@ const uniqueExamSvc: CollectionBeforeValidateHook = async ({ data, originalDoc, 
 
 export const Concepts: CollectionConfig = {
   slug: "concepts",
+  labels: { singular: "개념 카드", plural: "개념 카드" },
   admin: {
+    group: "콘텐츠",
     useAsTitle: "svc",
     defaultColumns: ["exam", "svc", "cat", "ord"],
     listSearchableFields: ["svc", "abbr"],
@@ -46,7 +48,7 @@ export const Concepts: CollectionConfig = {
     afterDelete: [revalidateExamContentOnDelete],
   },
   fields: [
-    { name: "exam", type: "relationship", relationTo: "exams", required: true, index: true },
+    { name: "exam", type: "relationship", label: "문제집", relationTo: "exams", required: true, index: true },
     {
       name: "svc",
       type: "text",

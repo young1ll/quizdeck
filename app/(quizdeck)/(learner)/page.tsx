@@ -11,7 +11,7 @@ import { pool } from "@/lib/db";
 import { loadAllProgress } from "@/lib/progress-db";
 import { buildContinueList, totalMyProblems, type ContinueItem } from "@/lib/dashboard";
 import { groupExams } from "@/lib/catalog";
-import { listExamsCms } from "@/cms/serve";
+import { getSiteConfigCms, listExamsCms } from "@/cms/serve";
 
 // Home — 재개(act) (ADR-0012 결정 2·3). 로그인 Learner 엔 상단 "이어서 학습"(Progress 기반 최근 시험,
 // cross-device 일관, 최대 3) + 카탈로그, 익명엔 카탈로그만. 진도 스코프 사다리의 재개 지점 — 숫자는
@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 const MAX_CONTINUE = 3;
 
 export default async function Home() {
-  const exams = await listExamsCms();
+  const [exams, site] = await Promise.all([listExamsCms(), getSiteConfigCms()]);
 
   // 카탈로그 그룹화 — 트랙(자격 계열) 우선, 없으면 provider 폴백(lib/catalog 순수 결정, 데이터 모델 ③).
   const groups = groupExams(exams);
@@ -45,7 +45,7 @@ export default async function Home() {
     <Container size="lg" className="py-8">
       {/* 브랜드·계정(로고·로그인/마이페이지)은 learner shell 헤더가 소유(ADR-0010 슬라이스 C). 태그라인만. */}
       <header className="mb-8">
-        <p className="text-sm text-[var(--muted)]">자격·기술 시험 대비 퀴즈 · 학습</p>
+        <p className="text-sm text-[var(--muted)]">{site.tagline}</p>
       </header>
 
       {/* 이어서 학습 — 로그인 Learner 의 최근 시험(ADR-0012 결정 3). 재개 affordance, 숫자 최소. */}
@@ -154,9 +154,7 @@ export default async function Home() {
         </div>
       )}
 
-      <footer className="mt-16 text-center text-xs text-[var(--muted)]">
-        QuizDeck · self-hosted
-      </footer>
+      <footer className="mt-16 text-center text-xs text-[var(--muted)]">{site.footerText}</footer>
     </Container>
   );
 }

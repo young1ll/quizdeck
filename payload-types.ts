@@ -93,8 +93,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: ('false' | 'none' | 'null') | false | null | ('ko' | 'en') | ('ko' | 'en')[];
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'site-config': SiteConfig;
+  };
+  globalsSelect: {
+    'site-config': SiteConfigSelect<false> | SiteConfigSelect<true>;
+  };
   locale: 'ko' | 'en';
   user: CmsUser;
   jobs: {
@@ -566,6 +570,48 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * 홈 문구·공지 배너 — 저장 즉시 사이트에 반영된다
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-config".
+ */
+export interface SiteConfig {
+  id: number;
+  /**
+   * 홈 상단 한 줄 소개 — 비우면 기본 문구
+   */
+  tagline?: string | null;
+  /**
+   * 홈 하단 — 비우면 기본 문구
+   */
+  footerText?: string | null;
+  notice?: {
+    enabled?: boolean | null;
+    text?: string | null;
+    tone?: ('info' | 'warning') | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-config_select".
+ */
+export interface SiteConfigSelect<T extends boolean = true> {
+  tagline?: T;
+  footerText?: T;
+  notice?:
+    | T
+    | {
+        enabled?: T;
+        text?: T;
+        tone?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

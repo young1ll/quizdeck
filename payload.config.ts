@@ -4,11 +4,14 @@ import { buildConfig } from "payload";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { s3Storage } from "@payloadcms/storage-s3";
+import { en } from "@payloadcms/translations/languages/en";
+import { ko } from "@payloadcms/translations/languages/ko";
 import { CmsUsers } from "./cms/collections/CmsUsers.ts";
 import { Exams } from "./cms/collections/Exams.ts";
 import { Questions } from "./cms/collections/Questions.ts";
 import { Concepts } from "./cms/collections/Concepts.ts";
 import { Media } from "./cms/collections/Media.ts";
+import { SiteConfig } from "./cms/globals/SiteConfig.ts";
 
 // Payload CMS 설정 (ADR-0024) — 콘텐츠(문제집·문항·개념·미디어)의 런타임 소스.
 //
@@ -50,11 +53,20 @@ export default buildConfig({
   admin: {
     user: CmsUsers.slug,
     importMap: { baseDir: dirname },
+    meta: { titleSuffix: " · QuizDeck CMS" },
     components: {
       beforeLogin: ["@/cms/components/CmsLoginLink"],
+      beforeDashboard: ["@/cms/components/DashboardStats"],
+      graphics: {
+        Logo: "@/cms/components/Logo",
+        Icon: "@/cms/components/LogoIcon",
+      },
     },
   },
+  // admin UI 언어 — 한국어 기본(사용자별 계정 설정에서 변경 가능). (확장 E)
+  i18n: { supportedLanguages: { en, ko }, fallbackLanguage: "ko" },
   collections: [CmsUsers, Exams, Questions, Concepts, Media],
+  globals: [SiteConfig],
   editor: lexicalEditor(),
   // 언어 봉투(content jsonb {ko,en}) 의 대체 — 필드 단위 localized + ko 기본, 폴백 on.
   localization: { locales: ["ko", "en"], defaultLocale: "ko", fallback: true },

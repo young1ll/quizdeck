@@ -7,6 +7,8 @@ import { adminOnly, cmsUser } from "../access.ts";
 // 리사이즈/크롭 없음(아이콘 ≤256KB 수준이라 원본 서빙으로 충분, 이미지 슬림 유지).
 export const Media: CollectionConfig = {
   slug: "media",
+  labels: { singular: "미디어", plural: "미디어" },
+  admin: { group: "콘텐츠" },
   upload: {
     staticDir: "media",
     crop: false,
