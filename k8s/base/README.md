@@ -58,6 +58,26 @@ kubectl -n quizdeck patch secret quizdeck-auth --type merge -p "{\"data\":{
 kubectl -n quizdeck rollout restart deploy/quizdeck
 ```
 
+### Payload CMS 키 (ADR-0024)
+
+`PAYLOAD_SECRET`(Payload 내부 토큰 서명 — 32자 이상 무작위)과 CMS 미디어용 R2 자격증명
+4개도 같은 `quizdeck-auth` Secret 에 보관한다. 모두 `optional: true` — 없어도 파드는
+기동하고, `PAYLOAD_SECRET` 부재 시 /cms 요청만 실패하며, R2 4종이 모두 있어야
+`payload.config.ts` 가 R2 스토리지를 켠다(부재 시 로컬 디스크 폴백 — 휘발이라 dev 전용).
+
+R2 는 백업(ADR-0021)과 같은 Cloudflare 계정에 **media 전용 버킷**을 따로 만들고
+(Object Read & Write 스코프 토큰), 백업 자격증명과 섞지 않는다:
+
+```sh
+kubectl -n quizdeck patch secret quizdeck-auth --type merge -p "{\"data\":{
+  \"PAYLOAD_SECRET\":\"$(openssl rand -base64 32 | tr -d '\n' | base64)\",
+  \"R2_MEDIA_ENDPOINT\":\"$(printf %s 'https://<account-id>.r2.cloudflarestorage.com' | base64)\",
+  \"R2_MEDIA_BUCKET\":\"$(printf %s 'quizdeck-media' | base64)\",
+  \"R2_MEDIA_ACCESS_KEY_ID\":\"$(printf %s '...' | base64)\",
+  \"R2_MEDIA_SECRET_ACCESS_KEY\":\"$(printf %s '...' | base64)\"}}"
+kubectl -n quizdeck rollout restart deploy/quizdeck
+```
+
 ## `db-credentials` (이슈 #4 가 생성)
 
 DB VM postgres 접속 문자열(`DATABASE_URL`). 생성 절차는 #4 가 추가한

@@ -1,3 +1,5 @@
+import { withPayload } from '@payloadcms/next/withPayload';
+
 /** @type {import('next').NextConfig} */
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
@@ -18,4 +20,5 @@ const nextConfig = {
   skipTrailingSlashRedirect: true,
 };
 
-export default nextConfig;
+// withPayload — Payload embed(ADR-0024)에 필요한 웹팩/서버 external 설정을 얹는다.
+export default withPayload(nextConfig);

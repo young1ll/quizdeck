@@ -10,6 +10,17 @@ export function isAdminRole(role: string | null | undefined): boolean {
 }
 
 /**
+ * role 이 CMS(Payload admin) 접근 가능한가 (ADR-0024). admin = 전체 운영 + CMS, author = 콘텐츠
+ * 저작 전용(비개발자 작성자) — better-auth admin API(밴·롤 변경)는 여전히 admin 만 통과한다.
+ * isAdminRole 과 같은 콤마 다중 role 규칙.
+ */
+export function isCmsRole(role: string | null | undefined): boolean {
+  if (!role) return false;
+  const roles = role.split(",").map((r) => r.trim());
+  return roles.includes("admin") || roles.includes("author");
+}
+
+/**
  * 세션이 admin 의 것인가. 순수 — 클라(useSession)·서버(getSession) 가 공유한다. 클라 세션 타입엔 role 이
  * 안 실려(admin 플러그인 미타이핑) 있으나 런타임엔 있으므로 unknown 으로 받아 내부에서 좁힌다.
  */

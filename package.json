@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Self-hosted exam quiz app for certification prep",
+  "type": "module",
   "packageManager": "pnpm@10.13.1",
   "scripts": {
     "dev": "next dev",
@@ -10,15 +11,24 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "payload": "payload",
+    "generate:types": "payload generate:types",
+    "generate:importmap": "payload generate:importmap"
   },
   "dependencies": {
     "@astryxdesign/core": "0.1.2",
     "@astryxdesign/theme-neutral": "0.1.2",
     "@better-auth/infra": "^0.3.2",
     "@better-auth/passkey": "^1.6.22",
+    "@payloadcms/db-postgres": "3.75.0",
+    "@payloadcms/next": "3.75.0",
+    "@payloadcms/richtext-lexical": "3.75.0",
+    "@payloadcms/storage-s3": "3.75.0",
     "better-auth": "^1.6.22",
+    "graphql": "^16.14.2",
     "next": "^15.1.6",
+    "payload": "3.75.0",
     "pg": "^8.22.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
