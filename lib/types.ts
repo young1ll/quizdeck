@@ -60,7 +60,7 @@ export interface ExamMeta {
   name: string;
   slug: string;
   language: string;
-  /** 카탈로그·카드 표시용 아이콘(이모지). 없으면 미표시. meta=파일 결정(ADR-0005) 유지 — git 편집. */
+  /** 카탈로그·카드 표시용 아이콘(이모지). 없으면 미표시. 소스 = Payload exams.icon (ADR-0024). */
   icon?: string;
   /** 트랙(자격 계열). 없으면 카탈로그가 provider 묶음으로 폴백. */
   track?: ExamTrack;

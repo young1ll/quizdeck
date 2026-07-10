@@ -27,20 +27,6 @@ export function parseIcon(raw: unknown): string | null | undefined {
   return s.length <= ICON_MAX ? s : undefined;
 }
 
-/**
- * 문제집 아이콘 오버라이드 병합 (ADR-0023) — 카탈로그(파일 meta, 빌드-세이프)는 그대로 두고
- * 표시 직전에 DB 오버라이드를 얹는다. 오버라이드 없는 시험은 파일 아이콘 유지.
- */
-export function applyIconOverrides(
-  exams: ExamSummary[],
-  overrides: Record<string, string>,
-): ExamSummary[] {
-  return exams.map((e) => {
-    const icon = overrides[`${e.provider}/${e.slug}`];
-    return icon ? { ...e, icon } : e;
-  });
-}
-
 export function groupExams(exams: ExamSummary[]): CatalogGroup[] {
   const byId = new Map<string, CatalogGroup>();
   for (const e of exams) {

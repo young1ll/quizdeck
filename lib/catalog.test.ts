@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyIconOverrides, groupExams, parseIcon, ICON_MAX } from "./catalog";
+import { groupExams, parseIcon, ICON_MAX } from "./catalog";
 import type { ExamSummary } from "./types";
 
 const ex = (over: Partial<ExamSummary>): ExamSummary => ({
@@ -67,23 +67,5 @@ describe("parseIcon (아이콘 경계 — ADR-0023, 컬렉션·문제집 오버�
     expect(parseIcon("x".repeat(ICON_MAX + 1))).toBeUndefined();
     expect(parseIcon(7)).toBeUndefined();
     expect(parseIcon({})).toBeUndefined();
-  });
-});
-
-describe("applyIconOverrides (문제집 아이콘 오버라이드 병합)", () => {
-  it("오버라이드가 파일 아이콘을 이기고, 없는 시험은 파일 값 유지", () => {
-    const exams = [
-      ex({ slug: "saa-c03", icon: "🏗️" }),
-      ex({ slug: "sap-c02", icon: "🏛️" }),
-    ];
-    const merged = applyIconOverrides(exams, { "aws/saa-c03": "🎯" });
-    expect(merged.map((e) => e.icon)).toEqual(["🎯", "🏛️"]);
-    // 입력 불변(순수)
-    expect(exams[0].icon).toBe("🏗️");
-  });
-
-  it("파일 아이콘이 없던 시험에도 오버라이드가 얹힌다", () => {
-    const merged = applyIconOverrides([ex({ slug: "clf-c02" })], { "aws/clf-c02": "☁️" });
-    expect(merged[0].icon).toBe("☁️");
   });
 });
