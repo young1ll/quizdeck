@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LuFlame, LuFolderOpen } from "react-icons/lu";
+import ExamIcon from "@/components/ui/ExamIcon";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import type { DashboardData } from "@/lib/dashboard";
@@ -57,7 +58,7 @@ export default function Dashboard({
                         <div className="min-w-0">
                           {m && (
                             <div className="font-mono text-[10px] text-[var(--accent)]">
-                              {m.icon && <span className="mr-1">{m.icon}</span>}
+                              <ExamIcon icon={m.icon} className="mr-1" />
                               {m.code}
                             </div>
                           )}
