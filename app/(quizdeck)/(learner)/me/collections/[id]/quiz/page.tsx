@@ -3,11 +3,8 @@ import { requireLearnerPage } from "@/lib/route-guards";
 import { Container } from "@/components/ui/Container";
 import { pool } from "@/lib/db";
 import { getCollection } from "@/lib/collection-db";
-import { loadQuestionsByKeys } from "@/lib/content-db";
 import { projectQuestion } from "@/lib/content-localize";
-import { listExams } from "@/lib/content";
-import { applyIconOverrides } from "@/lib/catalog";
-import { loadIconOverrides } from "@/lib/exam-icon-db";
+import { listExamsCms, loadQuestionsByKeysCms } from "@/cms/serve";
 import type { MixedItem } from "@/lib/mixed-session";
 import MixedQuizClient, { type MixedExamMeta } from "@/components/collections/MixedQuizClient";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
@@ -28,7 +25,7 @@ export default async function CollectionQuizPage({
   const col = await getCollection(pool, session.user.id, id);
   if (!col) notFound();
 
-  const rows = await loadQuestionsByKeys(pool, col.items);
+  const rows = await loadQuestionsByKeysCms(col.items);
   const byKey = new Map(rows.map((r) => [`${r.examKey}#${r.qn}`, r]));
   // 컬렉션 순서 보존 + 삭제된 문항 제외. 표시 언어는 ko 우선(혼합 뷰 v1 — 시험별 언어 토글 없음).
   const items: MixedItem[] = [];
@@ -43,7 +40,7 @@ export default async function CollectionQuizPage({
   }
 
   const examMeta: Record<string, MixedExamMeta> = {};
-  const exams = applyIconOverrides(listExams(), await loadIconOverrides(pool));
+  const exams = await listExamsCms();
   for (const e of exams) examMeta[`${e.provider}/${e.slug}`] = { code: e.code, icon: e.icon };
 
   return (

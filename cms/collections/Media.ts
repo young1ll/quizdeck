@@ -3,7 +3,7 @@ import { adminOnly, cmsUser } from "../access.ts";
 
 // 미디어 (ADR-0024) — 문제집 아이콘 이미지(exam_icon_override.image bytea 의 이관처)와 향후
 // 지문 이미지. 저장은 R2(payload.config 의 s3Storage — env 부재 시 로컬 디스크 폴백, dev 전용).
-// mime 화이트리스트는 기존 parseIconImage(lib/icon-image.ts) 규칙 계승. sharp 미도입 —
+// mime 화이트리스트는 구 parseIconImage(ADR-0023 애던덤, 3단계에서 제거) 규칙 계승. sharp 미도입 —
 // 리사이즈/크롭 없음(아이콘 ≤256KB 수준이라 원본 서빙으로 충분, 이미지 슬림 유지).
 export const Media: CollectionConfig = {
   slug: "media",

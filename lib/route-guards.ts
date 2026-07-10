@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { getLearnerSession } from "./learner-server";
 import { getAdminSession, type AdminSession } from "./admin-server";
 import type { LearnerSession } from "./learner";
@@ -74,12 +74,5 @@ export function withAdmin(handler: AdminHandler): (req: Request) => Promise<Resp
 export async function requireLearnerPage(): Promise<LearnerSession> {
   const session = await getLearnerSession(await headers());
   if (!session) redirect("/");
-  return session;
-}
-
-/** RSC — admin 세션을 반환, 아니면 notFound(관리 표면 존재를 안 드러냄). */
-export async function requireAdminPage(): Promise<AdminSession> {
-  const session = await getAdminSession(await headers());
-  if (!session) notFound();
   return session;
 }

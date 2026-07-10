@@ -1,5 +1,6 @@
 import { APIError, type CollectionBeforeValidateHook, type CollectionConfig } from "payload";
 import { adminOnly, cmsUser } from "../access.ts";
+import { revalidateExamContent, revalidateExamContentOnDelete } from "../revalidate.ts";
 
 // 개념 카드 (ADR-0024) — 기존 concept(exam_key, svc, ord, content jsonb{ko,en}) 테이블의 이관.
 // svc 는 q2svc 매핑·기존 데이터의 조인 키라 언어 무관 식별자(현행 데이터는 한국어 서비스명)로
@@ -39,7 +40,11 @@ export const Concepts: CollectionConfig = {
     update: cmsUser,
     delete: adminOnly,
   },
-  hooks: { beforeValidate: [uniqueExamSvc] },
+  hooks: {
+    beforeValidate: [uniqueExamSvc],
+    afterChange: [revalidateExamContent],
+    afterDelete: [revalidateExamContentOnDelete],
+  },
   fields: [
     { name: "exam", type: "relationship", relationTo: "exams", required: true, index: true },
     {

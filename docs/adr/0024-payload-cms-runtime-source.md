@@ -84,6 +84,26 @@
 - 스크립트 실행 제약: tsx 는 확장자 없는 상대 TS import 를 못 풀어 lib 체인의 **런타임** 상대
   import(content·content-db)에 `.ts` 를 명시했다(타입 전용은 소거되므로 그대로).
 
+## 애던덤 — 3단계 서빙 전환 완료 (2026-07-10)
+
+- 코드: `cms/serve.ts`(RSC 서빙 로더 — listExamsCms·loadExamLocalizedCms·loadQuestionsByKeysCms) ·
+  `cms/revalidate.ts`(ISR 훅) · `lib/header-model.ts`(admin 링크)
+- **서빙 = Payload Local API.** 소비처 5곳(home·/me·컬렉션 상세/quiz·exam layout)이 구 하이브리드
+  로더에서 `cms/serve.ts` 로 교체됐다. 아이콘 오버레이 병합(applyIconOverrides 소비)은 사라짐 —
+  아이콘이 exams 문서 안이다. exam layout 은 ISR(3600) 유지 + questions/concepts/exams 훅이
+  `revalidatePath(경로, 'layout')` — 훅의 next/cache 는 동적 import + try/catch(CLI 쓰기에서 no-op).
+- **/admin 이양(Q8 합의 이행).** Payload admin 을 `/cms`→`/admin` 으로, REST 는 `/api/cms` 유지.
+  구 커스텀 어드민 전부 삭제: `app/(quizdeck)/admin/`·`app/api/admin/`·`app/api/exam-icon/`(공개
+  서빙)·`components/admin/`·lib(content-command*·content-validate·admin-users·icon-image·
+  *-draft 3종·requireAdminPage). `exam-icon-db` 는 verify 용 `loadIconOverrides` 만 잔존(4단계 제거).
+  '이 시험 편집' 링크는 `/admin/collections/questions` 로(시험별 필터는 후속 다듬기).
+- **검증**: 임시 DB 풀 스택(앱 스키마+seed+payload 이관) 위에서 ① verify 전 섹션 일치 재확인
+  ② **Payload 쪽에만 마커 주입 → exam 페이지가 마커를 렌더**(구 테이블 무변경 — 서빙 소스 전환의
+  결정적 증거) ③ home 카탈로그·/admin·/admin/login 200. ISR 디스크 캐시(.next)는 재시작을 넘어
+  살아남으므로 스모크 시 캐시 삭제가 필요했다 — 프로덕션 편집 반영은 훅이 담당.
+- lib/content.ts·content-db.ts·content-localize.ts 의 구 로더는 **verify/migrate 스크립트 전용**으로
+  잔존 — 4단계에서 구 테이블 drop 과 함께 정리한다.
+
 ## 기각 대안 (재제안 방지)
 
 - **저작 도구 + publish 동기화** — 리스크는 작지만 이중 소스(Payload+구 테이블) 유지 비용이 상시.
