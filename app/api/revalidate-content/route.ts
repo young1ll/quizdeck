@@ -12,7 +12,12 @@ export async function POST(req: Request): Promise<Response> {
   if (!expected || req.headers.get("x-qd-token") !== expected) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
-  const body = (await req.json().catch(() => null)) as { examKey?: string } | null;
+  const body = (await req.json().catch(() => null)) as { examKey?: string; scope?: string } | null;
+  // scope=site — 사이트 설정(태그라인·공지) 저장: 전 화면에 영향, 루트 layout 통째 무효화.
+  if (body?.scope === "site") {
+    revalidatePath("/", "layout");
+    return Response.json({ revalidated: "site" });
+  }
   const examKey = body?.examKey;
   if (typeof examKey !== "string" || !/^[a-z0-9-]+\/[a-z0-9-]+$/.test(examKey)) {
     return Response.json({ error: "examKey 형식 오류" }, { status: 400 });

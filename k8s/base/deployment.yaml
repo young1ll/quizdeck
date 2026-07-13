@@ -102,42 +102,6 @@ spec:
                   name: quizdeck-auth
                   key: REVALIDATE_TOKEN
                   optional: true
-            # Payload CMS(ADR-0024) 내부 토큰 서명 키 — git 밖 quizdeck-auth Secret.
-            # optional:true — 키 부재에도 파드는 기동하고 /admin(CMS) 요청만 명확히 실패한다
-            # (BETTER_AUTH_SECRET 과 같은 규칙). 생성: k8s/base/README.md
-            - name: PAYLOAD_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: quizdeck-auth
-                  key: PAYLOAD_SECRET
-                  optional: true
-            # CMS 미디어(R2, ADR-0024) — 4개가 모두 있어야 payload.config 가 R2 스토리지를
-            # 켠다(소셜 로그인과 같은 조건부 규칙). 부재 시 media 업로드는 로컬 디스크(휘발 —
-            # dev 전용)라 프로덕션에선 반드시 채운다. 생성: k8s/base/README.md
-            - name: R2_MEDIA_ENDPOINT
-              valueFrom:
-                secretKeyRef:
-                  name: quizdeck-auth
-                  key: R2_MEDIA_ENDPOINT
-                  optional: true
-            - name: R2_MEDIA_BUCKET
-              valueFrom:
-                secretKeyRef:
-                  name: quizdeck-auth
-                  key: R2_MEDIA_BUCKET
-                  optional: true
-            - name: R2_MEDIA_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: quizdeck-auth
-                  key: R2_MEDIA_ACCESS_KEY_ID
-                  optional: true
-            - name: R2_MEDIA_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: quizdeck-auth
-                  key: R2_MEDIA_SECRET_ACCESS_KEY
-                  optional: true
           # readiness — 앱이 요청 수용 준비됐음(ADR-0018). DB 무관: 공유 외부 DB 로 트래픽을 게이팅하면
           # replicas:1 에서 DB 순단이 전면 503 이 되고 롤아웃을 wedge 한다. trailingSlash:true 라 슬래시 포함.
           # 롤아웃 2단계(2026-07-08): sha-7f786a5(=/api/ready 도입 이미지)가 라이브 확인돼 /api/health/
