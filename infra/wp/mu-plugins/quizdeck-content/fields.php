@@ -76,7 +76,10 @@ function qd_sanitize_meta(array $def, string $raw): array
             if (json_last_error() !== JSON_ERROR_NONE) return [null, "{$def['label']}: JSON 파싱 실패"];
             return [wp_json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), null];
         case 'textarea':
-            return [sanitize_textarea_field($raw), null];
+            // 원문 보존 — sanitize_textarea_field 는 strip_tags 로 본문 속 '<'·'>' 구간을 삭제해
+            // 충실 이관을 깨뜨린다(diff 실사). 저작 표면이 전부 인증(edit_posts) 뒤이고 앱 렌더러가
+            // 이스케이프하므로 개행 정규화만 한다.
+            return [str_replace(["\r\n", "\r"], "\n", $raw), null];
         default:
             return [sanitize_text_field($raw), null];
     }

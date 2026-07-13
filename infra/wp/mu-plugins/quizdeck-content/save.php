@@ -45,13 +45,13 @@ function qd_handle_save(int $postId, WP_Post $post): void
             if ($value === null || $value === '') {
                 delete_post_meta($postId, $key);
             } else {
-                update_post_meta($postId, $key, $value);
+                update_post_meta($postId, $key, wp_slash($value)); // unslash 함정 — rest.php 참조
             }
         }
         // ── 문항: 보기 repeater + 정답 ──
         if ($post->post_type === 'qd_question') {
             $keys  = array_map('sanitize_text_field', wp_unslash($_POST['qd_opt_key'] ?? []));
-            $texts = array_map('sanitize_textarea_field', wp_unslash($_POST['qd_opt_text'] ?? []));
+            $texts = array_map(fn($v) => str_replace(["\r\n", "\r"], "\n", $v), wp_unslash($_POST['qd_opt_text'] ?? [])); // 원문 보존 — fields.php 참조
             $options = [];
             foreach ($keys as $i => $k) {
                 $k = trim($k);
@@ -59,8 +59,8 @@ function qd_handle_save(int $postId, WP_Post $post): void
                 $options[] = ['key' => $k, 'text' => trim($texts[$i] ?? '')];
             }
             $answer = array_values(array_map('sanitize_text_field', wp_unslash($_POST['qd_answer'] ?? [])));
-            update_post_meta($postId, 'qd_options', wp_json_encode($options, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-            update_post_meta($postId, 'qd_answer', wp_json_encode($answer, JSON_UNESCAPED_UNICODE));
+            update_post_meta($postId, 'qd_options', wp_slash(wp_json_encode($options, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)));
+            update_post_meta($postId, 'qd_answer', wp_slash(wp_json_encode($answer, JSON_UNESCAPED_UNICODE)));
         }
     }
 
