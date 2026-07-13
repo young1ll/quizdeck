@@ -21,8 +21,9 @@ const uniqueExamQn: CollectionBeforeValidateHook = async ({ data, originalDoc, r
         ...(originalDoc?.id ? [{ id: { not_equals: originalDoc.id } }] : []),
       ],
     },
+    // draft 미지정 = 본 테이블 조회 — draft 전용 문서도 행이 있어 전수다. draft:true(버전 기반)는
+    // 버전 없는 문서를 놓친다(리허설 실사 — 백필 전 데이터에서 중복 통과).
     limit: 1,
-    draft: true,
     overrideAccess: true,
   });
   if (dup.totalDocs > 0) throw new APIError(`이미 존재하는 문항 번호입니다: qn=${qn}`, 400);

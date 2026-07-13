@@ -170,6 +170,26 @@ full importMap 이 나온다. env-조건부 플러그인을 새로 추가하면 
 중요: 사용자가 admin 에서 만든 미완성 초안을 게시 시도하면 ValidationError(운영 실사).
 교훈: **기존 데이터에 drafts 를 켤 땐 _status 백필 + 버전 행 백필이 한 쌍**이다.
 
+## 애던덤 — 2차 고도화 완료 (2026-07-13)
+
+grilling 합의(A 라이브 프리뷰 · B 대시보드 v3 · C① 반입/반출 · D join/그룹핑) 전부 라이브.
+
+- **D**(#121): Exams join 가상 필드(questionList·conceptList — 스키마 무변경) + 목록 groupBy.
+  서빙 exams 조회는 joins:false 로 서브쿼리 비용 차단.
+- **B**(#122): 30일 활동 바 차트(dataviz 절차 — 검증 색 쌍 #2a78d6/#3987e5, 픽스처 렌더
+  눈검증) + 시험별 현황 표 + 게시 대기 초안 작업함.
+- **A**(#123): /cms-preview/question·exam — CMS 세션 가드(payload.auth) + force-dynamic,
+  admin iframe 라이브 프리뷰(server-side live preview, RefreshRouteOnSave→router.refresh).
+- **C①**: plugin-import-export(반출 전용, per-collection export.disableJobsQueue —
+  플러그인이 jobs·imports 테이블을 무조건 생성, 마이그레이션 #6) + 커스텀 JSON 반입
+  (/admin/import + POST /api/cms/import-json — 구 포맷, 원자적 거부, 전부 초안 생성,
+  실패 시 역삭제 롤백).
+- **⚠️ draft:true 존재 검사 함정(치명 버그 수정)**: `find({draft:true})` 는 **버전 테이블
+  기반이라 버전 없는 문서를 놓친다** — (exam,qn)/(exam,svc) 유일성 훅이 draft:true 로
+  검사하다 백필 전 데이터에서 중복 생성을 통과시켰다(리허설 실사). **존재/유일성 검사는
+  draft 미지정(본 테이블)이 전수** — 본 테이블은 draft 전용 문서도 행을 가진다. 훅·반입
+  사전검사 모두 수정, E2E(게시본 충돌·draft 충돌·복합 에러·원자성) 검증.
+
 ## 기각 대안 (재제안 방지)
 
 - **저작 도구 + publish 동기화** — 리스크는 작지만 이중 소스(Payload+구 테이블) 유지 비용이 상시.

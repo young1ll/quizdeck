@@ -4,6 +4,8 @@ import { buildConfig } from "payload";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { s3Storage } from "@payloadcms/storage-s3";
+import { importExportPlugin } from "@payloadcms/plugin-import-export";
+import { importJsonEndpoint } from "./cms/import-endpoint.ts";
 import { en } from "@payloadcms/translations/languages/en";
 import { ko } from "@payloadcms/translations/languages/ko";
 import { CmsUsers } from "./cms/collections/CmsUsers.ts";
@@ -66,6 +68,7 @@ export default buildConfig({
       // 파괴 조작(삭제·세션)은 hosted 대시보드 유지.
       views: {
         users: { Component: "@/cms/components/UsersView", path: "/users" },
+        import: { Component: "@/cms/components/ImportView", path: "/import" },
       },
     },
   },
@@ -85,8 +88,22 @@ export default buildConfig({
     // 인터랙티브 프롬프트로 멈추는 원인)를 차단한다. 로컬 dev 도 pnpm payload migrate 로 적용.
     push: false,
   }),
+  // 구 JSON 포맷 대량 반입(2차 확장 C - 원자적, 초안 생성) - POST /api/cms/import-json
+  endpoints: [importJsonEndpoint],
   graphQL: { disable: true },
   typescript: { outputFile: path.resolve(dirname, "payload-types.ts") },
-  plugins: r2 ? [s3Storage({ collections: { media: true }, ...r2 })] : [],
+  plugins: [
+    // 반출(2차 확장 C①) — 목록 뷰에 CSV/JSON 내보내기. jobs 큐 없이 동기 실행(단일 pod,
+    // 큐 러너 미상주). 반입은 커스텀 /admin/import(구 JSON 포맷 전용 — cms/import-endpoint).
+    importExportPlugin({
+      collections: (["questions", "concepts", "exams"] as const).map((slug) => ({
+        slug,
+        // 동기 실행(jobs 큐 러너 미상주 — 단일 pod). 반입은 커스텀 뷰가 담당하므로 plugin import 비활성.
+        export: { disableJobsQueue: true },
+        import: false,
+      })),
+    }),
+    ...(r2 ? [s3Storage({ collections: { media: true }, ...r2 })] : []),
+  ],
   telemetry: false,
 });
