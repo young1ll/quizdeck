@@ -1,0 +1,20 @@
+# WP admin 을 tailnet 전용으로 노출 (ADR-0025 — argocd-server 선례 ADR-0020 계승).
+# (tailnet) wp.myquizdeck.com → grey-cloud DNS → VM Tailscale IP → Traefik → wordpress:80.
+# 인터넷 격리는 Cloudflare 레코드가 grey-cloud(DNS-only) 라는 사실이 보장한다 — orange 금지.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: wordpress
+  namespace: wordpress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`wp.myquizdeck.com`)
+      priority: 100
+      services:
+        - name: wordpress
+          port: 80
+  tls:
+    certResolver: cloudflare # DNS-01 — argocd 부트스트랩에서 이미 구성된 resolver 재사용

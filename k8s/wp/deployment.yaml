@@ -1,0 +1,55 @@
+# headless WordPress (ADR-0025). 콘텐츠 저작 전용 — 학습자는 이 pod 를 직접 보지 않는다
+# (admin 은 tailnet 전용 IngressRoute, 앱은 클러스터 내부 Service 로 REST read).
+# 무상태 원칙: /var/www/html 은 emptyDir(기동 시 코어 복사) — 플러그인·코어는 이미지가 소유
+# (DISALLOW_FILE_MODS), 업로드 미디어는 2단계에서 R2 offload. DB 는 db-home MariaDB(git 밖 Secret).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  namespace: wordpress
+  labels: { app: wordpress }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: wordpress }
+  template:
+    metadata:
+      labels: { app: wordpress }
+    spec:
+      containers:
+        - name: wordpress
+          image: ghcr.io/young1ll/quizdeck-wp # 태그는 kustomization(newTag — CI bump)
+          ports:
+            - containerPort: 80
+          envFrom:
+            # WORDPRESS_DB_HOST/NAME/USER/PASSWORD — infra/wp-db/provision-mariadb.sh 출력으로 생성
+            - secretRef: { name: wp-db-credentials }
+            # WORDPRESS_AUTH_KEY 등 salts 8종 — k8s/wp/README.md
+            - secretRef: { name: wp-salts }
+          env:
+            - name: WORDPRESS_CONFIG_EXTRA
+              value: |
+                define('WP_HOME', 'https://wp.myquizdeck.com');
+                define('WP_SITEURL', 'https://wp.myquizdeck.com');
+                /* Traefik 이 TLS 종단(pod 는 HTTP) — 프록시 헤더로 HTTPS 인지 */
+                if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { $_SERVER['HTTPS'] = 'on'; }
+                /* 코어·플러그인·테마는 이미지가 소유 — admin 설치/업데이트 금지(GitOps) */
+                define('DISALLOW_FILE_MODS', true);
+                define('AUTOMATIC_UPDATER_DISABLED', true);
+          readinessProbe:
+            httpGet: { path: /wp-login.php, port: 80 }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /wp-login.php, port: 80 }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
+          volumeMounts:
+            - { name: html, mountPath: /var/www/html }
+      volumes:
+        - name: html
+          emptyDir: {}

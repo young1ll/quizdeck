@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wordpress
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/young1ll/quizdeck.git
+    targetRevision: main
+    path: k8s/wp
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: wordpress
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    # wp-db-credentials·wp-salts Secret 은 git 밖 → 동기화 대상 아님(존재만 의존)
