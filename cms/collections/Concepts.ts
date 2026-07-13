@@ -35,6 +35,7 @@ export const Concepts: CollectionConfig = {
     group: "콘텐츠",
     useAsTitle: "svc",
     defaultColumns: ["exam", "svc", "cat", "ord", "_status"],
+    groupBy: true, // 목록을 문제집 등 필드로 그룹핑(화면 고도화 PR-1)
     listSearchableFields: ["svc", "abbr"],
   },
   access: {

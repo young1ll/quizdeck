@@ -35,6 +35,7 @@ export const Questions: CollectionConfig = {
   admin: {
     group: "콘텐츠",
     defaultColumns: ["exam", "qn", "topic", "_status", "updatedAt"],
+    groupBy: true, // 목록을 문제집 등 필드로 그룹핑(화면 고도화 PR-1)
     listSearchableFields: ["q", "topic"],
   },
   access: {

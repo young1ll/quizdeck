@@ -77,7 +77,12 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    exams: {
+      questionList: 'questions';
+      conceptList: 'concepts';
+    };
+  };
   collectionsSelect: {
     'cms-users': CmsUsersSelect<false> | CmsUsersSelect<true>;
     exams: ExamsSelect<false> | ExamsSelect<true>;
@@ -190,6 +195,16 @@ export interface Exam {
    * 자격 계열 표시명
    */
   trackName?: string | null;
+  questionList?: {
+    docs?: (number | Question)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  conceptList?: {
+    docs?: (number | Concept)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   /**
    * diagrams.json 원형
    */
@@ -449,6 +464,8 @@ export interface ExamsSelect<T extends boolean = true> {
   iconImage?: T;
   trackId?: T;
   trackName?: T;
+  questionList?: T;
+  conceptList?: T;
   diagrams?: T;
   q2svc?: T;
   svcIcons?: T;

@@ -76,6 +76,27 @@ export const Exams: CollectionConfig = {
       admin: { description: "자격 계열 안정 id, 예: aws-solutions-architect — 없으면 provider 로 그룹핑" },
     },
     { name: "trackName", type: "text", admin: { description: "자격 계열 표시명" } },
+    // 소속 콘텐츠 역참조(join — 가상 필드, 스키마 무변경). 문제집 하나를 열면 문항·개념이
+    // 표로 보이고 여기서 바로 생성으로 이어진다(화면 고도화 PR-1). 서빙(cms/read.ts)은
+    // joins:false 로 이 비용을 내지 않는다.
+    {
+      name: "questionList",
+      type: "join",
+      label: "소속 문항",
+      collection: "questions",
+      on: "exam",
+      defaultSort: "qn",
+      defaultLimit: 25,
+    },
+    {
+      name: "conceptList",
+      type: "join",
+      label: "소속 개념 카드",
+      collection: "concepts",
+      on: "exam",
+      defaultSort: "ord",
+      defaultLimit: 25,
+    },
     // 코드성 산출물 — 개발자가 만드는 구조화 JSON. CMS 편집 UX 는 없지만 단일 소스는 지킨다
     // (ADR-0024). collapsible = 순수 표현 계층 — 평소 접어 편집 화면 소음을 줄인다.
     {
