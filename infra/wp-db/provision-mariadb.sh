@@ -51,7 +51,9 @@ systemctl restart mariadb
 
 # ── database + user (host-restricted to the k3s VM) ─────────────────────────
 if [[ -z "$WP_PASSWORD" ]]; then
-  WP_PASSWORD="$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)"
+  # openssl(유한 출력) 기반 — /dev/urandom|head 는 set -o pipefail 에서 SIGPIPE(141)로
+  # 스크립트를 조용히 죽인다(2026-07-13 실사).
+  WP_PASSWORD="$(openssl rand -base64 48 | tr -d '/+=\n' | cut -c1-32)"
   GENERATED=1
 else
   GENERATED=0
