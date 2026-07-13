@@ -1,6 +1,18 @@
 # quizdeck WP (headless CMS tier — ADR-0025). 코어·PHP 버전 고정 + 플러그인은 이미지에 굽는다
 # (admin 에서 설치 금지 — DISALLOW_FILE_MODS, k8s/wp/deployment.yaml). 갱신 = 태그 bump + CI.
-FROM wordpress:6.9-php8.3-apache
+# 언어팩도 같은 원칙 — DISALLOW_FILE_MODS 는 번역 설치도 막으므로 ko_KR 을 이미지에 굽는다.
+# 코어 버전 bump 시 WP_VERSION 도 같이 — 언어팩 URL 이 버전에 묶여 있다.
+ARG WP_VERSION=6.9
+
+# ko_KR 코어 언어팩(ko_KR.mo·admin·admin-network·continents-cities) — translate.wordpress.org
+FROM wordpress:${WP_VERSION}-php8.3-apache AS lang
+ARG WP_VERSION
+RUN apt-get update && apt-get install -y --no-install-recommends unzip \
+ && curl -fsSL -o /tmp/ko_KR.zip "https://downloads.wordpress.org/translation/core/${WP_VERSION}/ko_KR.zip" \
+ && mkdir -p /tmp/languages && unzip -q /tmp/ko_KR.zip -d /tmp/languages
+
+FROM wordpress:${WP_VERSION}-php8.3-apache
+COPY --from=lang /tmp/languages/ /usr/src/wordpress/wp-content/languages/
 
 # quizdeck-content (mu-plugin — 활성화 불필요·비활성화 불가): CPT·메타박스·검증·REST.
 # ACF 대체 자체구현(ADR-0025 애던덤 예정 — 사용자 결정 2026-07-13).
