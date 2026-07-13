@@ -8,7 +8,7 @@
 ## 불변식
 
 - 외부로 통하는 경로는 **인터넷 → Cloudflare → 터널 → Traefik → Next** 한 줄뿐.
-- **postgres는 어디서도 인터넷에 직접 노출되지 않는다.**
+- **postgres·MariaDB는 어디서도 인터넷에 직접 노출되지 않는다.** WP admin도 tailnet 전용(ADR-0025).
 - 모든 변경은 **선언적·버전관리(GitOps)** — "배우기 = 하기".
 - 각 상위 층은 독립적으로 가치 있고, **가치 < 비용 지점에서 멈춘다.**
 
@@ -18,24 +18,29 @@
 flowchart TB
   U[인터넷 사용자] --> CF[Cloudflare Tunnel<br/>경계 · IGW · 인바운드 0]
   CF -. 아웃바운드 터널 .- CFD
-  ADM[관리자 · Tailscale] -. "argocd.myquizdeck.com<br/>grey-cloud DNS · LE cert · tailnet 전용" .-> TR
+  ADM[관리자 · Tailscale] -. "argocd. · wp.myquizdeck.com<br/>grey-cloud DNS · LE cert · tailnet 전용" .-> TR
   subgraph SYN["Synology · VPC 경계"]
     subgraph K3S["k3s 클러스터 · app tier"]
       CFD[cloudflared] --> TR[Traefik · ingress<br/>ACME DNS-01]
       TR --> NX[quizdeck · Next pod]
       TR -. IngressRoute .-> AUI[argocd-server UI]
-      BK[CronJob db-backup<br/>매일 KST 03:00]
+      TR -. IngressRoute .-> WP[WordPress · headless CMS<br/>무상태 pod · ADR-0025]
+      NX -- "콘텐츠 read · REST+ISR" --> WP
+      WP -. "편집 웹훅 revalidate" .-> NX
+      BK[CronJob db-backup 03:00<br/>wp-db-backup 03:20]
     end
     NX --> PG[(postgres · 클러스터 밖<br/>RDS 아날로그)]
+    WP --> MD[(MariaDB · db-home<br/>WP 콘텐츠)]
     BK --> PG
-    GIT[Git 레포] --> ARGO[Argo CD · GitOps<br/>App ×4]
+    BK --> MD
+    GIT[Git 레포] --> ARGO[Argo CD · GitOps<br/>App ×5]
     ARGO -. sync .-> K3S
   end
-  BK -. "pg_dump -Fc" .-> R2[(Cloudflare R2<br/>오프사이트 백업 · 30일)]
+  BK -. "pg_dump · mariadb-dump" .-> R2[(Cloudflare R2<br/>오프사이트 백업 · 30일)]
   classDef edge fill:#fff7ed,stroke:#f59e0b;
   classDef data fill:#fffbeb,stroke:#f59e0b;
   class CF edge
-  class PG,R2 data
+  class PG,MD,R2 data
 ```
 
 ## 진화 로드맵
@@ -57,7 +62,7 @@ flowchart TB
 | ingress | Traefik (k3s 기본) | ALB / ingress controller |
 | 오케스트레이션 | k3s | EKS |
 | app tier | Next pod | Fargate / EKS pod |
-| data tier | 외부 postgres 컨테이너+볼륨 | RDS (private subnet) |
+| data tier | db-home VM의 postgres + MariaDB(WP) | RDS (private subnet) |
 | 격리 | namespace | VPC / account 분리 |
 | 네트워크 정책 | NetworkPolicy | security group |
 | 배포 | Argo CD (GitOps) | Argo CD on EKS / CodePipeline |
