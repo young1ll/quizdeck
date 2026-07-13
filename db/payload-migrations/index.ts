@@ -3,6 +3,7 @@ import * as migration_20260710_044432_add_content_fields from './20260710_044432
 import * as migration_20260710_061433_site_config from './20260710_061433_site_config';
 import * as migration_20260710_061956_versions_drafts from './20260710_061956_versions_drafts';
 import * as migration_20260710_072051_question_image from './20260710_072051_question_image';
+import * as migration_20260713_023159_import_export_plugin from './20260713_023159_import_export_plugin';
 
 export const migrations = [
   {
@@ -28,6 +29,11 @@ export const migrations = [
   {
     up: migration_20260710_072051_question_image.up,
     down: migration_20260710_072051_question_image.down,
-    name: '20260710_072051_question_image'
+    name: '20260710_072051_question_image',
+  },
+  {
+    up: migration_20260713_023159_import_export_plugin.up,
+    down: migration_20260713_023159_import_export_plugin.down,
+    name: '20260713_023159_import_export_plugin'
   },
 ];
