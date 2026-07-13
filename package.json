@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "payload": "payload",
     "generate:types": "payload generate:types",
-    "generate:importmap": "payload generate:importmap"
+    "generate:importmap": "R2_MEDIA_BUCKET=importmap-gen R2_MEDIA_ENDPOINT=https://importmap-gen.invalid R2_MEDIA_ACCESS_KEY_ID=importmap-gen R2_MEDIA_SECRET_ACCESS_KEY=importmap-gen payload generate:importmap"
   },
   "dependencies": {
     "@astryxdesign/core": "0.1.2",

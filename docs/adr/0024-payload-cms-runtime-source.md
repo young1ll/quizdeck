@@ -144,6 +144,19 @@
 pnpm 업그레이드 후 `.pnpm` 에 구 버전 @payloadcms/ui 빌드가 잔존해 dependencyChecker 가
 "Mismatching versions" 로 죽는다 — `rm -rf node_modules && pnpm install` 로 해소.
 
+## 애던덤 — importMap 은 env 의존이다 (2026-07-13, /admin 백화 사고)
+
+R2 키 주입(rollout) 직후부터 **/admin 전체가 흰 화면** — s3Storage 플러그인(R2 env 조건부)이
+admin importMap 에 `@payloadcms/storage-s3/client#S3ClientUploadHandler` 를 요구하는데,
+커밋된 importMap.js 는 R2 env 없이 생성돼 엔트리가 없었다. 클라이언트 컴포넌트 resolve 실패는
+콘솔 에러 없이 admin 부트스트랩을 멈춘다(서버 HTML·청크·API 는 전부 200 — 진단이 어려운 백화).
+로컬 스모크는 R2 env 가 없어 플러그인 off → 통과해 버린 검증 구멍.
+
+교훈: **generate:importmap 산출물은 조건부 플러그인 env 에 의존한다.** 재발 방지로
+package.json 의 generate:importmap 스크립트에 R2 더미 env 를 박제 — 누가 어디서 돌려도
+full importMap 이 나온다. env-조건부 플러그인을 새로 추가하면 이 스크립트에도 그 더미 env 를
+추가할 것. 검증: 실패 조건(R2 env 활성) 재현 빌드에서 로그인 화면 렌더 확인(Playwright).
+
 ## 기각 대안 (재제안 방지)
 
 - **저작 도구 + publish 동기화** — 리스크는 작지만 이중 소스(Payload+구 테이블) 유지 비용이 상시.
