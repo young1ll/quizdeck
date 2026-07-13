@@ -44,6 +44,24 @@ Payload 적합성이 높고, WP 전환은 MySQL 인프라 신설·검증 PHP 재
 
 Payload 는 3단계 검증 전까지 라이브 병행 — 서빙 소스는 검증된 뒤에만 바뀐다.
 
+## 애던덤 — 2·3단계 완료 (2026-07-13)
+
+- **2단계**: quizdeck-content mu-plugin(ACF 대체 자체구현 — 사용자 재결정: headless 라 필드
+  프레임워크의 가치는 admin UI 뿐, 목적 제작 폼이 UX·저장 포맷 우위. 정답 = 보기 key
+  체크박스로 정답⊄보기가 구조적으로 불가). 라이브 이관 787문항·228개념 + diff 기계 검증
+  전 섹션 일치. MariaDB 백업 cronjob(KST 03:20). **WP 함정 기록**: update_post_meta 는
+  unslash(wp_slash 필수) · sanitize_textarea_field 는 <…> strip(충실 저장 부적합) ·
+  get_the_title 은 wptexturize(raw 는 get_post_field) · REST 저장 시 save_post 가 필드
+  콜백보다 먼저(REST_REQUEST skip) · PHP 는 빈 연관배열 표현 불가({}↔[] 클라 정규화) ·
+  REST orderby 는 enum 화이트리스트(커스텀 파라미터로 우회) · app password 는 HTTP 비활성
+  (로컬은 WP_ENVIRONMENT_TYPE=local).
+- **3단계**: 서빙 = WP REST(cms/wp-client — 클러스터 내부 Service, ko 단일 봉투 재구성).
+  cms/serve.ts 시그니처 유지(소비처 무변경). 편집 웹훅(webhook.php, 게시본 영향 시에만)
+  → /api/revalidate-content(공유 토큰, layout revalidate) — Payload 훅의 WP 등가.
+  admin 링크(헤더·/me) → wp.myquizdeck.com. site-config 는 payload 잔존(4단계에서 WP
+  옵션 이관 예정 — serve-siteconfig.ts). 검증: 로컬 풀 스택 — 홈·exam WP 데이터 렌더,
+  WP 전용 수정 마커가 서빙에 반영(소스 전환 증거), 웹훅 401/200.
+
 ## 기각 대안 (재제안 방지)
 
 - **pg 재사용** — WP 가 MySQL 계열 전용이라 불가(기술 사실, 선호 아님).

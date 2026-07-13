@@ -92,6 +92,16 @@ spec:
                   name: quizdeck-auth
                   key: NAVER_CLIENT_SECRET
                   optional: true
+            # WP 서빙(ADR-0025 3단계) — 클러스터 내부 Service 로 REST read(tailnet 왕복 회피).
+            - name: WP_API_URL
+              value: http://wordpress.wordpress.svc.cluster.local
+            # WP 편집 웹훅 공유 토큰 — git 밖 quizdeck-auth Secret(k8s/base/README.md).
+            - name: REVALIDATE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: quizdeck-auth
+                  key: REVALIDATE_TOKEN
+                  optional: true
             # Payload CMS(ADR-0024) 내부 토큰 서명 키 — git 밖 quizdeck-auth Secret.
             # optional:true — 키 부재에도 파드는 기동하고 /admin(CMS) 요청만 명확히 실패한다
             # (BETTER_AUTH_SECRET 과 같은 규칙). 생성: k8s/base/README.md
