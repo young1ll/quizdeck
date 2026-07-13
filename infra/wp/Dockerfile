@@ -2,6 +2,6 @@
 # (admin 에서 설치 금지 — DISALLOW_FILE_MODS, k8s/wp/deployment.yaml). 갱신 = 태그 bump + CI.
 FROM wordpress:6.9-php8.3-apache
 
-# ── 플러그인 베이킹 지점 (2단계에서 채움) ─────────────────────────────────────
-# ACF Pro(라이선스 zip — git 밖, CI secret 로 주입) · 미디어 R2 offload · 검증 플러그인(자체).
-# 예: COPY plugins/quizdeck-content /usr/src/wordpress/wp-content/plugins/quizdeck-content
+# quizdeck-content (mu-plugin — 활성화 불필요·비활성화 불가): CPT·메타박스·검증·REST.
+# ACF 대체 자체구현(ADR-0025 애던덤 예정 — 사용자 결정 2026-07-13).
+COPY mu-plugins/ /usr/src/wordpress/wp-content/mu-plugins/
