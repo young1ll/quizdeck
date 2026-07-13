@@ -75,9 +75,17 @@ jobs:
           git fetch origin main
           if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ] \
              && git merge-base --is-ancestor HEAD origin/main; then
-            echo "더 새로운 커밋이 main 에 반영됨 — 이 빌드는 추월되어 배포를 스킵한다."
-            echo "deployed=false" >> "$GITHUB_OUTPUT"
-            exit 0
+            # origin/main 이 앞서 있다 — 단, [skip ci] 커밋(wp-image 등 다른 워크플로의 태그
+            # bump)만 있으면 "추월"이 아니다: 그 커밋은 앱 배포를 트리거하지 않으므로 스킵하면
+            # 아무도 이 앱 빌드를 배포하지 않는다(2026-07-13 실사 — #127~#129 무배포). 실제
+            # 새 빌드 커밋이 있을 때만 스킵하고, 아니면 리베이스 후 계속한다.
+            if git log --format=%s HEAD..origin/main | grep -qv '\[skip ci\]'; then
+              echo "더 새로운 빌드 커밋이 main 에 반영됨 — 이 빌드는 추월되어 배포를 스킵한다."
+              echo "deployed=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "[skip ci] 커밋만 앞서 있음 — 리베이스 후 배포 계속"
+            git rebase origin/main
           fi
           sed -i "s|newTag:.*|newTag: ${{ steps.meta.outputs.tag }}|" k8s/base/kustomization.yaml
           git add k8s/base/kustomization.yaml
