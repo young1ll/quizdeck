@@ -7,4 +7,4 @@ resources:
   - ingressroute.yaml
 images:
   - name: ghcr.io/young1ll/quizdeck-wp
-    newTag: bootstrap # 첫 이미지가 push 되면 CI(wp-image.yml)가 bump
+    newTag: sha-c239203
