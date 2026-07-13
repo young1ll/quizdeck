@@ -3,6 +3,8 @@ name: build-and-deploy
 # main 푸시 → 테스트 → 이미지 빌드(ghcr) → kustomize 태그 bump 커밋.
 # Argo CD가 k8s/base 변경을 감지해 새 이미지를 배포한다(pull 기반 GitOps).
 on:
+  # 수동 트리거 — 파일 변경 없는 재배포용(빈 커밋은 paths-ignore 에 걸려 트리거 불가, 2026-07-13 실사).
+  workflow_dispatch:
   push:
     branches: [main]
     paths-ignore:
