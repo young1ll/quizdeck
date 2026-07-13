@@ -36,6 +36,7 @@ function toTrack(doc: Pick<Exam, "trackId" | "trackName">): ExamTrack | undefine
 export async function listExamsFromPayload(payload: Payload): Promise<ExamSummary[]> {
   const { docs } = await payload.find({
     collection: "exams",
+    joins: false, // join 가상 필드(questionList 등) 서브쿼리 비용 차단 — 서빙은 본문만
     where: { _status: { equals: "published" } },
     draft: false,
     pagination: false,
@@ -135,6 +136,7 @@ export async function loadQuestionsByKeysFromPayload(
   }
   const exams = await payload.find({
     collection: "exams",
+    joins: false, // join 가상 필드(questionList 등) 서브쿼리 비용 차단 — 서빙은 본문만
     where: { and: [{ examKey: { in: [...byExam.keys()] } }, { _status: { equals: "published" } }] },
     draft: false,
     pagination: false,
@@ -173,6 +175,7 @@ export async function loadExamLocalizedFromPayload(
   const examKey = `${provider}/${slug}`;
   const found = await payload.find({
     collection: "exams",
+    joins: false, // join 가상 필드(questionList 등) 서브쿼리 비용 차단 — 서빙은 본문만
     where: { and: [{ examKey: { equals: examKey } }, { _status: { equals: "published" } }] },
     draft: false,
     limit: 1,
