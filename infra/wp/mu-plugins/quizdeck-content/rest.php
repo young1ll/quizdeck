@@ -47,7 +47,8 @@ function qd_rest_projection(int $postId, string $type): array
     }
     if ($type === 'qd_exam') {
         $out['exam_key'] = $meta('qd_exam_key') ?: null;
-        $out['name']     = get_the_title($postId);
+        // get_the_title 은 wptexturize 로 하이픈→&#8211; 등 원문을 바꾼다(diff 실사) — raw 로.
+        $out['name']     = get_post_field('post_title', $postId, 'raw');
     }
 
     return $out;
@@ -69,13 +70,15 @@ function qd_rest_ingest(array $value, WP_Post $post)
         [$clean, $err] = qd_sanitize_meta($def, $raw);
         if ($err) return new WP_Error('qd_invalid', $err, ['status' => 400]);
         if ($clean === null || $clean === '') delete_post_meta($post->ID, $key);
-        else update_post_meta($post->ID, $key, $clean);
+        // update_post_meta 는 인자를 unslash 한다 — 따옴표·백슬래시가 든 텍스트/JSON 이 깨지는
+        // 고전 함정(qn50 실사: 저장된 qd_options 가 JSON Syntax error). 반드시 wp_slash.
+        else update_post_meta($post->ID, $key, wp_slash($clean));
     }
 
     if (isset($value['exam_id'])) update_post_meta($post->ID, 'qd_exam_id', (string) (int) $value['exam_id']);
     if ($type === 'qd_question') {
-        if (isset($value['options'])) update_post_meta($post->ID, 'qd_options', wp_json_encode($value['options'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        if (isset($value['answer'])) update_post_meta($post->ID, 'qd_answer', wp_json_encode(array_values($value['answer']), JSON_UNESCAPED_UNICODE));
+        if (isset($value['options'])) update_post_meta($post->ID, 'qd_options', wp_slash(wp_json_encode($value['options'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)));
+        if (isset($value['answer'])) update_post_meta($post->ID, 'qd_answer', wp_slash(wp_json_encode(array_values($value['answer']), JSON_UNESCAPED_UNICODE)));
     }
 
     // 게시 요청이면 폼과 같은 게이트 — 실패 시 draft 강등 + 에러 반환(이관 스크립트가 감지)

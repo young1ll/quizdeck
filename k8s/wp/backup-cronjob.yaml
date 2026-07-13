@@ -1,0 +1,65 @@
+# WP MariaDB 오프사이트 논리 백업 (ADR-0025 — db-backup(ADR-0021) 패턴 계승).
+# WP 콘텐츠가 유일 소스가 되는 3단계 전에 반드시 가동돼야 하는 게이트.
+# 자격: wp-db-credentials(이 ns) + r2-backup(quizdeck ns 의 것을 이 ns 로 복제 — README).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: wp-db-backup
+  namespace: wordpress
+  labels:
+    app: wp-db-backup
+spec:
+  schedule: "20 18 * * *" # 매일 UTC 18:20 = KST 03:20 (pg 백업 20분 뒤 — 동시 부하 회피)
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app: wp-db-backup
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: dump
+              image: alpine:3.20
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu -o pipefail
+                  apk add --no-cache mariadb-client ca-certificates curl >/dev/null
+                  curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc
+                  chmod +x /tmp/mc
+                  host="${WORDPRESS_DB_HOST%%:*}"; port="${WORDPRESS_DB_HOST##*:}"
+                  [ "$port" = "$host" ] && port=3306
+                  ts=$(date -u +%Y%m%dT%H%M%SZ)
+                  key="quizdeck-wp-${ts}.sql.gz"
+                  /tmp/mc alias set r2 "$R2_ENDPOINT" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" >/dev/null
+                  echo "dumping → r2/${R2_BUCKET}/${key}"
+                  mariadb-dump --single-transaction --quick \
+                    -h "$host" -P "$port" -u "$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" \
+                    "$WORDPRESS_DB_NAME" | gzip | /tmp/mc pipe "r2/${R2_BUCKET}/${key}"
+                  echo "backup ok: r2/${R2_BUCKET}/${key}"
+              envFrom:
+                - secretRef: { name: wp-db-credentials }
+              env:
+                - name: R2_BUCKET
+                  valueFrom:
+                    secretKeyRef: { name: r2-backup, key: R2_BUCKET }
+                - name: R2_ENDPOINT
+                  valueFrom:
+                    secretKeyRef: { name: r2-backup, key: R2_ENDPOINT }
+                - name: R2_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef: { name: r2-backup, key: R2_ACCESS_KEY_ID }
+                - name: R2_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef: { name: r2-backup, key: R2_SECRET_ACCESS_KEY }
+              resources:
+                requests: { cpu: 50m, memory: 128Mi }
+                limits: { memory: 512Mi } # db-backup OOM 선례(2026-07-09) 계승
