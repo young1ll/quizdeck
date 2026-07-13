@@ -157,6 +157,19 @@ package.json 의 generate:importmap 스크립트에 R2 더미 env 를 박제 —
 full importMap 이 나온다. env-조건부 플러그인을 새로 추가하면 이 스크립트에도 그 더미 env 를
 추가할 것. 검증: 실패 조건(R2 env 활성) 재현 빌드에서 로그인 화면 렌더 확인(Playwright).
 
+## 애던덤 — admin 목록 '결과없음': 버전 테이블 백필 (2026-07-13)
+
+/admin 백화 해소 직후 드러난 다음 층 — 문항·문제집·개념 목록이 전부 '결과없음'.
+**드래프트 활성화(#114)의 published 백필은 본 테이블(_status)만 채웠고 버전 테이블(_v)은
+빈 채였다.** 서빙(draft:false)은 본 테이블이라 멀쩡했지만, admin 목록은 draft:true(최신
+버전 조인) — 버전 없는 문서는 목록에서 안 보인다. 리허설의 드래프트 시맨틱 검증이 서빙만
+확인하고 admin 목록 경로는 안 봤던 검증 구멍.
+
+해결: `cms/backfill-versions.ts` — published 문서를 무변경 재저장해 버전 행 생성(멱등,
+이미 버전 있는 문서 skip — 원격 터널 실행이 느려 이어달리기 필수). **published 한정**이
+중요: 사용자가 admin 에서 만든 미완성 초안을 게시 시도하면 ValidationError(운영 실사).
+교훈: **기존 데이터에 drafts 를 켤 땐 _status 백필 + 버전 행 백필이 한 쌍**이다.
+
 ## 기각 대안 (재제안 방지)
 
 - **저작 도구 + publish 동기화** — 리스크는 작지만 이중 소스(Payload+구 테이블) 유지 비용이 상시.
