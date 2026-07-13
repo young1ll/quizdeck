@@ -17,9 +17,8 @@ export function examRoutes(meta: { provider: string; slug: string }): ExamRoutes
   return {
     hub: base,
     search: `${base}/search`,
-    // Payload admin(ADR-0024 3단계) — 문항 목록을 이 시험으로 필터한 딥링크(화면 고도화).
-    // where 쿼리는 Payload 목록 뷰가 그대로 해석한다(관계 하위 필드 exam.examKey 지원).
-    admin: `/admin/collections/questions?where[exam.examKey][equals]=${encodeURIComponent(`${meta.provider}/${meta.slug}`)}`,
+    // WP admin(ADR-0025 3단계) — 문항 목록(tailnet 전용 도메인). 시험별 필터 UI 는 미구현.
+    admin: "https://wp.myquizdeck.com/wp-admin/edit.php?post_type=qd_question",
   };
 }
 

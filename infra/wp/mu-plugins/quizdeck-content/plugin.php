@@ -19,3 +19,5 @@ require_once __DIR__ . '/fields.php';
 require_once __DIR__ . '/metabox.php';
 require_once __DIR__ . '/save.php';
 require_once __DIR__ . '/rest.php';
+require_once __DIR__ . '/query.php';
+require_once __DIR__ . '/webhook.php';

@@ -13,7 +13,7 @@ export default function AdminLink() {
   if (!isAdminSession(session)) return null;
   return (
     <Link
-      href="/admin"
+      href="https://wp.myquizdeck.com/wp-admin/"
       className="flex min-h-[44px] items-center gap-1.5 text-sm text-[var(--muted)] hover:text-[var(--fg)]"
     >
       <LuSettings className="size-4" aria-hidden /> 어드민

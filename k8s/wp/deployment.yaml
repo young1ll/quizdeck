@@ -27,6 +27,16 @@ spec:
             # WORDPRESS_AUTH_KEY 등 salts 8종 — k8s/wp/README.md
             - secretRef: { name: wp-salts }
           env:
+            # 편집 → 앱 revalidate 웹훅(3단계) — 클러스터 내부 앱 Service. 토큰은 git 밖
+            # wp-revalidate Secret(앱 쪽 quizdeck-auth 의 REVALIDATE_TOKEN 과 같은 값 — README).
+            - name: QD_REVALIDATE_URL
+              value: http://quizdeck.quizdeck.svc.cluster.local/api/revalidate-content
+            - name: QD_REVALIDATE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: wp-revalidate
+                  key: QD_REVALIDATE_TOKEN
+                  optional: true
             - name: WORDPRESS_CONFIG_EXTRA
               value: |
                 define('WP_HOME', 'https://wp.myquizdeck.com');
