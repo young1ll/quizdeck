@@ -12,6 +12,10 @@ export const Exams: CollectionConfig = {
   admin: {
     group: "콘텐츠",
     useAsTitle: "name",
+    // 라이브 프리뷰(2차 확장 A) — draft 카탈로그 카드/메타. preview(게시본 새 탭)와 공존.
+    livePreview: {
+      url: ({ data }) => (data?.id ? `/cms-preview/exam/${data.id}` : null),
+    },
     // 게시본 보기 — 학습 화면 새 탭(초안 프리뷰 아님: 서빙은 게시본만).
     preview: (doc) =>
       doc?.provider && doc?.slug ? `/${doc.provider as string}/${doc.slug as string}` : null,

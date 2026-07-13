@@ -34,6 +34,10 @@ export const Questions: CollectionConfig = {
   labels: { singular: "문항", plural: "문항" },
   admin: {
     group: "콘텐츠",
+    // 라이브 프리뷰(2차 확장 A) — 편집 화면 iframe 이 단일 문항 draft 프리뷰를 띄운다.
+    livePreview: {
+      url: ({ data }) => (data?.id ? `/cms-preview/question/${data.id}` : null),
+    },
     defaultColumns: ["exam", "qn", "topic", "_status", "updatedAt"],
     groupBy: true, // 목록을 문제집 등 필드로 그룹핑(화면 고도화 PR-1)
     listSearchableFields: ["q", "topic"],
