@@ -7,4 +7,4 @@ resources:
   - ingressroute.yaml
 images:
   - name: ghcr.io/young1ll/quizdeck-wp
-    newTag: sha-c239203
+    newTag: sha-0edd451
