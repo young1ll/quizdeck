@@ -24,19 +24,33 @@ defined('ABSPATH') || exit;
 
 require_once __DIR__ . '/r2.php';
 
-/** env 5종이 모두 있어야 활성 — 부분 설정은 없는 것으로 취급(반쯤 켜진 상태 방지). */
+/** 필드 → env 이름. 설정 폴백(options)의 키는 `qd_media_<field>`. */
+function qd_media_fields(): array
+{
+    return ['endpoint' => 'QD_MEDIA_ENDPOINT', 'bucket' => 'QD_MEDIA_BUCKET',
+            'key' => 'QD_MEDIA_ACCESS_KEY_ID', 'secret' => 'QD_MEDIA_SECRET_ACCESS_KEY',
+            'base_url' => 'QD_MEDIA_BASE_URL'];
+}
+
+/**
+ * 설정 소스 체인(일반화 (a), 2026-07-14): env **우선** → 없으면 admin 설정(options).
+ * env 가 하나라도 있으면 options 와 혼합하지 않는다 — 소스 단위 전환(부분 설정 = 미설정,
+ * 반쯤 켜진 상태 방지). QuizDeck 프로덕션은 항상 env(Secret) — 확정 경계 무변경.
+ */
 function qd_media_config(): ?array
 {
     static $config = false;
     if ($config !== false) {
         return $config;
     }
+    $envAny = false;
+    foreach (qd_media_fields() as $env) {
+        if (getenv($env)) { $envAny = true; break; }
+    }
     $cfg = [];
-    foreach (['endpoint' => 'QD_MEDIA_ENDPOINT', 'bucket' => 'QD_MEDIA_BUCKET',
-              'key' => 'QD_MEDIA_ACCESS_KEY_ID', 'secret' => 'QD_MEDIA_SECRET_ACCESS_KEY',
-              'base_url' => 'QD_MEDIA_BASE_URL'] as $name => $env) {
-        $v = getenv($env);
-        if (!$v) {
+    foreach (qd_media_fields() as $name => $env) {
+        $v = $envAny ? (string) getenv($env) : (string) get_option("qd_media_{$name}", '');
+        if ($v === '') {
             return $config = null;
         }
         $cfg[$name] = rtrim($v, '/');
@@ -44,9 +58,26 @@ function qd_media_config(): ?array
     return $config = $cfg;
 }
 
-/* 중간 사이즈·-scaled 변형 비활성 — offload 여부와 무관하게 항상(서빙 계약이 'full' 뿐). */
-add_filter('intermediate_image_sizes_advanced', '__return_empty_array');
-add_filter('big_image_size_threshold', '__return_false');
+/** 활성 소스 — 'env' | 'options' | null(미설정). 설정 페이지·대시보드 상태 표시용. */
+function qd_media_config_source(): ?string
+{
+    if (qd_media_config() === null) {
+        return null;
+    }
+    foreach (qd_media_fields() as $env) {
+        if (getenv($env)) return 'env';
+    }
+    return 'options';
+}
+
+/* 중간 사이즈·-scaled 변형 비활성 — 기본 정책(QuizDeck 서빙 계약이 'full' 뿐).
+   일반 사용처는 `qd_media_disable_sizes` 필터 false 로 WP 기본 동작 복원(원본만 offload — README). */
+add_filter('intermediate_image_sizes_advanced',
+    fn(array $sizes): array => apply_filters('qd_media_disable_sizes', true) ? [] : $sizes);
+add_filter('big_image_size_threshold',
+    fn($threshold) => apply_filters('qd_media_disable_sizes', true) ? false : $threshold);
+
+require_once __DIR__ . '/settings.php';
 
 /**
  * 업로드 완료 → R2 PUT. wp_generate_attachment_metadata 는 이미지 외 타입에도 돌므로
@@ -60,6 +91,7 @@ add_filter('wp_generate_attachment_metadata', function (array $metadata, int $at
     }
     $file = get_attached_file($attachmentId, true); // unfiltered — 로컬 실경로
     $key  = get_post_meta($attachmentId, '_wp_attached_file', true); // uploads 상대경로 = R2 키
+    $key  = (string) apply_filters('qd_media_object_key', $key, $attachmentId); // 키 정책 오버라이드 seam
     if (!$file || !$key || !is_readable($file)) {
         error_log("qd-media: attachment {$attachmentId} 파일 접근 불가 — offload 생략");
         return $metadata;

@@ -18,7 +18,8 @@ function qd_media_r2_put(array $cfg, string $key, string $file, string $contentT
     }
     $res = qd_media_r2_request($cfg, 'PUT', $key, $body, [
         'content-type'  => $contentType,
-        'cache-control' => 'public, max-age=31536000, immutable',
+        // 파일명은 WP 가 유일화 — 불변 캐시가 기본. 사용처 정책은 필터로.
+        'cache-control' => (string) apply_filters('qd_media_cache_control', 'public, max-age=31536000, immutable', $key),
     ]);
     return $res >= 200 && $res < 300;
 }

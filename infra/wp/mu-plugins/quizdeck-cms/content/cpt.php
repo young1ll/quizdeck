@@ -7,7 +7,7 @@ add_action('init', function () {
     $common = [
         'public'       => false,
         'show_ui'      => true,
-        'show_in_menu' => true,
+        'show_in_menu' => 'quizdeck-cms', // 최상위 QuizDeck 메뉴(admin.php)의 서브메뉴로 — 메뉴트리 단일화
         'show_in_rest' => true, // published = 익명 read, draft = 인증 필요 (WP 기본 — 서빙 계약)
         'supports'     => ['title'],
         'map_meta_cap' => true,
