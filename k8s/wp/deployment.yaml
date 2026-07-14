@@ -41,15 +41,13 @@ spec:
                   name: wp-revalidate
                   key: QD_REVALIDATE_TOKEN
                   optional: true
+            # 환경값만 — 제품 행동(DISALLOW_FILE_MODS 등)은 플러그인 platform 모듈이 소유(흡수 2026-07-14)
             - name: WORDPRESS_CONFIG_EXTRA
               value: |
                 define('WP_HOME', 'https://wp.myquizdeck.com');
                 define('WP_SITEURL', 'https://wp.myquizdeck.com');
                 /* Traefik 이 TLS 종단(pod 는 HTTP) — 프록시 헤더로 HTTPS 인지 */
                 if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { $_SERVER['HTTPS'] = 'on'; }
-                /* 코어·플러그인·테마는 이미지가 소유 — admin 설치/업데이트 금지(GitOps) */
-                define('DISALLOW_FILE_MODS', true);
-                define('AUTOMATIC_UPDATER_DISABLED', true);
           readinessProbe:
             httpGet: { path: /wp-login.php, port: 80 }
             initialDelaySeconds: 15
