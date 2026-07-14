@@ -3,10 +3,14 @@
 require '/tests/_helpers.php';
 echo "[00-fixture]\n";
 
-// 플러그인 정체성 — must-use 표면은 QuizDeck CMS 단일(통합 결정 2026-07-14)
+// 플러그인 정체성 — must-use 표면은 QuizDeck CMS 단일(통합 결정 2026-07-14) + 메타데이터 완결
 $mu = get_mu_plugins();
-t_assert(count($mu) === 1 && ($mu['quizdeck-cms-loader.php']['Name'] ?? '') === 'QuizDeck CMS',
+$hdr = $mu['quizdeck-cms-loader.php'] ?? [];
+t_assert(count($mu) === 1 && ($hdr['Name'] ?? '') === 'QuizDeck CMS',
     'must-use = QuizDeck CMS 단일 (' . implode(',', array_keys($mu)) . ')');
+t_assert(($hdr['Version'] ?? '') !== '' && ($hdr['Author'] ?? '') !== ''
+    && ($hdr['RequiresPHP'] ?? '') === '8.0' && ($hdr['RequiresWP'] ?? '') === '6.5',
+    "메타데이터 완결 (v{$hdr['Version']} · {$hdr['Author']} · PHP≥{$hdr['RequiresPHP']} · WP≥{$hdr['RequiresWP']})");
 
 $exam = t_published('qd_exam', 'TEST-01', [
     'qd_provider' => 'aws', 'qd_slug' => 'test-01', 'qd_provider_name' => 'AWS', 'qd_code' => 'TEST-01',
