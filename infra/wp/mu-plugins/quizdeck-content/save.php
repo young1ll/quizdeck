@@ -107,6 +107,30 @@ function qd_validate(int $postId, string $type): array
 
     if ($type === 'qd_concept') {
         $errors = array_merge($errors, qd_check_unique($postId, 'qd_concept', 'qd_svc', $meta('qd_svc'), '식별자(svc)'));
+        // 참조 서비스 존재 검증 — id 는 이 카드가 속한 시험의 provider 스코프로 조회(ADR-0026).
+        $serviceIds = json_decode($meta('qd_service_ids'), true) ?: [];
+        if ($serviceIds) {
+            $examId   = (int) $meta('qd_exam_id');
+            $provider = $examId ? (string) get_post_meta($examId, 'qd_provider', true) : '';
+            foreach ($serviceIds as $sid) {
+                if (!is_string($sid) || $provider === '' || !qd_find_service($provider, $sid)) {
+                    $errors[] = "참조 서비스 '{$sid}' 이(가) 레지스트리에 없습니다 (provider: {$provider})";
+                }
+            }
+        }
+    }
+
+    if ($type === 'qd_service') {
+        $sid = $meta('qd_service_id');
+        if ($sid !== '' && !preg_match('/^[a-z0-9-]+$/', $sid)) {
+            $errors[] = '서비스 id: 소문자·숫자·하이픈만 허용합니다 (언어 무관 안정 키)';
+        }
+        // (provider, service_id) 유일성 — exam_key 와 같은 파생 복합키 패턴.
+        $key = $meta('qd_provider') !== '' && $sid !== '' ? $meta('qd_provider') . '/' . $sid : '';
+        if ($key !== '') {
+            update_post_meta($postId, 'qd_service_key', $key);
+            $errors = array_merge($errors, qd_check_unique($postId, 'qd_service', 'qd_service_key', $key, '서비스 키', false));
+        }
     }
 
     if ($type === 'qd_exam') {
@@ -147,10 +171,33 @@ function qd_auto_title(int $postId, string $type): string
     return match ($type) {
         'qd_question' => $meta('qd_qn') !== '' ? "Q{$meta('qd_qn')}" : '',
         'qd_concept'  => $meta('qd_svc'),
+        'qd_service'  => $meta('qd_name'),
         'qd_exam'     => '', // 문제집 제목은 사용자가 직접(표시명)
         default       => '',
     };
 }
+
+/** (provider, service_id) 로 서비스 조회 — 검증·파생 공용. */
+function qd_find_service(string $provider, string $serviceId): ?int
+{
+    $found = get_posts([
+        'post_type'   => 'qd_service',
+        'post_status' => 'publish',
+        'numberposts' => 1,
+        'fields'      => 'ids',
+        'meta_query'  => [['key' => 'qd_service_key', 'value' => "{$provider}/{$serviceId}"]],
+    ]);
+    return $found[0] ?? null;
+}
+
+// 파생 캐시(exam 아이콘 오버레이 — rest.php) 무효화: 콘텐츠 4종 저장 시 전부 비운다.
+// 시험이 2~3개뿐이라 전량 무효화가 선택적 무효화보다 단순하고 충분히 싸다.
+add_action('save_post', function (int $postId, WP_Post $post): void {
+    if (!in_array($post->post_type, ['qd_exam', 'qd_question', 'qd_concept', 'qd_service'], true)) return;
+    foreach (get_posts(['post_type' => 'qd_exam', 'post_status' => 'any', 'numberposts' => -1, 'fields' => 'ids']) as $eid) {
+        delete_transient("qd_icons_{$eid}");
+    }
+}, 20, 2);
 
 // 검증 실패 알림 — draft 강등 사유를 편집 화면 상단에.
 add_action('admin_notices', function () {

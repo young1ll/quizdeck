@@ -9,7 +9,7 @@
 defined('ABSPATH') || exit;
 
 add_action('add_meta_boxes', function () {
-    foreach (['qd_exam' => '문제집 정보', 'qd_question' => '문항 내용', 'qd_concept' => '개념 카드 내용'] as $type => $title) {
+    foreach (['qd_exam' => '문제집 정보', 'qd_question' => '문항 내용', 'qd_concept' => '개념 카드 내용', 'qd_service' => '서비스 정보'] as $type => $title) {
         add_meta_box("qd-{$type}", $title, 'qd_render_metabox', $type, 'normal', 'high');
     }
 });
