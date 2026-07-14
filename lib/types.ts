@@ -37,6 +37,8 @@ export interface Concept {
   rel?: number[];
   /** 관련 문항 총 개수 */
   reln?: number;
+  /** 카드 이미지 URL(WP 대표이미지 → R2 offload). 언어 무관. */
+  image?: string;
 }
 
 export interface Diagram {
@@ -44,8 +46,19 @@ export interface Diagram {
   title: string;
   cat: string;
   caption: string;
-  /** 인라인 SVG 마크업 */
-  svg: string;
+  /** 인라인 SVG 마크업 — image 와 둘 중 하나는 존재(WP 게이트) */
+  svg?: string;
+  /** 래스터 이미지 URL(WP 대표이미지 → R2) — SVG 의 대안 */
+  image?: string;
+}
+
+/** provider 귀속 서비스(레지스트리 투영 — ADR-0026). icon 은 유효 아이콘(이미지 URL 우선). */
+export interface ProviderService {
+  id: string;
+  name: string;
+  abbr?: string;
+  cat?: string;
+  icon?: string;
 }
 
 /** 시험 트랙(자격 계열) — 카탈로그 묶음. id 는 언어 무관 안정 키(그룹/정렬), name 은 표시 라벨.

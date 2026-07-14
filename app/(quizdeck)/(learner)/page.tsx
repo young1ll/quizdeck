@@ -128,9 +128,20 @@ export default async function Home() {
         <div className="space-y-8">
           {groups.map((g) => (
             <section key={g.id}>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-                {g.name}
-              </h2>
+              <div className="mb-3 flex items-baseline justify-between gap-3">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
+                  {g.name}
+                </h2>
+                {/* provider 허브 진입점 (계층 실체화 — 결정 (a)) */}
+                {g.exams[0] && (
+                  <Link
+                    href={`/${g.exams[0].provider}/`}
+                    className="shrink-0 text-xs text-[var(--muted)] hover:text-[var(--fg)]"
+                  >
+                    학습 자료 →
+                  </Link>
+                )}
+              </div>
               <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {g.exams.map((e) => (
                   <li key={`${e.provider}/${e.slug}`}>
