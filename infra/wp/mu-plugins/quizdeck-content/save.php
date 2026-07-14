@@ -75,9 +75,43 @@ function qd_handle_save(int $postId, WP_Post $post): void
         $update['post_status'] = 'draft';
         set_transient("qd_errors_{$postId}", $errors, 60);
     }
-    if (count($update) > 1) wp_update_post($update);
+    if (count($update) > 1) {
+        qd_demoting(true); // 자동 강등은 qn 셰도우를 해제하지 않는다(게이트 우회 방지)
+        wp_update_post($update);
+        qd_demoting(false);
+    }
     add_action('save_post', 'qd_handle_save', 10, 2);
+    if (!$errors && $post->post_status === 'publish' && $post->post_type === 'qd_question') {
+        update_post_meta($postId, 'qd_qn_published', (string) get_post_meta($postId, 'qd_qn', true));
+    }
 }
+
+/** 자동 강등 진행 중 플래그 — transition 훅이 사용자 초안 전환과 구분하는 데 쓴다. */
+function qd_demoting(?bool $set = null): bool
+{
+    static $v = false;
+    if ($set !== null) $v = $set;
+    return $v;
+}
+
+// 사용자가 게시를 내리면(초안 전환·휴지통) qn 셰도우 해제 — 재게시 시점 qn 이 새 기준이 된다.
+// 검증 실패로 인한 자동 강등(qd_demoting)은 제외: 게이트가 스스로를 우회하게 두지 않는다.
+add_action('transition_post_status', function (string $new, string $old, WP_Post $post): void {
+    if ($post->post_type !== 'qd_question' || $old !== 'publish' || $new === 'publish') return;
+    if (qd_demoting()) return;
+    delete_post_meta($post->ID, 'qd_qn_published');
+    if ($new === 'trash') {
+        set_transient('qd_trash_notice_' . get_current_user_id(),
+            "Q" . get_post_meta($post->ID, 'qd_qn', true) . " 을(를) 휴지통으로 — 학습 기록(이력·오답·컬렉션·주석)이 이 문항을 참조합니다. 복원 전까지 학습자 화면에서 빠집니다", 60);
+    }
+}, 10, 3);
+
+add_action('admin_notices', function (): void {
+    $msg = get_transient('qd_trash_notice_' . get_current_user_id());
+    if (!$msg) return;
+    delete_transient('qd_trash_notice_' . get_current_user_id());
+    echo '<div class="notice notice-warning"><p>' . esc_html($msg) . '</p></div>';
+});
 
 /** 게시 가능 조건 — 폼·REST 공용 검증. 에러 배열(비면 통과). */
 function qd_validate(int $postId, string $type): array
@@ -103,6 +137,14 @@ function qd_validate(int $postId, string $type): array
             if (!in_array($a, $keys, true)) $errors[] = "정답 {$a} 가 보기에 없습니다";
         }
         $errors = array_merge($errors, qd_check_unique($postId, 'qd_question', 'qd_qn', $meta('qd_qn'), '문항 번호'));
+        // qn 불변 게이트 — 학습자 데이터(이력·오답·컬렉션·주석)가 (examKey, qn)으로 이 문항을
+        // 참조한다. 셰도우(qd_qn_published = 마지막 게시 시점 qn)와 다르면 게시 거부. 탈출구는
+        // 의도적 2단계: 사용자가 초안으로 전환(셰도우 해제 — 아래 transition 훅)→변경→재게시.
+        $shadow = $meta('qd_qn_published');
+        if ($shadow !== '' && $shadow !== $meta('qd_qn')) {
+            $errors[] = "게시된 문항의 번호는 변경할 수 없습니다 — 학습 기록이 Q{$shadow} 를 참조합니다. "
+                . "정말 필요하면 초안으로 전환한 뒤 변경해 재게시하세요";
+        }
     }
 
     if ($type === 'qd_concept') {
