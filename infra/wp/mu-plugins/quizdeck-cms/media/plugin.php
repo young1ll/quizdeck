@@ -24,6 +24,13 @@ defined('ABSPATH') || exit;
 
 require_once __DIR__ . '/r2.php';
 
+// i18n — 소스는 영어, 번역은 languages/*.l10n.php(WP 6.5+ PHP 번역 파일 — msgfmt 툴체인
+// 불필요, 수기 유지). load_textdomain 은 .mo 경로를 받지만 컨트롤러가 .l10n.php 를 우선한다.
+// 로그(error_log)는 관례대로 번역하지 않는다(영어 고정 — grep 가능성).
+add_action('init', function (): void {
+    load_textdomain('qd-media', __DIR__ . '/languages/qd-media-' . determine_locale() . '.mo');
+});
+
 /** 필드 → env 이름. 설정 폴백(options)의 키는 `qd_media_<field>`. */
 function qd_media_fields(): array
 {
@@ -93,14 +100,14 @@ add_filter('wp_generate_attachment_metadata', function (array $metadata, int $at
     $key  = get_post_meta($attachmentId, '_wp_attached_file', true); // uploads 상대경로 = R2 키
     $key  = (string) apply_filters('qd_media_object_key', $key, $attachmentId); // 키 정책 오버라이드 seam
     if (!$file || !$key || !is_readable($file)) {
-        error_log("qd-media: attachment {$attachmentId} 파일 접근 불가 — offload 생략");
+        error_log("qd-media: attachment {$attachmentId} file unreadable — offload skipped");
         return $metadata;
     }
     $ok = qd_media_r2_put($cfg, $key, $file, get_post_mime_type($attachmentId) ?: 'application/octet-stream');
     if ($ok) {
         update_post_meta($attachmentId, '_qd_r2_key', $key);
     } else {
-        error_log("qd-media: attachment {$attachmentId} R2 PUT 실패 — URL 은 로컬로 남음(비영속)");
+        error_log("qd-media: attachment {$attachmentId} R2 PUT failed — URL stays local (non-durable)");
     }
     return $metadata;
 }, 20, 2);
@@ -123,6 +130,6 @@ add_action('delete_attachment', function (int $attachmentId): void {
     }
     $key = get_post_meta($attachmentId, '_qd_r2_key', true);
     if ($key && !qd_media_r2_delete($cfg, $key)) {
-        error_log("qd-media: attachment {$attachmentId} R2 DELETE 실패 — 고아 객체: {$key}");
+        error_log("qd-media: attachment {$attachmentId} R2 DELETE failed — orphan object: {$key}");
     }
 });

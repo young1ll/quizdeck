@@ -3,23 +3,28 @@
  * media 설정 페이지 — env 없이 쓰는 사용처를 위한 options 폴백 UI(일반화 (a)).
  * env 가 있으면 저장값은 무시된다(소스 단위 우선 — plugin.php qd_media_config).
  * 메뉴 부모는 필터 seam: 단독 사용 시 기본 '설정', QuizDeck 조합에서는 admin.php 가
- * 'quizdeck-cms' 로 바꾼다(모듈은 조합에 무의존).
+ * 'quizdeck-cms' 로 바꾼다(모듈은 조합에 무의존). 문자열은 영어 소스 + qd-media 도메인.
  */
 
 defined('ABSPATH') || exit;
 
-const QD_MEDIA_SETTINGS_LABELS = [
-    'endpoint' => ['R2/S3 엔드포인트', 'https://<account>.r2.cloudflarestorage.com'],
-    'bucket'   => ['버킷', ''],
-    'key'      => ['Access Key ID', ''],
-    'secret'   => ['Secret Access Key', '⚠️ DB(options)에 평문 저장 — 가능하면 env(QD_MEDIA_*) 권장'],
-    'base_url' => ['공개 미디어 도메인', '예: https://media.example.com — 버킷의 커스텀 도메인'],
-];
+/** 필드 라벨·설명 — const 는 __() 를 못 부르므로 함수. */
+function qd_media_settings_labels(): array
+{
+    return [
+        'endpoint' => [__('R2/S3 endpoint', 'qd-media'), 'https://<account>.r2.cloudflarestorage.com'],
+        'bucket'   => [__('Bucket', 'qd-media'), ''],
+        'key'      => [__('Access Key ID', 'qd-media'), ''],
+        'secret'   => [__('Secret Access Key', 'qd-media'), __('Stored as plain text in the database — prefer env (QD_MEDIA_*) when possible', 'qd-media')],
+        'base_url' => [__('Public media domain', 'qd-media'), __('e.g. https://media.example.com — the bucket\'s public (custom) domain', 'qd-media')],
+    ];
+}
 
 add_action('admin_menu', function () {
     add_submenu_page(
         (string) apply_filters('qd_media_settings_parent', 'options-general.php'),
-        '미디어 R2 offload', '미디어(R2)', 'manage_options', 'qd-media-settings', 'qd_media_render_settings'
+        __('Media R2 Offload', 'qd-media'), __('Media (R2)', 'qd-media'), 'manage_options',
+        'qd-media-settings', 'qd_media_render_settings'
     );
 }, 20); // 부모 메뉴(10) 이후
 
@@ -31,20 +36,19 @@ add_action('admin_init', function () {
 
 function qd_media_render_settings(): void
 {
-    $source = qd_media_config_source();
-    $status = match ($source) {
-        'env'     => '✅ <strong>환경변수(QD_MEDIA_*)가 우선 적용 중</strong> — 아래 저장값은 무시됩니다 (QuizDeck 프로덕션의 정상 상태: 자격증명은 Secret 소유)',
-        'options' => '✅ 아래 저장값으로 동작 중',
-        default   => '⚠️ 미설정 — 업로드는 로컬로만 저장됩니다(무상태 환경에서는 비영속)',
+    $status = match (qd_media_config_source()) {
+        'env'     => __('<strong>Environment variables (QD_MEDIA_*) take precedence</strong> — values saved below are ignored.', 'qd-media'),
+        'options' => __('Active — using the values saved below.', 'qd-media'),
+        default   => __('Not configured — uploads stay local only (non-durable on stateless hosts).', 'qd-media'),
     };
     ?>
     <div class="wrap">
-      <h1>미디어 R2 offload</h1>
+      <h1><?php esc_html_e('Media R2 Offload', 'qd-media'); ?></h1>
       <p><?php echo wp_kses($status, ['strong' => []]); ?></p>
       <form method="post" action="options.php">
         <?php settings_fields('qd_media_settings'); ?>
         <table class="form-table">
-          <?php foreach (QD_MEDIA_SETTINGS_LABELS as $field => [$label, $desc]) :
+          <?php foreach (qd_media_settings_labels() as $field => [$label, $desc]) :
               $optKey = "qd_media_{$field}"; ?>
             <tr>
               <th scope="row"><label for="<?php echo esc_attr($optKey); ?>"><?php echo esc_html($label); ?></label></th>
@@ -58,9 +62,9 @@ function qd_media_render_settings(): void
             </tr>
           <?php endforeach; ?>
         </table>
-        <?php submit_button('저장'); ?>
+        <?php submit_button(); ?>
       </form>
-      <p class="description">동작 검증은 QuizDeck 대시보드의 "R2 연결 테스트"로. 원본 오프로드 전용(중간 사이즈 기본 비활성 — <code>qd_media_disable_sizes</code> 필터) — 제약은 media/README.md 참조.</p>
+      <p class="description"><?php esc_html_e('Offloads originals only — intermediate sizes are disabled by default (qd_media_disable_sizes filter). See media/README.md for constraints.', 'qd-media'); ?></p>
     </div>
     <?php
 }
