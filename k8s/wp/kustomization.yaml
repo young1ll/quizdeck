@@ -8,4 +8,4 @@ resources:
   - backup-cronjob.yaml
 images:
   - name: ghcr.io/young1ll/quizdeck-wp
-    newTag: sha-44b1cc9
+    newTag: sha-2d35c81
