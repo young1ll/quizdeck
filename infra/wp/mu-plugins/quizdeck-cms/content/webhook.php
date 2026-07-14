@@ -10,7 +10,7 @@
 defined('ABSPATH') || exit;
 
 add_action('transition_post_status', function (string $new, string $old, WP_Post $post): void {
-    if (!in_array($post->post_type, ['qd_question', 'qd_concept', 'qd_exam'], true)) return;
+    if (!in_array($post->post_type, ['qd_question', 'qd_concept', 'qd_exam', 'qd_diagram'], true)) return;
     // 게시본에 영향 = 어느 쪽이든 publish 가 관여할 때만(draft↔draft 는 무시)
     if ($new !== 'publish' && $old !== 'publish') return;
     qd_fire_revalidate($post);
@@ -18,7 +18,7 @@ add_action('transition_post_status', function (string $new, string $old, WP_Post
 
 // publish 상태에서의 내용 수정(상태 전이 없음) — save_post 로 잡는다.
 add_action('save_post', function (int $postId, WP_Post $post): void {
-    if (!in_array($post->post_type, ['qd_question', 'qd_concept', 'qd_exam'], true)) return;
+    if (!in_array($post->post_type, ['qd_question', 'qd_concept', 'qd_exam', 'qd_diagram'], true)) return;
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
     if (wp_is_post_revision($postId)) return;
     if ($post->post_status !== 'publish') return;

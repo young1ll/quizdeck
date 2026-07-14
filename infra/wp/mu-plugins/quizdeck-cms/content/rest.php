@@ -10,7 +10,7 @@
 defined('ABSPATH') || exit;
 
 add_action('rest_api_init', function () {
-    foreach (['qd_exam', 'qd_question', 'qd_concept', 'qd_service'] as $type) {
+    foreach (['qd_exam', 'qd_question', 'qd_concept', 'qd_service', 'qd_diagram'] as $type) {
         register_rest_field($type, 'qd', [
             'get_callback'    => fn(array $post) => qd_rest_projection($post['id'], $type),
             'update_callback' => fn($value, WP_Post $post) => qd_rest_ingest((array) $value, $post),
@@ -42,6 +42,10 @@ function qd_rest_projection(int $postId, string $type): array
         $thumb = get_the_post_thumbnail_url($postId, 'full');
         $out['image'] = $thumb ?: null;
     }
+    if ($type === 'qd_diagram') {
+        $out['exam_id'] = (int) $meta('qd_exam_id') ?: null;
+        $out['title']   = get_post_field('post_title', $postId, 'raw'); // wptexturize 함정 — raw
+    }
     if ($type === 'qd_concept') {
         $out['exam_id'] = (int) $meta('qd_exam_id') ?: null;
         // rel/reln 은 저장하지 않는다 — q2svc(단일 소스)에서 파생(ADR-0026). 봉투 계약은
@@ -55,8 +59,42 @@ function qd_rest_projection(int $postId, string $type): array
         // svc_icons = 레거시 블롭 위에 레지스트리 파생 오버레이(카드→첫 참조 서비스의 아이콘).
         // 서비스에서 아이콘을 고치면 참조하는 모든 시험 카드에 반영된다(ADR-0026).
         $out['svc_icons'] = qd_derived_icons($postId) + (is_array($out['svc_icons'] ?? null) ? $out['svc_icons'] : []);
+        // diagrams = qd_diagram CPT 파생(봉투 계약 = 구 블롭과 동일 — 앱 무변경).
+        $out['diagrams'] = qd_derived_diagrams($postId);
     }
 
+    return $out;
+}
+
+/** exam 의 다이어그램 배열 — CPT 파생(qd_ord 순). CPT 0건이면 구 블롭 폴백(이관 전 무공백). */
+function qd_derived_diagrams(int $examId): array
+{
+    $cached = get_transient("qd_diagrams_{$examId}");
+    if (is_array($cached)) return $cached;
+
+    $out = [];
+    $posts = get_posts([
+        'post_type'   => 'qd_diagram',
+        'post_status' => 'publish',
+        'numberposts' => -1,
+        'meta_key'    => 'qd_ord',
+        'orderby'     => 'meta_value_num',
+        'order'       => 'ASC',
+        'meta_query'  => [['key' => 'qd_exam_id', 'value' => (string) $examId]],
+    ]);
+    foreach ($posts as $p) {
+        $out[] = [
+            'id'      => (string) get_post_meta($p->ID, 'qd_diag_id', true),
+            'title'   => get_post_field('post_title', $p->ID, 'raw'),
+            'cat'     => (string) get_post_meta($p->ID, 'qd_cat', true),
+            'caption' => (string) get_post_meta($p->ID, 'qd_caption', true),
+            'svg'     => (string) get_post_meta($p->ID, 'qd_svg', true),
+        ];
+    }
+    if (!$out) {
+        $out = json_decode((string) get_post_meta($examId, 'qd_diagrams', true), true) ?: [];
+    }
+    set_transient("qd_diagrams_{$examId}", $out, DAY_IN_SECONDS);
     return $out;
 }
 

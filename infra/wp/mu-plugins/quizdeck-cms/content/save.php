@@ -30,7 +30,7 @@ function qd_handle_save(int $postId, WP_Post $post): void
 
     if ($isForm) {
         // ── 관계 ──
-        if (in_array($post->post_type, ['qd_question', 'qd_concept'], true)) {
+        if (in_array($post->post_type, ['qd_question', 'qd_concept', 'qd_diagram'], true)) {
             $examId = (int) ($_POST['qd_exam_id'] ?? 0);
             if ($examId && get_post_type($examId) === 'qd_exam') {
                 update_post_meta($postId, 'qd_exam_id', (string) $examId);
@@ -162,6 +162,14 @@ function qd_validate(int $postId, string $type): array
         }
     }
 
+    if ($type === 'qd_diagram') {
+        $svg = $meta('qd_svg');
+        if ($svg !== '' && !str_contains($svg, '<svg')) {
+            $errors[] = 'SVG: <svg …> 인라인 마크업이 아닙니다';
+        }
+        $errors = array_merge($errors, qd_check_unique($postId, 'qd_diagram', 'qd_diag_id', $meta('qd_diag_id'), '다이어그램 id'));
+    }
+
     if ($type === 'qd_service') {
         $sid = $meta('qd_service_id');
         if ($sid !== '' && !preg_match('/^[a-z0-9-]+$/', $sid)) {
@@ -235,9 +243,10 @@ function qd_find_service(string $provider, string $serviceId): ?int
 // 파생 캐시(exam 아이콘 오버레이 — rest.php) 무효화: 콘텐츠 4종 저장 시 전부 비운다.
 // 시험이 2~3개뿐이라 전량 무효화가 선택적 무효화보다 단순하고 충분히 싸다.
 add_action('save_post', function (int $postId, WP_Post $post): void {
-    if (!in_array($post->post_type, ['qd_exam', 'qd_question', 'qd_concept', 'qd_service'], true)) return;
+    if (!in_array($post->post_type, ['qd_exam', 'qd_question', 'qd_concept', 'qd_service', 'qd_diagram'], true)) return;
     foreach (get_posts(['post_type' => 'qd_exam', 'post_status' => 'any', 'numberposts' => -1, 'fields' => 'ids']) as $eid) {
         delete_transient("qd_icons_{$eid}");
+        delete_transient("qd_diagrams_{$eid}");
     }
 }, 20, 2);
 
