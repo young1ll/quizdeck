@@ -34,7 +34,7 @@ function qd_field_schema(): array
             'qd_deeplink'    => ['type' => 'text', 'label' => '딥링크'],
         ],
         'qd_concept' => [
-            'qd_svc'    => ['type' => 'text', 'label' => '서비스/개념 식별자', 'desc' => 'q2svc 조인 키', 'required' => true],
+            'qd_svc'    => ['type' => 'text', 'label' => '카드 식별자', 'desc' => 'q2svc 조인 키(시험 내 유일)', 'required' => true],
             'qd_ord'    => ['type' => 'int', 'label' => '순서', 'required' => true],
             'qd_cat'    => ['type' => 'text', 'label' => '분류'],
             'qd_abbr'   => ['type' => 'text', 'label' => '축약'],
@@ -45,8 +45,20 @@ function qd_field_schema(): array
             'qd_vs'     => ['type' => 'textarea', 'label' => '비교'],
             'qd_detail' => ['type' => 'textarea', 'label' => '상세(선택)'],
             'qd_cost'   => ['type' => 'textarea', 'label' => '비용 특성(선택)'],
-            'qd_rel'    => ['type' => 'json', 'label' => '관련 문항 번호 (JSON 배열)', 'default' => '[]'],
-            'qd_reln'   => ['type' => 'int', 'label' => '관련 문항 총 개수'],
+            // 참조 서비스(ADR-0026 — CONTEXT '서비스'/'개념 카드' 2층): 단일 서비스 카드 1개,
+            // 비교·묶음 카드 여러 개, 전략 카드 0개. rel/reln 은 저장하지 않는다 — q2svc 단일
+            // 소스에서 REST 투영이 파생(구 저장 필드는 드리프트 실사로 폐기).
+            'qd_service_ids' => ['type' => 'json', 'label' => '참조 서비스 id (JSON 배열)', 'desc' => '예: ["amazon-efs"]', 'default' => '[]'],
+        ],
+        // provider 귀속 서비스 레지스트리(ADR-0026) — 정체성(id·이름·약어·아이콘·분류)의 단일
+        // 소스. 개념 카드(시험 눈높이 학습 노트)와 분리 — 같은 서비스라도 카드는 시험마다 다르다.
+        'qd_service' => [
+            'qd_service_id' => ['type' => 'text', 'label' => '서비스 id', 'desc' => '언어 무관 안정 키 — 소문자·숫자·하이픈(예: amazon-efs). 라벨을 키로 쓰지 않는다', 'required' => true],
+            'qd_provider'   => ['type' => 'text', 'label' => 'provider', 'desc' => '예: aws', 'required' => true],
+            'qd_name'       => ['type' => 'text', 'label' => '이름', 'required' => true],
+            'qd_abbr'       => ['type' => 'text', 'label' => '축약'],
+            'qd_icon'       => ['type' => 'text', 'label' => '아이콘(이모지)'],
+            'qd_cat'        => ['type' => 'text', 'label' => '분류'],
         ],
     ];
 }

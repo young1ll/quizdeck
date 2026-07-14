@@ -31,6 +31,13 @@ add_action('init', function () {
         'menu_icon' => 'dashicons-lightbulb',
         'rest_base' => 'qd-concepts',
     ]);
+
+    // provider 귀속 — 시험 관계(qd_exam_id) 없음. ADR-0026.
+    register_post_type('qd_service', $common + [
+        'labels'    => qd_labels('서비스'),
+        'menu_icon' => 'dashicons-cloud',
+        'rest_base' => 'qd-services',
+    ]);
 });
 
 function qd_labels(string $name): array

@@ -17,6 +17,15 @@ add_filter('rest_qd_concept_query', function (array $args, WP_REST_Request $req)
     return qd_apply_query_filters($args, $req, 'qd_ord');
 }, 10, 2);
 
+// 서비스 레지스트리: provider 스코프 목록(ADR-0026) — ?qd_provider=aws
+add_filter('rest_qd_service_query', function (array $args, WP_REST_Request $req): array {
+    $provider = $req->get_param('qd_provider');
+    if (is_string($provider) && $provider !== '') {
+        $args['meta_query'][] = ['key' => 'qd_provider', 'value' => $provider];
+    }
+    return $args;
+}, 10, 2);
+
 add_filter('rest_qd_exam_query', function (array $args, WP_REST_Request $req): array {
     $key = $req->get_param('qd_exam_key');
     if (is_string($key) && $key !== '') {
