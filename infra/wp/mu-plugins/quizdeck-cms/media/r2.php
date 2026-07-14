@@ -39,7 +39,7 @@ function qd_media_r2_request(array $cfg, string $method, string $key, string $bo
 {
     $host = parse_url($cfg['endpoint'], PHP_URL_HOST);
     if (!$host) {
-        error_log("qd-media: QD_MEDIA_ENDPOINT 파싱 실패");
+        error_log("qd-media: failed to parse QD_MEDIA_ENDPOINT");
         return 0;
     }
     // 서명의 host 는 실제 전송되는 Host 헤더와 바이트 단위로 같아야 한다 — 비표준 포트 포함
@@ -89,7 +89,7 @@ function qd_media_r2_request(array $cfg, string $method, string $key, string $bo
         'timeout' => 30,
     ]);
     if (is_wp_error($res)) {
-        error_log('qd-media: R2 전송 실패 — ' . $res->get_error_message());
+        error_log('qd-media: R2 transport failure — ' . $res->get_error_message());
         return 0;
     }
     $code = (int) wp_remote_retrieve_response_code($res);

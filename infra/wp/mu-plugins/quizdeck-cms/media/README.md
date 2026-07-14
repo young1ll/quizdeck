@@ -43,6 +43,13 @@ require_once __DIR__ . '/<이름>/plugin.php';
 | `qd_media_object_key` | uploads 상대경로 | 객체 키 정책(프리픽스 등) |
 | `qd_media_cache_control` | `public, max-age=31536000, immutable` | PUT 캐시 헤더 |
 
+## i18n
+
+- 소스 문자열은 **영어**, 텍스트 도메인 `qd-media`. 번역은 `languages/qd-media-<locale>.l10n.php`
+  (WP 6.5+ PHP 번역 파일 — 툴체인 없이 수기 유지, ko_KR 동봉). 소스 문자열 변경 시 번역
+  파일의 키를 같이 갱신할 것.
+- 로그(error_log)는 번역하지 않는다 — 영어 고정(운영자 grep 표면).
+
 ## 함정 (실사 기록)
 
 - SigV4 의 host 서명은 전송 Host 헤더와 **바이트 일치** — 비표준 포트 포함(로컬 MinIO :9000).
