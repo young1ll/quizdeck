@@ -18,6 +18,6 @@ COPY --from=lang /tmp/languages/ /usr/src/wordpress/wp-content/languages/
 # admin 에서 삭제 불가 + akismet 은 업데이트 알림만 낸다. 이미지가 소유하니 이미지에서 뺀다.
 RUN rm -rf /usr/src/wordpress/wp-content/plugins/akismet /usr/src/wordpress/wp-content/plugins/hello.php
 
-# quizdeck-content (mu-plugin — 활성화 불필요·비활성화 불가): CPT·메타박스·검증·REST.
-# ACF 대체 자체구현(ADR-0025 애던덤 예정 — 사용자 결정 2026-07-13).
+# QuizDeck CMS (mu-plugin — 활성화 불필요·비활성화 불가): content(CPT·검증 게이트·REST·웹훅)
+# + media(R2 offload) + locale(ko_KR) 모듈. ACF 대체 자체구현(ADR-0025).
 COPY mu-plugins/ /usr/src/wordpress/wp-content/mu-plugins/

@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 
-// WP 편집 웹훅 수신 (ADR-0025 3단계) — quizdeck-content/webhook.php 가 게시본 영향 변화 시
+// WP 편집 웹훅 수신 (ADR-0025 3단계) — quizdeck-cms(content/webhook.php) 가 게시본 영향 변화 시
 // { examKey } 를 쏜다(클러스터 내부 + 공유 토큰). exam 레이아웃(ISR 3600)을 layout 스코프로
 // 무효화. 토큰 불일치·미설정은 균일 401(관리 표면 존재를 안 드러냄 — withAdmin 의 403 규율과
 // 같은 결).

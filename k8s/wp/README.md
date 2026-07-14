@@ -19,7 +19,7 @@
      do printf -- "--from-literal=%s=%s " "$k" "$(openssl rand -base64 48 | tr -d '\n=+/')"; done)
    ```
    ```sh
-   # ③ 미디어 R2 offload(quizdeck-media mu-plugin) — 자격증명은 media 버킷 스코프 R2 토큰
+   # ③ 미디어 R2 offload(QuizDeck CMS media 모듈) — 자격증명은 media 버킷 스코프 R2 토큰
    #    (구 quizdeck-auth 의 R2_MEDIA_* 값을 이전 — 스코프 실증 2026-07-14). 없으면
    #    미디어만 로컬(비영속)로 남는다(optional Secret).
    kubectl -n wordpress create secret generic wp-media \
