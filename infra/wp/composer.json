@@ -1,0 +1,11 @@
+{
+    "description": "mu-plugin 정적 분석 전용(dev) — 이미지에 들어가지 않는다(Dockerfile 은 mu-plugins/ 만 COPY)",
+    "require-dev": {
+        "szepeviktor/phpstan-wordpress": "^2.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
+    }
+}

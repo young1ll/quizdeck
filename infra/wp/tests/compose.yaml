@@ -1,0 +1,46 @@
+# mu-plugin 통합 테스트 스택 — run.sh 가 기동·실행·정리를 소유한다. CI(wp-image)와
+# 로컬에서 동일하게 동작(경로는 이 파일 기준 상대).
+name: qd-wp-tests
+services:
+  db:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+  minio:
+    image: minio/minio
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: testkey
+      MINIO_ROOT_PASSWORD: testsecret123
+      MINIO_SITE_REGION: auto
+  wordpress:
+    image: wordpress:6.9-php8.3-apache
+    depends_on: [db, minio]
+    environment: &wpenv
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WP_ENVIRONMENT_TYPE: local
+      QD_MEDIA_ENDPOINT: http://minio:9000
+      QD_MEDIA_BUCKET: qd-media
+      QD_MEDIA_ACCESS_KEY_ID: testkey
+      QD_MEDIA_SECRET_ACCESS_KEY: testsecret123
+      QD_MEDIA_BASE_URL: https://media.test.invalid
+    volumes:
+      - html:/var/www/html
+      - ../mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+  cli:
+    image: wordpress:cli-php8.3
+    depends_on: [wordpress]
+    environment: *wpenv
+    volumes:
+      - html:/var/www/html
+      - ../mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+      - ./cases:/tests:ro
+    entrypoint: ["sleep", "infinity"]
+volumes:
+  html:
