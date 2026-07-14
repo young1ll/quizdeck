@@ -32,6 +32,12 @@ add_action('init', function () {
         'rest_base' => 'qd-concepts',
     ]);
 
+    register_post_type('qd_diagram', $common + [
+        'labels'    => qd_labels('다이어그램'),
+        'menu_icon' => 'dashicons-chart-area',
+        'rest_base' => 'qd-diagrams',
+    ]);
+
     // provider 귀속 — 시험 관계(qd_exam_id) 없음. ADR-0026.
     register_post_type('qd_service', $common + [
         'labels'    => qd_labels('서비스'),

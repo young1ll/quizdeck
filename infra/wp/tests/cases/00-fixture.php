@@ -35,4 +35,7 @@ t_published('qd_concept', 'Amazon EFS', ['qd_exam_id' => (string) $exam, 'qd_svc
     'qd_ord' => '1', 'qd_deff' => 'NFS', 'qd_service_ids' => '["amazon-efs"]']);
 t_published('qd_concept', 'ALB vs NLB', ['qd_exam_id' => (string) $exam, 'qd_svc' => 'ALB vs NLB',
     'qd_ord' => '2', 'qd_deff' => '비교']);
+t_published('qd_diagram', '테스트 구성도', ['qd_exam_id' => (string) $exam, 'qd_diag_id' => 'test-diagram',
+    'qd_ord' => '1', 'qd_cat' => '네트워킹', 'qd_caption' => '설명 캡션',
+    'qd_svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>']);
 echo "OK\n";

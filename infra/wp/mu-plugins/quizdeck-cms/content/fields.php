@@ -19,7 +19,8 @@ function qd_field_schema(): array
             'qd_icon'          => ['type' => 'text', 'label' => '아이콘(이모지)'],
             'qd_track_id'      => ['type' => 'text', 'label' => '트랙 id', 'desc' => '예: aws-solutions-architect'],
             'qd_track_name'    => ['type' => 'text', 'label' => '트랙 표시명'],
-            'qd_diagrams'      => ['type' => 'json', 'label' => 'diagrams (JSON)', 'default' => '[]'],
+            // diagrams 블롭은 qd_diagram CPT 로 승격(2026-07-14) — REST 투영이 CPT 에서 파생,
+            // 구 블롭 meta 는 이관 전 폴백으로만 읽힌다(rest.php qd_derived_diagrams).
             'qd_q2svc'         => ['type' => 'json', 'label' => 'q2svc (JSON)', 'default' => '{}'],
             'qd_svc_icons'     => ['type' => 'json', 'label' => 'svc 아이콘 (JSON)', 'default' => '{}'],
         ],
@@ -50,6 +51,15 @@ function qd_field_schema(): array
             // 소스에서 REST 투영이 파생(구 저장 필드는 드리프트 실사로 폐기).
             'qd_service_ids' => ['type' => 'json', 'label' => '참조 서비스 id (JSON 배열)', 'desc' => '예: ["amazon-efs"]', 'default' => '[]'],
         ],
+        // exam 귀속 다이어그램 — 구 exam 블롭에서 CPT 승격(개별 편집·게이트·리비전·웹훅).
+        // 제목은 post_title(사용자 소유 — exam name 과 같은 규율).
+        'qd_diagram' => [
+            'qd_diag_id'  => ['type' => 'text', 'label' => '다이어그램 id', 'desc' => '언어 무관 안정 키(시험 내 유일)', 'required' => true],
+            'qd_ord'      => ['type' => 'int', 'label' => '순서', 'required' => true],
+            'qd_cat'      => ['type' => 'text', 'label' => '분류'],
+            'qd_caption'  => ['type' => 'textarea', 'label' => '캡션'],
+            'qd_svg'      => ['type' => 'textarea', 'label' => 'SVG 마크업', 'desc' => '인라인 <svg …> 전체', 'required' => true],
+        ],
         // provider 귀속 서비스 레지스트리(ADR-0026) — 정체성(id·이름·약어·아이콘·분류)의 단일
         // 소스. 개념 카드(시험 눈높이 학습 노트)와 분리 — 같은 서비스라도 카드는 시험마다 다르다.
         'qd_service' => [
@@ -69,6 +79,7 @@ function qd_special_meta(string $post_type): array
     return match ($post_type) {
         'qd_question' => ['qd_exam_id', 'qd_options', 'qd_answer'],
         'qd_concept'  => ['qd_exam_id'],
+        'qd_diagram'  => ['qd_exam_id'],
         default       => [],
     };
 }

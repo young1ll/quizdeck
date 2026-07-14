@@ -9,7 +9,7 @@
 defined('ABSPATH') || exit;
 
 add_action('add_meta_boxes', function () {
-    foreach (['qd_exam' => '문제집 정보', 'qd_question' => '문항 내용', 'qd_concept' => '개념 카드 내용', 'qd_service' => '서비스 정보'] as $type => $title) {
+    foreach (['qd_exam' => '문제집 정보', 'qd_question' => '문항 내용', 'qd_concept' => '개념 카드 내용', 'qd_service' => '서비스 정보', 'qd_diagram' => '다이어그램 내용'] as $type => $title) {
         add_meta_box("qd-{$type}", $title, 'qd_render_metabox', $type, 'normal', 'high');
     }
 });
@@ -29,7 +29,7 @@ function qd_render_metabox(WP_Post $post): void
     </style>';
 
     // ── 관계: 문제집 select (문항·개념) ──
-    if (in_array($post->post_type, ['qd_question', 'qd_concept'], true)) {
+    if (in_array($post->post_type, ['qd_question', 'qd_concept', 'qd_diagram'], true)) {
         $examId = (int) get_post_meta($post->ID, 'qd_exam_id', true);
         $exams  = get_posts(['post_type' => 'qd_exam', 'numberposts' => -1, 'post_status' => ['publish', 'draft'], 'orderby' => 'title']);
         echo '<div class="qd-field"><label>문제집 *</label><select name="qd_exam_id" required><option value="">— 선택 —</option>';
