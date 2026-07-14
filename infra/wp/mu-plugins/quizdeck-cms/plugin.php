@@ -12,3 +12,4 @@ defined('ABSPATH') || exit;
 require_once __DIR__ . '/content/plugin.php';
 require_once __DIR__ . '/media/plugin.php';
 require_once __DIR__ . '/locale.php';
+require_once __DIR__ . '/admin.php'; // 조합 계층 — 모듈을 읽는 대시보드(모듈은 admin 무의존)

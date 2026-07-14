@@ -15,10 +15,7 @@ const QD_SITE_OPTIONS = [
     'qd_notice_tone'    => ['label' => '공지 톤', 'type' => 'select', 'options' => ['info' => '안내', 'warning' => '주의'], 'desc' => ''],
 ];
 
-// ── 설정 페이지 (Settings API) ──
-add_action('admin_menu', function () {
-    add_options_page('QuizDeck 설정', 'QuizDeck', 'manage_options', 'qd-settings', 'qd_render_settings_page');
-});
+// 설정 페이지 메뉴 등록은 admin.php(QuizDeck 메뉴의 '사이트 설정' 탭)가 소유 — 렌더만 여기.
 
 add_action('admin_init', function () {
     register_setting('qd_settings', 'qd_tagline', ['sanitize_callback' => 'sanitize_text_field']);
