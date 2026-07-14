@@ -127,5 +127,6 @@ spec:
               cpu: 50m
               memory: 96Mi
             limits:
-              # 256→512Mi (ADR-0024): Payload embed(admin 번들+Drizzle)가 얹히는 여유분.
+              # 512Mi — ADR-0024(Payload embed) 시절 증설분. Payload 제거(ADR-0025) 후에도
+              # Next SSR+ISR 여유분으로 유지.
               memory: 512Mi
