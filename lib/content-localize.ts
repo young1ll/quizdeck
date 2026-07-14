@@ -19,7 +19,21 @@ export interface LocalizedQuestion {
 
 export interface LocalizedConcept {
   svc: string;
+  /** 참조 서비스 id(언어 무관 — ADR-0026). 비교 카드는 여러 개, 전략 카드는 없음. */
+  serviceIds?: string[];
   content: Record<string, ConceptSlot>;
+}
+
+// provider 허브 데이터(집계 뷰 — 소유권 이동 없음, 2026-07-14 결정 (a)). 문항은 싣지 않는다.
+export interface ProviderContent {
+  provider: string;
+  providerName: string;
+  /** provider 소속 시험 목록 — 허브가 groupExams 로 트랙 섹션을 만든다 */
+  examList: import("./types").ExamSummary[];
+  /** 서비스 레지스트리(provider 귀속) */
+  services: import("./types").ProviderService[];
+  /** 시험별 열람 콘텐츠(개념 카드·다이어그램) — 서비스맵 조인·다이어그램 합집합용 */
+  contents: { examKey: string; code: string; concepts: LocalizedConcept[]; diagrams: Diagram[] }[];
 }
 
 // 로더 출력 / ExamApp 입력 — 양 언어 콘텐츠 + 가용 언어. 클라이언트가 현재 언어로 투영한다.

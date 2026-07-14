@@ -23,5 +23,7 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: "examKey 형식 오류" }, { status: 400 });
   }
   revalidatePath(`/${examKey}`, "layout");
+  // provider 허브·집계 뷰(맵·개념·다이어그램)도 이 시험의 콘텐츠를 서빙한다 — 함께 무효화.
+  revalidatePath(`/${examKey.split("/")[0]}`, "layout");
   return Response.json({ revalidated: examKey });
 }

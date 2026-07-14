@@ -30,12 +30,14 @@ add_action('init', function () {
         'labels'    => qd_labels('개념 카드'),
         'menu_icon' => 'dashicons-lightbulb',
         'rest_base' => 'qd-concepts',
+        'supports'  => ['title', 'thumbnail'], // thumbnail = 카드 이미지(R2 offload)
     ]);
 
     register_post_type('qd_diagram', $common + [
         'labels'    => qd_labels('다이어그램'),
         'menu_icon' => 'dashicons-chart-area',
         'rest_base' => 'qd-diagrams',
+        'supports'  => ['title', 'thumbnail'], // thumbnail = SVG 대신 래스터 이미지 경로
     ]);
 
     // provider 귀속 — 시험 관계(qd_exam_id) 없음. ADR-0026.
@@ -43,6 +45,7 @@ add_action('init', function () {
         'labels'    => qd_labels('서비스'),
         'menu_icon' => 'dashicons-cloud',
         'rest_base' => 'qd-services',
+        'supports'  => ['title', 'thumbnail'], // thumbnail = 아이콘 이미지(데이터 URI 대체)
     ]);
 });
 

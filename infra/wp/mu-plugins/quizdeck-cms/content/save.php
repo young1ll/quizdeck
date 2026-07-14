@@ -167,6 +167,9 @@ function qd_validate(int $postId, string $type): array
         if ($svg !== '' && !str_contains($svg, '<svg')) {
             $errors[] = 'SVG: <svg …> 인라인 마크업이 아닙니다';
         }
+        if ($svg === '' && !has_post_thumbnail($postId)) {
+            $errors[] = '다이어그램: SVG 마크업 또는 대표이미지 중 하나는 필수입니다';
+        }
         $errors = array_merge($errors, qd_check_unique($postId, 'qd_diagram', 'qd_diag_id', $meta('qd_diag_id'), '다이어그램 id'));
     }
 
@@ -184,6 +187,11 @@ function qd_validate(int $postId, string $type): array
     }
 
     if ($type === 'qd_exam') {
+        // provider 허브 정적 라우트와 충돌 방지 — /aws/map 등이 [exam] 세그먼트를 못 잡아먹게
+        $reserved = ['map', 'concepts', 'diagrams', 'search', 'quiz', 'stats', 'my-problems', 'history'];
+        if (in_array($meta('qd_slug'), $reserved, true)) {
+            $errors[] = "slug '{$meta('qd_slug')}' 은 예약어입니다(provider 허브 라우트)";
+        }
         $key = $meta('qd_provider') !== '' && $meta('qd_slug') !== '' ? $meta('qd_provider') . '/' . $meta('qd_slug') : '';
         if ($key !== '') {
             update_post_meta($postId, 'qd_exam_key', $key);

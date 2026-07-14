@@ -143,6 +143,11 @@ function ConceptCard({
         </span>
       </div>
 
+      {/* 카드 이미지(선택 — WP 대표이미지 → R2) */}
+      {c.image && (
+        <img src={c.image} alt="" loading="lazy" className="mb-3 h-auto max-h-64 w-auto max-w-full rounded-lg" />
+      )}
+
       {/* 정의 */}
       <p className="md text-sm leading-relaxed">
         <Markdown text={c.deff} />

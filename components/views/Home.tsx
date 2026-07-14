@@ -50,7 +50,10 @@ export default function Home({
   return (
     <div className="space-y-6">
       <header>
-        <div className="font-mono text-xs text-[var(--accent)]">{meta.code}</div>
+        <Link href={`/${meta.provider}/`} className="text-xs text-[var(--muted)] hover:text-[var(--fg)]">
+          {meta.providerName} ›
+        </Link>
+        <div className="mt-1 font-mono text-xs text-[var(--accent)]">{meta.code}</div>
         <h1 className="mt-1 text-2xl font-bold leading-snug">{meta.name}</h1>
       </header>
 
@@ -124,7 +127,10 @@ function AnonymousHome({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
   return (
     <div className="space-y-6">
       <header>
-        <div className="font-mono text-xs text-[var(--accent)]">{meta.code}</div>
+        <Link href={`/${meta.provider}/`} className="text-xs text-[var(--muted)] hover:text-[var(--fg)]">
+          {meta.providerName} ›
+        </Link>
+        <div className="mt-1 font-mono text-xs text-[var(--accent)]">{meta.code}</div>
         <h1 className="mt-1 text-2xl font-bold leading-snug">{meta.name}</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">문항 {questions.length}개</p>
       </header>

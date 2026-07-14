@@ -58,7 +58,7 @@ function qd_field_schema(): array
             'qd_ord'      => ['type' => 'int', 'label' => '순서', 'required' => true],
             'qd_cat'      => ['type' => 'text', 'label' => '분류'],
             'qd_caption'  => ['type' => 'textarea', 'label' => '캡션'],
-            'qd_svg'      => ['type' => 'textarea', 'label' => 'SVG 마크업', 'desc' => '인라인 <svg …> 전체', 'required' => true],
+            'qd_svg'      => ['type' => 'textarea', 'label' => 'SVG 마크업', 'desc' => '인라인 <svg …> 전체 — 비우면 대표이미지가 필수'],
         ],
         // provider 귀속 서비스 레지스트리(ADR-0026) — 정체성(id·이름·약어·아이콘·분류)의 단일
         // 소스. 개념 카드(시험 눈높이 학습 노트)와 분리 — 같은 서비스라도 카드는 시험마다 다르다.

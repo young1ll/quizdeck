@@ -1,9 +1,10 @@
-import type { ExamMeta, ExamSummary, ExamTrack } from "../lib/types.ts";
+import type { ExamMeta, ExamSummary, ExamTrack, ProviderService } from "../lib/types.ts";
 import {
   availableLangs,
   type ConceptSlot,
   type LocalizedExamData,
   type LocalizedQuestion,
+  type ProviderContent,
   type QuestionSlot,
 } from "../lib/content-localize.ts";
 
@@ -96,9 +97,10 @@ function questionEnvelope(w: WpPost): LocalizedQuestion {
   return { qn: Number(qd.qn), answer: (qd.answer as string[]) ?? [], content: { ko: slot } };
 }
 
-function conceptEnvelope(w: WpPost): { svc: string; content: Record<string, ConceptSlot> } {
+function conceptEnvelope(w: WpPost): { svc: string; serviceIds?: string[]; content: Record<string, ConceptSlot> } {
   const qd = w.qd;
   const slot = compact({
+    image: und(qd.image as string | null),
     cat: und(qd.cat as string | null),
     abbr: und(qd.abbr as string | null),
     deff: String(qd.deff),
@@ -111,7 +113,11 @@ function conceptEnvelope(w: WpPost): { svc: string; content: Record<string, Conc
     rel: und(qd.rel as number[] | null),
     reln: und(qd.reln as number | null),
   }) as ConceptSlot;
-  return { svc: String(qd.svc), content: { ko: slot } };
+  return compact({
+    svc: String(qd.svc),
+    serviceIds: und(qd.service_ids as string[] | null),
+    content: { ko: slot },
+  }) as { svc: string; serviceIds?: string[]; content: Record<string, ConceptSlot> };
 }
 
 async function findExamByKey(examKey: string): Promise<WpPost | null> {
@@ -168,4 +174,36 @@ export async function loadQuestionsByKeysWp(
     }
   }
   return out;
+}
+
+/** provider 허브 로더 (집계 뷰 — 결정 (a)). 문항은 싣지 않는다(SAP 647 로드 회피). */
+export async function loadProviderContentWp(provider: string): Promise<ProviderContent | null> {
+  const examList = (await listExamsWp()).filter((e) => e.provider === provider);
+  if (!examList.length) return null;
+
+  const services: ProviderService[] = (await wpGetAll(`/qd-services?qd_provider=${encodeURIComponent(provider)}`)).map(
+    (s) =>
+      compact({
+        id: String(s.qd.service_id),
+        name: String(s.qd.name),
+        abbr: und(s.qd.abbr as string | null),
+        cat: und(s.qd.cat as string | null),
+        icon: und(s.qd.icon as string | null), // 유효 아이콘 — 대표이미지 URL 우선(WP 투영)
+      }) as ProviderService,
+  );
+
+  const contents: ProviderContent["contents"] = [];
+  for (const e of examList) {
+    const exam = await findExamByKey(`${e.provider}/${e.slug}`);
+    if (!exam) continue;
+    const concepts = (await wpGetAll(`/qd-concepts?qd_exam=${exam.id}&qd_orderby=num`)).map(conceptEnvelope);
+    contents.push({
+      examKey: `${e.provider}/${e.slug}`,
+      code: e.code,
+      concepts,
+      diagrams: (exam.qd.diagrams ?? []) as ProviderContent["contents"][number]["diagrams"],
+    });
+  }
+
+  return { provider, providerName: examList[0].providerName, examList, services, contents };
 }

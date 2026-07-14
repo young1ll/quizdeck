@@ -45,12 +45,19 @@ function qd_rest_projection(int $postId, string $type): array
     if ($type === 'qd_diagram') {
         $out['exam_id'] = (int) $meta('qd_exam_id') ?: null;
         $out['title']   = get_post_field('post_title', $postId, 'raw'); // wptexturize 함정 — raw
+        $out['image']   = get_the_post_thumbnail_url($postId, 'full') ?: null; // SVG 의 래스터 대안
     }
     if ($type === 'qd_concept') {
         $out['exam_id'] = (int) $meta('qd_exam_id') ?: null;
+        $out['image']   = get_the_post_thumbnail_url($postId, 'full') ?: null; // 카드 이미지
+
         // rel/reln 은 저장하지 않는다 — q2svc(단일 소스)에서 파생(ADR-0026). 봉투 계약은
         // 구 저장 필드와 동일(rel = 오름차순 최대 40개, reln = 총수)이라 앱 무변경.
         [$out['rel'], $out['reln']] = qd_derived_rel((int) $meta('qd_exam_id'), $meta('qd_svc'));
+    }
+    if ($type === 'qd_service') {
+        $thumb = get_the_post_thumbnail_url($postId, 'full');
+        if ($thumb) $out['icon'] = $thumb; // 대표이미지가 데이터 URI 를 대체(유효 아이콘 단일 필드)
     }
     if ($type === 'qd_exam') {
         $out['exam_key'] = $meta('qd_exam_key') ?: null;
@@ -83,13 +90,16 @@ function qd_derived_diagrams(int $examId): array
         'meta_query'  => [['key' => 'qd_exam_id', 'value' => (string) $examId]],
     ]);
     foreach ($posts as $p) {
-        $out[] = [
+        $item = [
             'id'      => (string) get_post_meta($p->ID, 'qd_diag_id', true),
             'title'   => get_post_field('post_title', $p->ID, 'raw'),
             'cat'     => (string) get_post_meta($p->ID, 'qd_cat', true),
             'caption' => (string) get_post_meta($p->ID, 'qd_caption', true),
             'svg'     => (string) get_post_meta($p->ID, 'qd_svg', true),
         ];
+        $img = get_the_post_thumbnail_url($p->ID, 'full');
+        if ($img) $item['image'] = $img;
+        $out[] = $item;
     }
     if (!$out) {
         $out = json_decode((string) get_post_meta($examId, 'qd_diagrams', true), true) ?: [];
@@ -141,7 +151,11 @@ function qd_derived_icons(int $examId): array
             $sids = json_decode((string) get_post_meta($cid, 'qd_service_ids', true), true) ?: [];
             if (!$sids || !is_string($sids[0])) continue;
             $serviceId = qd_find_service($provider, $sids[0]);
-            $icon = $serviceId ? (string) get_post_meta($serviceId, 'qd_icon', true) : '';
+            $icon = '';
+            if ($serviceId) {
+                $icon = get_the_post_thumbnail_url($serviceId, 'full') // 이미지 아이콘 우선(R2 URL)
+                    ?: (string) get_post_meta($serviceId, 'qd_icon', true);
+            }
             if ($icon !== '') $icons[(string) get_post_meta($cid, 'qd_svc', true)] = $icon;
         }
     }
