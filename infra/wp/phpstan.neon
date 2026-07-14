@@ -1,0 +1,9 @@
+# WPCS(스타일)는 의도적 미채택 — 기존 코드 스타일과 충돌. 실버그 탐지에 집중.
+# level 5 확정(2026-07-14 현재 무오류) — 6부터는 배열 제네릭 독블록 요구뿐(전수 확인)이라
+# 문서화 churn 대비 탐지 이득이 없다. 올리려면 근거와 함께.
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+parameters:
+    level: 5
+    paths:
+        - mu-plugins
