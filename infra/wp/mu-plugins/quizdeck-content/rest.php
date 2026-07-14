@@ -145,8 +145,13 @@ function qd_rest_ingest(array $value, WP_Post $post)
         wp_update_post(['ID' => $post->ID, 'post_title' => $title]);
     }
     if ($errors && $post->post_status === 'publish') {
+        qd_demoting(true); // 자동 강등 — qn 셰도우 유지(save.php 게이트 규율과 동일)
         wp_update_post(['ID' => $post->ID, 'post_status' => 'draft']);
+        qd_demoting(false);
         return new WP_Error('qd_validation', implode(' · ', $errors), ['status' => 400]);
+    }
+    if ($post->post_status === 'publish' && $type === 'qd_question') {
+        update_post_meta($post->ID, 'qd_qn_published', (string) get_post_meta($post->ID, 'qd_qn', true));
     }
     return true;
 }
