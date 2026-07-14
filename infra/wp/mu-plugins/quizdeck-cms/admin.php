@@ -8,12 +8,29 @@
 
 defined('ABSPATH') || exit;
 
-// ── 메뉴: 최상위 QuizDeck — 대시보드 + 사이트 설정(settings.php 페이지를 이 아래로) ──
+// ── 메뉴: 최상위 QuizDeck 단일 트리(재구성 2026-07-14) — CPT 4종은 cpt.php 의
+//    show_in_menu='quizdeck-cms' 로, 미디어(R2) 설정은 부모 필터로 이 아래에 합류한다.
 add_action('admin_menu', function () {
     add_menu_page('QuizDeck CMS', 'QuizDeck', 'manage_options', 'quizdeck-cms', 'qd_render_dashboard', 'dashicons-welcome-learn-more', 59);
     add_submenu_page('quizdeck-cms', 'QuizDeck 대시보드', '대시보드', 'manage_options', 'quizdeck-cms', 'qd_render_dashboard');
     add_submenu_page('quizdeck-cms', 'QuizDeck 사이트 설정', '사이트 설정', 'manage_options', 'qd-settings', 'qd_render_settings_page');
 });
+
+add_filter('qd_media_settings_parent', fn(): string => 'quizdeck-cms');
+
+// 서브메뉴 순서 고정 — CPT 항목은 core 가 먼저 append 하므로 그대로 두면 대시보드가
+// 첫 항목이 아니게 된다(부모 클릭 진입점이 흔들림). 명시 순서로 재배열.
+add_action('admin_menu', function (): void {
+    global $submenu;
+    if (empty($submenu['quizdeck-cms'])) return;
+    $order = ['quizdeck-cms', 'edit.php?post_type=qd_exam', 'edit.php?post_type=qd_question',
+              'edit.php?post_type=qd_concept', 'edit.php?post_type=qd_service', 'qd-media-settings', 'qd-settings'];
+    $rank = function (array $item) use ($order): int {
+        $i = array_search($item[2], $order, true);
+        return $i === false ? 99 : $i; // ?: 는 인덱스 0(대시보드)을 삼킨다 — 명시 비교
+    };
+    usort($submenu['quizdeck-cms'], fn(array $a, array $b): int => $rank($a) <=> $rank($b));
+}, 999);
 
 /** 플러그인 버전 — 로더 헤더가 단일 소스. */
 function qd_plugin_version(): string
@@ -167,7 +184,7 @@ function qd_render_dashboard(): void
           <tr>
             <td><strong>R2 미디어 offload</strong></td>
             <td><?php echo $media
-                ? '✅ 설정됨 — 버킷 <code>' . esc_html($media['bucket']) . '</code> · 공개 도메인 <code>' . esc_html($media['base_url']) . '</code> (키는 Secret)'
+                ? '✅ 설정됨(' . (qd_media_config_source() === 'env' ? 'env — Secret 소유' : 'admin 설정') . ') — 버킷 <code>' . esc_html($media['bucket']) . '</code> · 공개 도메인 <code>' . esc_html($media['base_url']) . '</code>'
                 : '⚠️ 미설정 — 업로드는 로컬(pod 재시작 시 소실)'; ?></td>
             <td><?php echo $btn('qd_r2_test', 'R2 연결 테스트'); ?></td>
           </tr>
