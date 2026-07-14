@@ -3,6 +3,11 @@
 require '/tests/_helpers.php';
 echo "[00-fixture]\n";
 
+// 플러그인 정체성 — must-use 표면은 QuizDeck CMS 단일(통합 결정 2026-07-14)
+$mu = get_mu_plugins();
+t_assert(count($mu) === 1 && ($mu['quizdeck-cms-loader.php']['Name'] ?? '') === 'QuizDeck CMS',
+    'must-use = QuizDeck CMS 단일 (' . implode(',', array_keys($mu)) . ')');
+
 $exam = t_published('qd_exam', 'TEST-01', [
     'qd_provider' => 'aws', 'qd_slug' => 'test-01', 'qd_provider_name' => 'AWS', 'qd_code' => 'TEST-01',
     'qd_q2svc' => '{"1":["Amazon EFS"],"2":["Amazon EFS","ALB vs NLB"]}',

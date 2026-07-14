@@ -1,6 +1,7 @@
 <?php
 /**
- * QuizDeck Media — 업로드 미디어 R2 offload (ADR-0025 결정 7 의 2단계 완결).
+ * media 모듈 — 업로드 미디어 R2 offload (ADR-0025 결정 7 의 2단계 완결).
+ * 일반화·분리 배포 후보(결정 (c) 차순위): 이 디렉토리가 곧 추출 단위 — content 모듈에 의존하지 않는다.
  *
  * pod 는 무상태(/var/www/html = emptyDir)라 로컬 업로드 파일은 재시작에 소실되고,
  * WP 자체 URL(wp.myquizdeck.com)은 tailnet 전용이라 공개 사용자에게 안 보인다.

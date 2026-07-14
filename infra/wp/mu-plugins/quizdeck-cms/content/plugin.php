@@ -1,6 +1,6 @@
 <?php
 /**
- * QuizDeck Content — 문제집·문항·개념 CPT + 메타박스 + 검증 + REST (ADR-0025 2단계).
+ * content 모듈 — 문제집·문항·개념·서비스 CPT + 메타박스 + 검증 게이트 + REST (ADR-0025/0026).
  *
  * ACF 대체 자체구현(사용자 결정 2026-07-13): headless 라 admin UI 만이 필드 프레임워크의
  * 가치인데, 목적 제작 폼이 퀴즈 데이터엔 UX 도 저장 포맷도 낫다 —
@@ -11,8 +11,6 @@
  */
 
 defined('ABSPATH') || exit;
-
-define('QD_CONTENT_DIR', __DIR__);
 
 require_once __DIR__ . '/cpt.php';
 require_once __DIR__ . '/fields.php';

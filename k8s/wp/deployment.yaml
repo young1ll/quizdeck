@@ -1,7 +1,7 @@
 # headless WordPress (ADR-0025). 콘텐츠 저작 전용 — 학습자는 이 pod 를 직접 보지 않는다
 # (admin 은 tailnet 전용 IngressRoute, 앱은 클러스터 내부 Service 로 REST read).
 # 무상태 원칙: /var/www/html 은 emptyDir(기동 시 코어 복사) — 플러그인·코어는 이미지가 소유
-# (DISALLOW_FILE_MODS), 업로드 미디어는 R2 offload(quizdeck-media mu-plugin — 공개 URL 은
+# (DISALLOW_FILE_MODS), 업로드 미디어는 R2 offload(QuizDeck CMS media 모듈 — 공개 URL 은
 # media.myquizdeck.com). DB 는 db-home MariaDB(git 밖 Secret).
 apiVersion: apps/v1
 kind: Deployment
@@ -27,7 +27,7 @@ spec:
             - secretRef: { name: wp-db-credentials }
             # WORDPRESS_AUTH_KEY 등 salts 8종 — k8s/wp/README.md
             - secretRef: { name: wp-salts }
-            # QD_MEDIA_* 5종(R2 offload — quizdeck-media mu-plugin). optional: Secret 부재 시
+            # QD_MEDIA_* 5종(R2 offload — QuizDeck CMS media 모듈). optional: Secret 부재 시
             # 미디어만 로컬(비영속)로 남고 pod 는 정상 기동 — 부트스트랩 순서에 인질 안 잡힘.
             - secretRef: { name: wp-media, optional: true }
           env:
