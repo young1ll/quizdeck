@@ -7,8 +7,8 @@ import {
   type QuestionSlot,
 } from "../lib/content-localize.ts";
 
-// WP REST 서빙 클라이언트 (ADR-0025 3단계) — cms/read.ts(payload 투영)와 **같은 출력형**을
-// WordPress 에서 재구성한다. verify-wp.ts 가 이 형태의 동일성을 이관 시점에 기계 증명했다.
+// WP REST 서빙 클라이언트 (ADR-0025 3단계) — 구 payload 투영과 같은 출력형을 WordPress 에서
+// 재구성한다(이관 시점 diff 기계 검증 — 검증 스크립트는 4단계에서 폐기, 이력은 git·ADR-0025).
 //  - 접근: 클러스터 내부 Service(WP_API_URL — k8s env) 기본, 미설정 시 tailnet 도메인(dev).
 //  - published 만 보인다(익명 GET — WP 기본). 초안은 서빙에 존재하지 않는다.
 //  - {}↔[] 동치: PHP 는 빈 연관배열을 못 표현 — object 계약 필드는 여기서 정규화한다.

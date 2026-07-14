@@ -18,6 +18,20 @@
      WORDPRESS_AUTH_SALT WORDPRESS_SECURE_AUTH_SALT WORDPRESS_LOGGED_IN_SALT WORDPRESS_NONCE_SALT; \
      do printf -- "--from-literal=%s=%s " "$k" "$(openssl rand -base64 48 | tr -d '\n=+/')"; done)
    ```
+   ```sh
+   # ③ 미디어 R2 offload(quizdeck-media mu-plugin) — 자격증명은 media 버킷 스코프 R2 토큰
+   #    (구 quizdeck-auth 의 R2_MEDIA_* 값을 이전 — 스코프 실증 2026-07-14). 없으면
+   #    미디어만 로컬(비영속)로 남는다(optional Secret).
+   kubectl -n wordpress create secret generic wp-media \
+     --from-literal=QD_MEDIA_ENDPOINT='https://<account>.r2.cloudflarestorage.com' \
+     --from-literal=QD_MEDIA_BUCKET='<media 버킷>' \
+     --from-literal=QD_MEDIA_ACCESS_KEY_ID='<access key id>' \
+     --from-literal=QD_MEDIA_SECRET_ACCESS_KEY='<secret access key>' \
+     --from-literal=QD_MEDIA_BASE_URL='https://media.myquizdeck.com'
+   ```
+   **미디어 공개 도메인(1회, Cloudflare 대시보드)**: R2 → media 버킷 → Custom Domains 에
+   `media.myquizdeck.com` 연결(프록시 자동). r2.dev 공개 URL 은 쓰지 않는다(프로덕션 부적격
+   — 레이트 리밋 + 계정 해시 종속 URL).
 3. **DNS(grey-cloud)**: Cloudflare 에 `wp.myquizdeck.com` A 레코드 → `100.81.230.113`
    (k3s-home Tailscale IP), **프록시 OFF(DNS-only·회색 구름)** — argocd 선례(ADR-0020).
    orange 로 뒤집으면 인터넷에 열린다.

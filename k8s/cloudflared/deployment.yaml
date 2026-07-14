@@ -17,7 +17,9 @@ spec:
     spec:
       containers:
         - name: cloudflared
-          image: cloudflare/cloudflared:latest
+          # 이미지 고정(다른 워크로드와 같은 GitOps 원칙) — 공개 진입로가 재스케줄 때
+          # 미검증 버전으로 조용히 바뀌는 것을 막는다. 업그레이드 = 태그 bump 커밋.
+          image: cloudflare/cloudflared:2026.6.1
           args: ["tunnel", "--no-autoupdate", "--metrics", "0.0.0.0:2000", "run"]
           env:
             # 터널 토큰은 git 밖 Secret. 생성: README.md 참고.

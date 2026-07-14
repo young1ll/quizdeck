@@ -16,7 +16,7 @@ export interface Question {
   answer: string[];
   explanation?: string;
   tip?: string;
-  /** 지문 이미지 URL(Payload media — /api/cms/media/file/…). 언어 무관. (ADR-0024 확장 F) */
+  /** 지문 이미지 URL(WP 대표이미지 → media.myquizdeck.com R2 offload). 언어 무관. */
   image?: string;
   page?: number | string;
   deeplink?: string;
@@ -62,7 +62,7 @@ export interface ExamMeta {
   name: string;
   slug: string;
   language: string;
-  /** 카탈로그·카드 표시용 아이콘(이모지). 없으면 미표시. 소스 = Payload exams.icon (ADR-0024). */
+  /** 카탈로그·카드 표시용 아이콘(이모지). 없으면 미표시. 소스 = WP qd_exam icon 필드. */
   icon?: string;
   /** 트랙(자격 계열). 없으면 카탈로그가 provider 묶음으로 폴백. */
   track?: ExamTrack;
