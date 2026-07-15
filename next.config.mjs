@@ -16,6 +16,10 @@ const nextConfig = {
   // 핸들러는 슬래시 없는 경로만 매칭해 404 가 된다(인증 전부 깨짐). skip 하면
   // 페이지·readiness probe(/api/health/)는 그대로 매칭되고 /api/auth/* 만 살아난다.
   skipTrailingSlashRedirect: true,
+  // View Transitions — React canary 의 <ViewTransition> 을 활성화해 클라이언트 내비게이션을
+  // 브라우저 View Transitions API 로 감싼다(PageTransition + globals.css .vt-page). 끄면
+  // PageTransition 이 무애니 폴백으로 렌더할 뿐 나머지는 그대로 동작한다(설계 문서 2026-07-15).
+  experimental: { viewTransition: true },
 };
 
 export default nextConfig;

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireLearnerPage } from "@/lib/route-guards";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
+import { PendingLink } from "@/components/ui/PendingLink";
 import { pool } from "@/lib/db";
 import { listCollections } from "@/lib/collection-db";
 import { groupItemsByExam } from "@/lib/collection";
@@ -35,7 +36,7 @@ export default async function CollectionsPage() {
           const examCount = groupItemsByExam(c.items).length;
           return (
             <li key={c.id}>
-              <Link href={`/me/collections/${c.id}`} className="block">
+              <PendingLink href={`/me/collections/${c.id}`} className="block">
                 <Card padding={4} interactive>
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
@@ -50,7 +51,7 @@ export default async function CollectionsPage() {
                     <span className="shrink-0 text-sm text-[var(--muted)]">›</span>
                   </div>
                 </Card>
-              </Link>
+              </PendingLink>
             </li>
           );
         })}

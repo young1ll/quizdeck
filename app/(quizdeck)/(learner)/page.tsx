@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { LuFolderOpen } from "react-icons/lu";
 import { Card } from "@/components/ui/Card";
+import { PendingLink } from "@/components/ui/PendingLink";
 import ExamIcon from "@/components/ui/ExamIcon";
 import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
@@ -60,7 +61,7 @@ export default async function Home() {
                 {/* 재개 카드 — astryx Card 서피스(accent 강조 border). 본문 Link→허브 + 내 문제함 하위 Link
                     (중첩 anchor 회피 위해 ClickableCard 아님 Card+Link 구성). ADR-0014 Phase 3. */}
                 <Card padding={0} emphasis="accent">
-                  <Link href={`/${exam.provider}/${exam.slug}/`} className="block p-4">
+                  <PendingLink href={`/${exam.provider}/${exam.slug}/`} className="block p-4">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
                         <div className="font-mono text-xs text-[var(--accent)]">
@@ -84,7 +85,7 @@ export default async function Home() {
                       />
                       <span className="shrink-0 text-xs text-[var(--muted)]">숙련도 {mastery}%</span>
                     </div>
-                  </Link>
+                  </PendingLink>
                   {/* 내 문제함 — 시험별 오답∪별표∪메모 직접 진입(있을 때만, ADR-0011). */}
                   {mine > 0 && (
                     <Link
@@ -108,7 +109,7 @@ export default async function Home() {
           최근 3개 시험만 커버하므로, 전 시험 합계 한 줄이 /me 롤업(시험별 개수·진입점)으로 잇는다. */}
       {mineTotal > 0 && (
         <section className="mb-8">
-          <Link href="/me" className="block">
+          <PendingLink href="/me" className="block">
             <Card padding={4} interactive>
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-2 font-medium">
@@ -118,7 +119,7 @@ export default async function Home() {
                 <span className="shrink-0 text-sm text-[var(--muted)]">시험별 보기 ›</span>
               </div>
             </Card>
-          </Link>
+          </PendingLink>
         </section>
       )}
 
@@ -151,7 +152,7 @@ export default async function Home() {
                   <li key={`${e.provider}/${e.slug}`}>
                     {/* 카탈로그 카드 — astryx Card 서피스 + Next Link(클라이언트 내비·prefetch 유지, ADR
                         라우팅 보존). ClickableCard 은 plain <a>(풀 리로드)라 미채택. ADR-0014 Phase 3. */}
-                    <Link href={`/${e.provider}/${e.slug}/`} className="block">
+                    <PendingLink href={`/${e.provider}/${e.slug}/`} className="block">
                       <Card padding={4} interactive>
                         <div className="font-mono text-xs text-[var(--accent)]">
                           <ExamIcon icon={e.icon} className="mr-1" />
@@ -160,7 +161,7 @@ export default async function Home() {
                         <div className="mt-1 font-medium leading-snug">{e.name}</div>
                         <div className="mt-2 text-xs text-[var(--muted)]">문항 {e.questionCount}개</div>
                       </Card>
-                    </Link>
+                    </PendingLink>
                   </li>
                 ))}
               </ul>
