@@ -40,6 +40,12 @@ t_assert(str_contains($html, 'list="qd-topic-options"') && str_contains($html, '
 t_assert(str_contains($html, '📦 스토리지') && !str_contains($html, '스토리지/백업'),
     'datalist 는 소속 시험 주제만');
 
+// 5) 칩 UI — 기존 주제 칩 + 상태 배지 + 동기화 JS
+t_assert(str_contains($html, 'data-qd-topic-chips') && substr_count($html, 'data-topic=') === 2,
+    '주제 칩 2개(소속 시험 스코프)');
+t_assert(str_contains($html, 'data-qd-topic-status'), '기존/새 주제 상태 배지');
+t_assert(str_contains($html, 'qd-active'), '칩 하이라이트 JS 포함');
+
 wp_delete_post($exam2, true);
 foreach (get_posts(['post_type' => 'qd_question', 'title' => 'Q1-e2', 'post_status' => 'any', 'numberposts' => 1, 'fields' => 'ids']) as $id) wp_delete_post($id, true);
 echo "OK\n";
