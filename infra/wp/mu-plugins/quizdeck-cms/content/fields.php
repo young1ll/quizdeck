@@ -22,7 +22,8 @@ function qd_field_schema(): array
             // diagrams 블롭은 qd_diagram CPT 로 승격(2026-07-14) — REST 투영이 CPT 에서 파생,
             // 구 블롭 meta 는 이관 전 폴백으로만 읽힌다(rest.php qd_derived_diagrams).
             'qd_q2svc'         => ['type' => 'json', 'label' => 'q2svc (JSON)', 'default' => '{}'],
-            'qd_svc_icons'     => ['type' => 'json', 'label' => 'svc 아이콘 (JSON)', 'default' => '{}'],
+            // svc_icons 블롭은 편집 표면에서 폐기(2026-07-15) — 아이콘은 엔티티(서비스 대표이미지·
+            // 카드 qd_icon)가 소유. 기존 meta 는 rest.php 파생의 휴면 폴백으로만 읽힌다.
         ],
         'qd_question' => [
             // qd_exam(관계)·qd_options·qd_answer 는 특수 위젯 — metabox.php
