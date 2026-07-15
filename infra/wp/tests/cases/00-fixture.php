@@ -28,6 +28,7 @@ foreach ([1, 2, 3] as $n) {
 
 $svc = t_published('qd_service', 'Amazon EFS', [
     'qd_service_id' => 'amazon-efs', 'qd_provider' => 'aws', 'qd_name' => 'Amazon EFS', 'qd_icon' => '🗂️',
+    'qd_cat' => '스토리지',
 ]);
 update_option('qd_test_service_id', $svc);
 
