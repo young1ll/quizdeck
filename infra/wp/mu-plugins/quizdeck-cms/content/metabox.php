@@ -39,21 +39,37 @@ function qd_render_metabox(WP_Post $post): void
         echo '</select></div>';
     }
 
-    // ── 스키마 필드 일괄 렌더 ──
+    // ── 스키마 필드 일괄 렌더 (qd_svg·qd_icon 은 실시간 미리보기 부착 — 2026-07-15) ──
     foreach ($schema as $key => $def) {
         $value = get_post_meta($post->ID, $key, true);
         if ($value === '' && isset($def['default'])) $value = $def['default'];
         $req = !empty($def['required']) ? ' *' : '';
         echo '<div class="qd-field"><label>' . esc_html($def['label'] . $req) . '</label>';
         if ($def['type'] === 'textarea' || $def['type'] === 'json') {
-            printf('<textarea name="%s" class="%s">%s</textarea>', esc_attr($key), $def['type'] === 'json' ? 'qd-json' : '', esc_textarea($value));
+            printf('<textarea name="%s" class="%s"%s>%s</textarea>', esc_attr($key), $def['type'] === 'json' ? 'qd-json' : '',
+                $key === 'qd_svg' ? ' data-qd-svg-src' : '', esc_textarea($value));
         } elseif ($def['type'] === 'int') {
             printf('<input type="number" name="%s" value="%s">', esc_attr($key), esc_attr($value));
         } else {
-            printf('<input type="text" name="%s" value="%s">', esc_attr($key), esc_attr($value));
+            printf('<input type="text" name="%s" value="%s"%s>', esc_attr($key), esc_attr($value),
+                $key === 'qd_icon' ? ' data-qd-icon-src' : '');
+        }
+        if ($key === 'qd_icon') {
+            // 아이콘 실시간 미리보기 — 목록 컬럼과 같은 유효 표시 규칙(이미지/데이터 URI = img, 그 외 텍스트)
+            echo '<div class="desc" style="margin-top:6px">미리보기: <span data-qd-icon-preview style="display:inline-block;vertical-align:middle;min-width:28px"></span></div>';
         }
         if (!empty($def['desc'])) echo '<div class="desc">' . esc_html($def['desc']) . '</div>';
         echo '</div>';
+    }
+
+    // ── SVG 실시간 미리보기 (다이어그램) — 프론트 diagbox 와 같은 흰 배경 ──
+    if (isset($schema['qd_svg'])) {
+        echo '<div class="qd-field"><label>SVG 미리보기</label>'
+            . '<div data-qd-svg-preview style="background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:12px;overflow:auto;max-height:420px"></div>'
+            . '<div class="desc">입력과 동시에 갱신 — 게시 시 앱 다이어그램 화면과 같은 마크업이 그대로 서빙됩니다</div></div>';
+    }
+    if (isset($schema['qd_svg']) || isset($schema['qd_icon'])) {
+        qd_preview_js();
     }
 
     // ── 문항 전용: 보기 repeater + 정답 체크박스 ──
@@ -83,6 +99,48 @@ function qd_option_row_html(string $key, string $text): void
         esc_attr($key),
         esc_textarea($text)
     );
+}
+
+function qd_preview_js(): void
+{
+    ?>
+    <script>
+    (function () {
+      // SVG 미리보기 — admin 이 자기 입력을 자기 화면에 렌더(저장 시 서빙되는 것과 동일 신뢰 수준)
+      const svgSrc = document.querySelector('[data-qd-svg-src]');
+      const svgBox = document.querySelector('[data-qd-svg-preview]');
+      if (svgSrc && svgBox) {
+        const renderSvg = () => {
+          const v = svgSrc.value.trim();
+          svgBox.innerHTML = v.includes('<svg') ? v : '<em style="color:#888">— SVG 마크업 없음(대표이미지 사용 시 비워둠) —</em>';
+          svgBox.querySelectorAll('svg').forEach(el => { el.style.maxWidth = '100%'; el.style.height = 'auto'; });
+        };
+        svgSrc.addEventListener('input', renderSvg);
+        renderSvg();
+      }
+      // 아이콘 미리보기 — 목록 컬럼과 같은 규칙(이미지 소스면 img, 아니면 텍스트)
+      const iconSrc = document.querySelector('[data-qd-icon-src]');
+      const iconBox = document.querySelector('[data-qd-icon-preview]');
+      if (iconSrc && iconBox) {
+        const renderIcon = () => {
+          const v = iconSrc.value.trim();
+          if (!v) { iconBox.textContent = '—'; return; }
+          if (/^(https?:\/\/|\/|data:image\/)/.test(v)) {
+            iconBox.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = v; img.style.cssText = 'width:28px;height:28px;object-fit:contain';
+            iconBox.appendChild(img);
+          } else {
+            iconBox.textContent = v;
+            iconBox.style.fontSize = '22px';
+          }
+        };
+        iconSrc.addEventListener('input', renderIcon);
+        renderIcon();
+      }
+    })();
+    </script>
+    <?php
 }
 
 function qd_question_js(): void
