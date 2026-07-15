@@ -38,3 +38,23 @@ export function groupExams(exams: ExamSummary[]): CatalogGroup[] {
   }
   return [...byId.values()];
 }
+
+/** provider 중첩 카탈로그 — 홈의 계층 멘탈 모델(provider > 트랙 > 시험, 2026-07-15).
+ *  키는 안정 id(provider), 트랙 묶음은 groupExams 재사용. 순서는 입력 첫 등장 순. */
+export interface ProviderGroup {
+  provider: string;
+  providerName: string;
+  groups: CatalogGroup[];
+}
+
+export function groupByProvider(exams: ExamSummary[]): ProviderGroup[] {
+  const byProvider = new Map<string, ExamSummary[]>();
+  for (const e of exams) {
+    byProvider.set(e.provider, [...(byProvider.get(e.provider) ?? []), e]);
+  }
+  return [...byProvider.entries()].map(([provider, list]) => ({
+    provider,
+    providerName: list[0].providerName,
+    groups: groupExams(list),
+  }));
+}

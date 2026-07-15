@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { useExam } from "@/lib/exam-context";
 import { MODE_LABEL, useStore, type Mode } from "@/lib/store";
 import { MODE_ICON } from "@/lib/mode-icons";
+import AdminEditLink from "@/components/AdminEditLink";
 import { today } from "@/lib/dates";
 import { examView } from "@/lib/exam-view";
 import { resumeInfo } from "@/lib/session";
@@ -50,9 +51,12 @@ export default function Home({
   return (
     <div className="space-y-6">
       <header>
-        <Link href={`/${meta.provider}/`} className="text-xs text-[var(--muted)] hover:text-[var(--fg)]">
-          {meta.providerName} ›
-        </Link>
+        <span className="flex items-center gap-3">
+          <Link href={`/${meta.provider}/`} className="text-xs text-[var(--muted)] hover:text-[var(--fg)]">
+            {meta.providerName} ›
+          </Link>
+          <AdminEditLink wpId={meta.wpId} />
+        </span>
         <div className="mt-1 font-mono text-xs text-[var(--accent)]">{meta.code}</div>
         <h1 className="mt-1 text-2xl font-bold leading-snug">{meta.name}</h1>
       </header>
@@ -127,9 +131,12 @@ function AnonymousHome({ onStartMode }: { onStartMode: (mode: Mode) => void }) {
   return (
     <div className="space-y-6">
       <header>
-        <Link href={`/${meta.provider}/`} className="text-xs text-[var(--muted)] hover:text-[var(--fg)]">
-          {meta.providerName} ›
-        </Link>
+        <span className="flex items-center gap-3">
+          <Link href={`/${meta.provider}/`} className="text-xs text-[var(--muted)] hover:text-[var(--fg)]">
+            {meta.providerName} ›
+          </Link>
+          <AdminEditLink wpId={meta.wpId} />
+        </span>
         <div className="mt-1 font-mono text-xs text-[var(--accent)]">{meta.code}</div>
         <h1 className="mt-1 text-2xl font-bold leading-snug">{meta.name}</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">문항 {questions.length}개</p>

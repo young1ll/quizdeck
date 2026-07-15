@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import Markdown from "@/components/Markdown";
 import ServiceIcon from "./ServiceIcon";
+import AdminEditLink from "@/components/AdminEditLink";
 import type { ProviderContent } from "@/lib/content-localize";
 
 // provider 서비스맵 (결정 (a) — 레지스트리 앵커 집계). 타일 = 서비스(정체성), 클릭하면 그
@@ -64,6 +65,7 @@ export default function ProviderMap({ data }: { data: ProviderContent }) {
                     {selectedSvc.abbr}
                   </span>
                 )}
+                <AdminEditLink wpId={selectedSvc.wpId} className="ml-auto" />
               </div>
               {cardsFor(selectedSvc.id).length === 0 ? (
                 <p className="text-sm text-[var(--muted)]">아직 이 서비스를 다루는 개념 카드가 없습니다.</p>
@@ -81,6 +83,7 @@ export default function ProviderMap({ data }: { data: ProviderContent }) {
                         >
                           시험에서 자세히 →
                         </Link>
+                        <AdminEditLink wpId={card.slot?.wpId} />
                       </div>
                       <p className="md text-sm leading-relaxed">
                         <Markdown text={card.slot?.deff ?? ""} />

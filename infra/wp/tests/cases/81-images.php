@@ -50,6 +50,16 @@ $id = t_post('qd_diagram', 'empty-diag', ['qd_exam_id' => (string) $exam, 'qd_di
 t_assert(get_post_status($id) === 'draft', 'SVG·이미지 둘 다 없음 → draft 강등');
 wp_delete_post($id, true);
 
+// wp_id 투영 + 행 액션 '앱에서 보기' (프론트-admin 연결성)
+$concepts = t_rest('/wp/v2/qd-concepts', ['qd_exam' => $exam, 'qd_orderby' => 'num']);
+t_assert(($concepts[0]['qd']['wp_id'] ?? 0) > 0, '투영에 wp_id (편집 딥링크용)');
+$cardPost = get_post($card);
+$actions = apply_filters('post_row_actions', [], $cardPost);
+t_assert(str_contains($actions['qd_view_app'] ?? '', '/aws/test-01/concepts?seed='), "행 액션 '앱에서 보기' (개념 카드 → seed 딥링크)");
+$svcPost = get_posts(['post_type' => 'qd_service', 'post_status' => 'publish', 'numberposts' => 1])[0];
+$actions = apply_filters('post_row_actions', [], $svcPost);
+t_assert(str_contains($actions['qd_view_app'] ?? '', '/aws/map/'), "행 액션 (서비스 → provider 맵)");
+
 // exam slug 예약어
 $id = t_post('qd_exam', 'BAD', ['qd_provider' => 'aws', 'qd_slug' => 'map', 'qd_provider_name' => 'AWS', 'qd_code' => 'BAD']);
 t_assert(get_post_status($id) === 'draft', "slug 'map' 예약어 → draft 강등");

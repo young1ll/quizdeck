@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { useExam } from "@/lib/exam-context";
+import AdminEditLink from "@/components/AdminEditLink";
 
 export default function Diagrams() {
   const { diagrams } = useExam();
@@ -51,8 +52,9 @@ export default function Diagrams() {
               <h3 className="text-[15px] font-bold text-[var(--accent)]">
                 {d.title}
               </h3>
-              <span className="shrink-0 rounded bg-[var(--panel-2)] px-2 py-0.5 text-xs text-[var(--muted)]">
-                {d.cat}
+              <span className="flex shrink-0 items-center gap-2">
+                <AdminEditLink wpId={d.wpId} />
+                <span className="rounded bg-[var(--panel-2)] px-2 py-0.5 text-xs text-[var(--muted)]">{d.cat}</span>
               </span>
             </div>
 

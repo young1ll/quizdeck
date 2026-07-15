@@ -103,6 +103,7 @@ function questionEnvelope(w: WpPost): LocalizedQuestion {
 function conceptEnvelope(w: WpPost): { svc: string; serviceIds?: string[]; content: Record<string, ConceptSlot> } {
   const qd = w.qd;
   const slot = compact({
+    wpId: und(qd.wp_id as number | null),
     image: und(qd.image as string | null),
     cat: und(qd.cat as string | null),
     abbr: und(qd.abbr as string | null),
@@ -123,6 +124,13 @@ function conceptEnvelope(w: WpPost): { svc: string; serviceIds?: string[]; conte
   }) as { svc: string; serviceIds?: string[]; content: Record<string, ConceptSlot> };
 }
 
+/** REST 의 snake(wp_id) → 도메인(camel) — 다이어그램은 exam 투영에 내장돼 오는 배열. */
+function diagramsEnvelope(raw: unknown): LocalizedExamData["diagrams"] {
+  return ((raw ?? []) as Array<Record<string, unknown>>).map(({ wp_id, ...d }) =>
+    compact({ ...d, wpId: und(wp_id as number | null) }),
+  ) as LocalizedExamData["diagrams"];
+}
+
 async function findExamByKey(examKey: string): Promise<WpPost | null> {
   const { rows } = await wpGet(`/qd-exams?qd_exam_key=${encodeURIComponent(examKey)}&per_page=1`);
   return rows[0] ?? null;
@@ -139,11 +147,12 @@ export async function loadExamLocalizedWp(provider: string, slug: string): Promi
 
   const qs = questions.map(questionEnvelope);
   const cs = concepts.map(conceptEnvelope);
-  const diagrams = (exam.qd.diagrams ?? []) as LocalizedExamData["diagrams"];
+  const diagrams = diagramsEnvelope(exam.qd.diagrams);
   const q2svc = asRecord<string[]>(exam.qd.q2svc);
   const icons = asRecord<string>(exam.qd.svc_icons);
 
   const meta: ExamMeta = compact({
+    wpId: und(exam.qd.wp_id as number | null),
     provider: String(exam.qd.provider),
     providerName: String(exam.qd.provider_name),
     code: String(exam.qd.code),
@@ -192,6 +201,7 @@ export async function loadProviderContentWp(provider: string): Promise<ProviderC
         abbr: und(s.qd.abbr as string | null),
         cat: und(s.qd.cat as string | null),
         icon: und(s.qd.icon as string | null), // 유효 아이콘 — 대표이미지 URL 우선(WP 투영)
+        wpId: und(s.qd.wp_id as number | null),
       }) as ProviderService,
   );
 
@@ -204,7 +214,7 @@ export async function loadProviderContentWp(provider: string): Promise<ProviderC
       examKey: `${e.provider}/${e.slug}`,
       code: e.code,
       concepts,
-      diagrams: (exam.qd.diagrams ?? []) as ProviderContent["contents"][number]["diagrams"],
+      diagrams: diagramsEnvelope(exam.qd.diagrams),
     });
   }
 

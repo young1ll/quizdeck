@@ -10,7 +10,7 @@ import { getLearnerSession } from "@/lib/learner-server";
 import { pool } from "@/lib/db";
 import { loadAllProgress } from "@/lib/progress-db";
 import { buildContinueList, totalMyProblems, type ContinueItem } from "@/lib/dashboard";
-import { groupExams } from "@/lib/catalog";
+import { groupByProvider } from "@/lib/catalog";
 import { getSiteConfigCms, listExamsCms } from "@/cms/serve";
 
 // Home — 재개(act) (ADR-0012 결정 2·3). 로그인 Learner 엔 상단 "이어서 학습"(Progress 기반 최근 시험,
@@ -26,7 +26,7 @@ export default async function Home() {
   const [exams, site] = await Promise.all([listExamsCms(), getSiteConfigCms()]);
 
   // 카탈로그 그룹화 — 트랙(자격 계열) 우선, 없으면 provider 폴백(lib/catalog 순수 결정, 데이터 모델 ③).
-  const groups = groupExams(exams);
+  const groups = groupByProvider(exams);
 
   // 로그인 Learner — 최근 학습한 시험(Progress 기반) 이어서 카드. 익명은 세션 없음 → 카탈로그만.
   // 재개 결정(어떤 시험·Mastery·내 문제함 수)은 buildContinueList(순수·핀됨)가 소유(아키텍처 리뷰 C3).
@@ -125,23 +125,27 @@ export default async function Home() {
       {exams.length === 0 ? (
         <EmptyState title="등록된 시험이 없습니다" isCompact />
       ) : (
-        <div className="space-y-8">
-          {groups.map((g) => (
-            <section key={g.id}>
-              <div className="mb-3 flex items-baseline justify-between gap-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-                  {g.name}
-                </h2>
-                {/* provider 허브 진입점 (계층 실체화 — 결정 (a)) */}
-                {g.exams[0] && (
-                  <Link
-                    href={`/${g.exams[0].provider}/`}
-                    className="shrink-0 text-xs text-[var(--muted)] hover:text-[var(--fg)]"
-                  >
-                    학습 자료 →
-                  </Link>
-                )}
+        <div className="space-y-10">
+          {groups.map((p) => (
+            <section key={p.provider}>
+              {/* provider 헤더 — 계층 멘탈 모델(provider > 트랙 > 시험)의 최상위. 허브 진입점. */}
+              <div className="mb-4 flex items-baseline justify-between gap-3">
+                <Link href={`/${p.provider}/`} className="text-base font-bold hover:text-[var(--accent)]">
+                  {p.providerName}
+                </Link>
+                <Link
+                  href={`/${p.provider}/`}
+                  className="shrink-0 text-xs text-[var(--muted)] hover:text-[var(--fg)]"
+                >
+                  학습 자료 →
+                </Link>
               </div>
+              <div className="space-y-6 border-l-2 border-[var(--border)] pl-4">
+                {p.groups.map((g) => (
+                  <section key={g.id}>
+                    <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
+                      {g.name}
+                    </h3>
               <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {g.exams.map((e) => (
                   <li key={`${e.provider}/${e.slug}`}>
@@ -160,6 +164,9 @@ export default async function Home() {
                   </li>
                 ))}
               </ul>
+                  </section>
+                ))}
+              </div>
             </section>
           ))}
         </div>

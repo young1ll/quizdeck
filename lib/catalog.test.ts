@@ -69,3 +69,28 @@ describe("parseIcon (아이콘 경계 — ADR-0023, 컬렉션·문제집 오버�
     expect(parseIcon({})).toBeUndefined();
   });
 });
+
+import { groupByProvider } from "./catalog";
+
+describe("groupByProvider — provider 중첩(계층 멘탈 모델)", () => {
+  const mk = (provider: string, providerName: string, slug: string, track?: { id: string; name: string }) =>
+    ({ provider, providerName, slug, code: slug.toUpperCase(), name: slug, questionCount: 0, track }) as never;
+
+  it("provider 별로 묶고 안에서 트랙 그룹을 만든다", () => {
+    const out = groupByProvider([
+      mk("aws", "Amazon Web Services", "saa-c03", { id: "aws-sa", name: "AWS Solutions Architect" }),
+      mk("aws", "Amazon Web Services", "sap-c02", { id: "aws-sa", name: "AWS Solutions Architect" }),
+      mk("cncf", "CNCF", "cka"),
+    ]);
+    expect(out.map((p) => p.provider)).toEqual(["aws", "cncf"]);
+    expect(out[0].providerName).toBe("Amazon Web Services");
+    expect(out[0].groups).toHaveLength(1);
+    expect(out[0].groups[0].exams).toHaveLength(2);
+    expect(out[1].groups[0].id).toBe("cncf"); // 트랙 없음 → provider 폴백(기존 규칙)
+  });
+
+  it("순서는 입력 첫 등장 순(안정 키)", () => {
+    const out = groupByProvider([mk("cncf", "CNCF", "cka"), mk("aws", "AWS", "saa-c03")]);
+    expect(out.map((p) => p.provider)).toEqual(["cncf", "aws"]);
+  });
+});
