@@ -33,6 +33,9 @@ async function wpGet(path: string): Promise<{ rows: WpPost[]; total: number }> {
   };
 }
 
+// ⚠️ 페이지네이션 함정: 기본 정렬(date)은 같은 초에 생성된 포스트(이관·시딩 배치)에서 동률 —
+// 페이지 경계 중복/누락이 비결정적으로 발생한다(2026-07-15 실사). 100건 초과 가능성이 있는
+// 호출은 반드시 결정적 정렬(qd_orderby=num 또는 orderby=id)을 지정할 것.
 async function wpGetAll(base: string): Promise<WpPost[]> {
   const out: WpPost[] = [];
   for (let page = 1; ; page++) {
@@ -167,7 +170,7 @@ export async function loadQuestionsByKeysWp(
   for (const [examKey, qns] of byExam) {
     const exam = await findExamByKey(examKey);
     if (!exam) continue;
-    const rows = await wpGetAll(`/qd-questions?qd_exam=${exam.id}&qd_qn_in=${qns.join(",")}`);
+    const rows = await wpGetAll(`/qd-questions?qd_exam=${exam.id}&qd_qn_in=${qns.join(",")}&orderby=id&order=asc`);
     for (const w of rows) {
       const env = questionEnvelope(w);
       out.push({ examKey, qn: env.qn, answer: env.answer, content: env.content });
@@ -181,7 +184,7 @@ export async function loadProviderContentWp(provider: string): Promise<ProviderC
   const examList = (await listExamsWp()).filter((e) => e.provider === provider);
   if (!examList.length) return null;
 
-  const services: ProviderService[] = (await wpGetAll(`/qd-services?qd_provider=${encodeURIComponent(provider)}`)).map(
+  const services: ProviderService[] = (await wpGetAll(`/qd-services?qd_provider=${encodeURIComponent(provider)}&orderby=id&order=asc`)).map(
     (s) =>
       compact({
         id: String(s.qd.service_id),
