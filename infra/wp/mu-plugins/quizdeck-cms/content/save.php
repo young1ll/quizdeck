@@ -39,6 +39,9 @@ function qd_handle_save(int $postId, WP_Post $post): void
             }
         }
         // ── 스키마 필드 ──
+        if ($post->post_type === 'qd_question') {
+            $_POST['qd_topic'] = qd_topic_from_post($_POST); // select '__new__' → 새 주제 텍스트
+        }
         foreach ($schema[$post->post_type] as $key => $def) {
             [$value, $err] = qd_sanitize_meta($def, wp_unslash($_POST[$key] ?? ''));
             if ($err) { $errors[] = $err; continue; }
@@ -112,6 +115,14 @@ add_action('admin_notices', function (): void {
     delete_transient('qd_trash_notice_' . get_current_user_id());
     echo '<div class="notice notice-warning"><p>' . esc_html($msg) . '</p></div>';
 });
+
+/** 주제 폼 정규화 — select 가 '__new__' 면 새 주제 텍스트 필드 값을 쓴다(메타박스 UI 계약). */
+function qd_topic_from_post(array $post): string
+{
+    $sel = (string) ($post['qd_topic'] ?? '');
+    if ($sel !== '__new__') return $sel;
+    return trim((string) ($post['qd_topic_new'] ?? ''));
+}
 
 /** 게시 가능 조건 — 폼·REST 공용 검증. 에러 배열(비면 통과). */
 function qd_validate(int $postId, string $type): array

@@ -26,11 +26,7 @@ function qd_render_metabox(WP_Post $post): void
       .qd-field textarea{min-height:70px}.qd-field textarea.qd-json{font-family:monospace;min-height:50px}
       table.qd-options{width:100%;border-collapse:collapse}table.qd-options td{padding:3px 6px 3px 0}
       table.qd-options .qd-opt-key{width:70px}#qd-answer-box label{display:inline-block;margin-right:14px;font-weight:600}
-      .qd-topic-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-      .qd-topic-chips button{border:1px solid #dcdcde;border-radius:14px;background:#fff;padding:3px 10px;cursor:pointer;font-size:12px}
-      .qd-topic-chips button.qd-active{border-color:#2271b1;background:#f0f6fc;font-weight:600}
-      .qd-topic-status{margin-left:8px;font-size:12px}
-      .qd-topic-status.is-new{color:#996800}.qd-topic-status.is-existing{color:#007017}
+
     </style>';
 
     // ── 관계: 문제집 select (문항·개념) ──
@@ -56,22 +52,34 @@ function qd_render_metabox(WP_Post $post): void
         } elseif ($def['type'] === 'int') {
             printf('<input type="number" name="%s" value="%s">', esc_attr($key), esc_attr($value));
         } elseif ($key === 'qd_topic') {
-            // 기존 주제 선택(칩 클릭·datalist 타이핑) + 새 주제 자유 입력 — 변형 누적 방지 UI(2026-07-15).
-            // 옵션은 이 문항이 속한 시험 스코프(주제는 시험 스코프 개념), 새 문항은 전 시험 합집합.
-            // 상태 배지가 '기존/새 주제'를 실시간 표시 — 오타로 새 변형을 만드는 실수를 드러낸다.
+            // 기존 주제 선택 or 새 주제 입력 — WP 표준 관례(부모 페이지 드롭다운 류): 기본 select
+            // + '새 주제 직접 입력' 선택 시 텍스트 필드 노출. 옵션은 소속 시험 스코프(Topic 은
+            // 시험 스코프 개념), 새 문항은 전 시험 합집합. 저장 정규화는 save.php(qd_topic_from_post).
             $examId = (int) get_post_meta($post->ID, 'qd_exam_id', true);
             $topics = $examId
                 ? qd_admin_distinct_meta('qd_question', 'qd_topic', $examId)
                 : qd_admin_distinct_meta('qd_question', 'qd_topic');
-            printf('<input type="text" name="%s" value="%s" list="qd-topic-options" data-qd-topic-input>', esc_attr($key), esc_attr($value));
-            echo '<span class="qd-topic-status" data-qd-topic-status></span>';
-            echo '<datalist id="qd-topic-options">';
-            foreach ($topics as $t) printf('<option value="%s"></option>', esc_attr($t));
-            echo '</datalist>';
-            echo '<div class="qd-topic-chips" data-qd-topic-chips>';
-            foreach ($topics as $t) printf('<button type="button" data-topic="%s">%s</button>', esc_attr($t), esc_html($t));
-            echo '</div>';
-            qd_topic_js();
+            if ($value !== '' && !in_array($value, $topics, true)) $topics[] = $value; // 현재값 보존
+            echo '<select name="qd_topic" data-qd-topic-select>';
+            echo '<option value="">— 없음 —</option>';
+            foreach ($topics as $t) {
+                printf('<option value="%s"%s>%s</option>', esc_attr($t), selected($value, $t, false), esc_html($t));
+            }
+            echo '<option value="__new__">+ 새 주제 직접 입력…</option>';
+            echo '</select>';
+            printf('<input type="text" name="qd_topic_new" class="regular-text" placeholder="새 주제 (예: 📦 스토리지)" style="display:none;margin-left:6px" data-qd-topic-new>');
+            ?>
+            <script>
+            (function () {
+              const sel = document.querySelector('[data-qd-topic-select]');
+              const txt = document.querySelector('[data-qd-topic-new]');
+              if (!sel || !txt) return;
+              const sync = () => { txt.style.display = sel.value === '__new__' ? 'inline-block' : 'none'; };
+              sel.addEventListener('change', sync);
+              sync();
+            })();
+            </script>
+            <?php
         } else {
             printf('<input type="text" name="%s" value="%s"%s>', esc_attr($key), esc_attr($value),
                 $key === 'qd_icon' ? ' data-qd-icon-src' : '');
@@ -121,37 +129,6 @@ function qd_option_row_html(string $key, string $text): void
         esc_attr($key),
         esc_textarea($text)
     );
-}
-
-function qd_topic_js(): void
-{
-    ?>
-    <script>
-    (function () {
-      const input = document.querySelector('[data-qd-topic-input]');
-      const chips = document.querySelector('[data-qd-topic-chips]');
-      const status = document.querySelector('[data-qd-topic-status]');
-      if (!input || !chips || !status) return;
-      const topics = [...chips.querySelectorAll('button')].map(b => b.dataset.topic);
-      const sync = () => {
-        const v = input.value.trim();
-        chips.querySelectorAll('button').forEach(b => b.classList.toggle('qd-active', b.dataset.topic === v));
-        if (!v) { status.textContent = ''; status.className = 'qd-topic-status'; return; }
-        const exists = topics.includes(v);
-        status.textContent = exists ? '✓ 기존 주제' : '✨ 새 주제 — 저장 시 생성';
-        status.className = 'qd-topic-status ' + (exists ? 'is-existing' : 'is-new');
-      };
-      chips.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[data-topic]');
-        if (!btn) return;
-        input.value = btn.dataset.topic;
-        input.dispatchEvent(new Event('input'));
-      });
-      input.addEventListener('input', sync);
-      sync();
-    })();
-    </script>
-    <?php
 }
 
 function qd_preview_js(): void

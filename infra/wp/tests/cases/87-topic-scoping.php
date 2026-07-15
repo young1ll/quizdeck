@@ -35,16 +35,18 @@ t_assert(substr_count($html, '<optgroup') >= 2 && str_contains($html, 'label="TE
 $q1 = get_posts(['post_type' => 'qd_question', 'post_status' => 'publish', 'numberposts' => 1, 'fields' => 'ids',
     'meta_query' => [['key' => 'qd_exam_id', 'value' => (string) $exam], ['key' => 'qd_qn', 'value' => '1']]])[0];
 ob_start(); qd_render_metabox(get_post($q1)); $html = ob_get_clean();
-t_assert(str_contains($html, 'list="qd-topic-options"') && str_contains($html, '<datalist id="qd-topic-options">'),
-    '주제 입력 = datalist (선택+자유 입력)');
-t_assert(str_contains($html, '📦 스토리지') && !str_contains($html, '스토리지/백업'),
-    'datalist 는 소속 시험 주제만');
+t_assert(str_contains($html, '<select name="qd_topic"'), '주제 = 표준 select (WP 네이티브)');
+t_assert(str_contains($html, '__new__') && str_contains($html, 'qd_topic_new'), "'새 주제 직접 입력' 경로");
+t_assert(substr_count($html, '<option value="📦') === 1 && !str_contains($html, '스토리지/백업'),
+    'select 옵션 = 소속 시험 주제만');
+t_assert(str_contains($html, 'selected'), '현재값 선택 상태');
+t_assert(!str_contains($html, 'data-qd-topic-chips') && !str_contains($html, '<datalist id="qd-topic-options"'),
+    '칩·datalist 제거됨');
 
-// 5) 칩 UI — 기존 주제 칩 + 상태 배지 + 동기화 JS
-t_assert(str_contains($html, 'data-qd-topic-chips') && substr_count($html, 'data-topic=') === 2,
-    '주제 칩 2개(소속 시험 스코프)');
-t_assert(str_contains($html, 'data-qd-topic-status'), '기존/새 주제 상태 배지');
-t_assert(str_contains($html, 'qd-active'), '칩 하이라이트 JS 포함');
+// 5) 저장 정규화(순수 함수) — select 값 그대로 / __new__ 면 새 텍스트
+t_assert(qd_topic_from_post(['qd_topic' => '📦 스토리지']) === '📦 스토리지', '정규화: 기존 선택');
+t_assert(qd_topic_from_post(['qd_topic' => '__new__', 'qd_topic_new' => ' 🧭 신규 ']) === '🧭 신규', '정규화: 새 주제(트림)');
+t_assert(qd_topic_from_post(['qd_topic' => '__new__']) === '', '정규화: 새 주제 미입력 → 빈 값');
 
 wp_delete_post($exam2, true);
 foreach (get_posts(['post_type' => 'qd_question', 'title' => 'Q1-e2', 'post_status' => 'any', 'numberposts' => 1, 'fields' => 'ids']) as $id) wp_delete_post($id, true);
