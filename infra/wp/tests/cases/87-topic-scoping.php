@@ -18,17 +18,10 @@ $t1 = qd_admin_distinct_meta('qd_question', 'qd_topic', $exam);
 t_assert($t1 === ['🌐 네트워킹', '📦 스토리지'] || $t1 === ['📦 스토리지', '🌐 네트워킹'],
     '시험 스코프 distinct (TEST-01 주제 2종만)');
 
-// 2) 필터: 시험 선택 → 그 시험 주제만 (다른 시험 체계 미노출)
-$_GET['qd_f_exam'] = (string) $exam;
+// 2) 필터: 평면 전역 목록 — 시험 구분(optgroup) 없음(통일 체계, 2026-07-15 확정)
 ob_start(); do_action('restrict_manage_posts', 'qd_question', 'top'); $html = ob_get_clean();
-t_assert(str_contains($html, '📦 스토리지') && !str_contains($html, '스토리지/백업'), '시험 선택 시 주제 스코프');
-t_assert(!str_contains($html, '<optgroup'), '시험 선택 시 optgroup 없음(단일 체계)');
-
-// 3) 필터: 전체 보기 → 시험별 optgroup 으로 체계 구분
-unset($_GET['qd_f_exam']);
-ob_start(); do_action('restrict_manage_posts', 'qd_question', 'top'); $html = ob_get_clean();
-t_assert(substr_count($html, '<optgroup') >= 2 && str_contains($html, 'label="TEST-01"') && str_contains($html, 'label="TEST-03"'),
-    '전체 보기 = 시험별 optgroup');
+t_assert(!str_contains($html, '<optgroup'), '필터 = 평면(시험 구분 없음)');
+t_assert(str_contains($html, '📦 스토리지') && str_contains($html, '스토리지/백업'), '전 시험 주제가 한 목록에');
 
 // 4) 편집 화면 datalist — 소속 시험의 기존 주제 제시 + 자유 입력(input type=text)
 // (자동 제목이 "Q{qn}" 이라 두 시험의 문항이 같은 제목 — meta 로 정확히 집는다)
@@ -37,8 +30,8 @@ $q1 = get_posts(['post_type' => 'qd_question', 'post_status' => 'publish', 'numb
 ob_start(); qd_render_metabox(get_post($q1)); $html = ob_get_clean();
 t_assert(str_contains($html, '<select name="qd_topic"'), '주제 = 표준 select (WP 네이티브)');
 t_assert(str_contains($html, '__new__') && str_contains($html, 'qd_topic_new'), "'새 주제 직접 입력' 경로");
-t_assert(substr_count($html, '<option value="📦') === 1 && !str_contains($html, '스토리지/백업'),
-    'select 옵션 = 소속 시험 주제만');
+t_assert(str_contains($html, '📦 스토리지') && str_contains($html, '스토리지/백업'),
+    'select 옵션 = provider 스코프(통일 체계 — 같은 provider 전 시험)');
 t_assert(str_contains($html, 'selected'), '현재값 선택 상태');
 t_assert(!str_contains($html, 'data-qd-topic-chips') && !str_contains($html, '<datalist id="qd-topic-options"'),
     '칩·datalist 제거됨');
