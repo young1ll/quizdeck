@@ -280,6 +280,84 @@ add_action('manage_qd_service_posts_custom_column', function ($col, $postId) {
 }, 10, 2);
 add_filter('manage_edit-qd_service_sortable_columns', fn($cols) => $cols + ['qd_provider' => 'qd_provider', 'qd_cat' => 'qd_cat']);
 
+// ── 목록 필터 (2026-07-15) — 유형별 드롭다운. 쿼리 적용은 순수 함수(테스트 표면)로 분리.
+
+/** 유형별 distinct meta 값 — 필터 옵션 소스(초안 포함 — 강등된 글도 찾아야 한다). */
+function qd_admin_distinct_meta(string $postType, string $metaKey): array
+{
+    global $wpdb;
+    return $wpdb->get_col($wpdb->prepare(
+        "SELECT DISTINCT pm.meta_value FROM {$wpdb->postmeta} pm
+         JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+         WHERE p.post_type = %s AND p.post_status IN ('publish','draft')
+           AND pm.meta_key = %s AND pm.meta_value <> '' ORDER BY pm.meta_value",
+        $postType, $metaKey
+    ));
+}
+
+/** GET 파라미터 → meta_query 조각 (순수 — 훅과 테스트가 공유). */
+function qd_admin_filter_meta_query(array $get): array
+{
+    $meta = [];
+    $g = fn(string $k): string => isset($get[$k]) ? sanitize_text_field((string) wp_unslash($get[$k])) : '';
+    if (($v = $g('qd_f_provider')) !== '') $meta[] = ['key' => 'qd_provider', 'value' => $v];
+    if (($v = $g('qd_f_exam')) !== '')     $meta[] = ['key' => 'qd_exam_id', 'value' => (string) (int) $v];
+    if (($v = $g('qd_f_topic')) !== '')    $meta[] = ['key' => 'qd_topic', 'value' => $v];
+    if (($v = $g('qd_f_cat')) !== '')      $meta[] = ['key' => 'qd_cat', 'value' => $v];
+    $ref = $g('qd_f_ref');
+    if ($ref === 'ref') {
+        $meta[] = ['key' => 'qd_service_ids', 'value' => '[]', 'compare' => '!='];
+    } elseif ($ref === 'unref') {
+        $meta[] = ['relation' => 'OR',
+            ['key' => 'qd_service_ids', 'compare' => 'NOT EXISTS'],
+            ['key' => 'qd_service_ids', 'value' => '[]']];
+    }
+    $fmt = $g('qd_f_format');
+    if ($fmt === 'image') $meta[] = ['key' => '_thumbnail_id', 'compare' => 'EXISTS'];
+    elseif ($fmt === 'svg') $meta[] = ['key' => 'qd_svg', 'compare' => 'EXISTS'];
+    return $meta;
+}
+
+add_action('restrict_manage_posts', function (string $postType): void {
+    $examOptions = function (): array {
+        $out = [];
+        foreach (get_posts(['post_type' => 'qd_exam', 'post_status' => ['publish', 'draft'], 'numberposts' => -1, 'orderby' => 'title']) as $e) {
+            $out[(string) $e->ID] = $e->post_title;
+        }
+        return $out;
+    };
+    $defs = match ($postType) {
+        'qd_exam'     => ['qd_f_provider' => ['provider 전체', array_combine($v = qd_admin_distinct_meta('qd_exam', 'qd_provider'), $v)]],
+        'qd_question' => ['qd_f_exam' => ['문제집 전체', $examOptions()],
+                          'qd_f_topic' => ['주제 전체', array_combine($v = qd_admin_distinct_meta('qd_question', 'qd_topic'), $v)]],
+        'qd_concept'  => ['qd_f_exam' => ['문제집 전체', $examOptions()],
+                          'qd_f_cat' => ['분류 전체', array_combine($v = qd_admin_distinct_meta('qd_concept', 'qd_cat'), $v)],
+                          'qd_f_ref' => ['참조 상태 전체', ['ref' => '서비스 참조됨', 'unref' => '미참조(편집 큐)']]],
+        'qd_diagram'  => ['qd_f_exam' => ['문제집 전체', $examOptions()],
+                          'qd_f_cat' => ['분류 전체', array_combine($v = qd_admin_distinct_meta('qd_diagram', 'qd_cat'), $v)],
+                          'qd_f_format' => ['형식 전체', ['svg' => 'SVG', 'image' => '이미지']]],
+        'qd_service'  => ['qd_f_provider' => ['provider 전체', array_combine($v = qd_admin_distinct_meta('qd_service', 'qd_provider'), $v)],
+                          'qd_f_cat' => ['분류 전체', array_combine($v = qd_admin_distinct_meta('qd_service', 'qd_cat'), $v)]],
+        default       => [],
+    };
+    foreach ($defs as $param => [$placeholder, $options]) {
+        $current = isset($_GET[$param]) ? sanitize_text_field((string) wp_unslash($_GET[$param])) : '';
+        echo '<select name="' . esc_attr($param) . '">';
+        echo '<option value="">' . esc_html($placeholder) . '</option>';
+        foreach ((array) $options as $value => $label) {
+            printf('<option value="%s"%s>%s</option>', esc_attr((string) $value), selected($current, (string) $value, false), esc_html((string) $label));
+        }
+        echo '</select>';
+    }
+});
+
+add_action('pre_get_posts', function (WP_Query $q): void {
+    if (!is_admin() || !$q->is_main_query()) return;
+    if (!in_array($q->get('post_type'), ['qd_exam', 'qd_question', 'qd_concept', 'qd_diagram', 'qd_service'], true)) return;
+    $extra = qd_admin_filter_meta_query($_GET);
+    if ($extra) $q->set('meta_query', array_merge((array) ($q->get('meta_query') ?: []), $extra));
+});
+
 // meta 정렬 실행 — 텍스트/숫자 구분
 add_action('pre_get_posts', function (WP_Query $q): void {
     if (!is_admin() || !$q->is_main_query()) return;
