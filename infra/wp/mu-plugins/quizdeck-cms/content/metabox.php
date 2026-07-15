@@ -50,6 +50,17 @@ function qd_render_metabox(WP_Post $post): void
                 $key === 'qd_svg' ? ' data-qd-svg-src' : '', esc_textarea($value));
         } elseif ($def['type'] === 'int') {
             printf('<input type="number" name="%s" value="%s">', esc_attr($key), esc_attr($value));
+        } elseif ($key === 'qd_topic') {
+            // 기존 주제 선택 + 새 주제 자유 입력(datalist) — 자유 텍스트 변형 누적 방지(2026-07-15).
+            // 옵션은 이 문항이 속한 시험 스코프(주제는 시험 스코프 개념), 새 문항은 전 시험 합집합.
+            $examId = (int) get_post_meta($post->ID, 'qd_exam_id', true);
+            $topics = $examId
+                ? qd_admin_distinct_meta('qd_question', 'qd_topic', $examId)
+                : qd_admin_distinct_meta('qd_question', 'qd_topic');
+            printf('<input type="text" name="%s" value="%s" list="qd-topic-options">', esc_attr($key), esc_attr($value));
+            echo '<datalist id="qd-topic-options">';
+            foreach ($topics as $t) printf('<option value="%s"></option>', esc_attr($t));
+            echo '</datalist>';
         } else {
             printf('<input type="text" name="%s" value="%s"%s>', esc_attr($key), esc_attr($value),
                 $key === 'qd_icon' ? ' data-qd-icon-src' : '');
@@ -282,17 +293,21 @@ add_filter('manage_edit-qd_service_sortable_columns', fn($cols) => $cols + ['qd_
 
 // ── 목록 필터 (2026-07-15) — 유형별 드롭다운. 쿼리 적용은 순수 함수(테스트 표면)로 분리.
 
-/** 유형별 distinct meta 값 — 필터 옵션 소스(초안 포함 — 강등된 글도 찾아야 한다). */
-function qd_admin_distinct_meta(string $postType, string $metaKey): array
+/** 유형별 distinct meta 값 — 필터·datalist 옵션 소스(초안 포함 — 강등된 글도 찾아야 한다).
+ *  $examId 지정 시 그 시험 소속으로 스코프(주제는 시험 스코프 개념 — CONTEXT.md Topic). */
+function qd_admin_distinct_meta(string $postType, string $metaKey, int $examId = 0): array
 {
     global $wpdb;
+    $scope = $examId ? $wpdb->prepare(
+        " AND EXISTS (SELECT 1 FROM {$wpdb->postmeta} pe WHERE pe.post_id = p.ID
+            AND pe.meta_key = 'qd_exam_id' AND pe.meta_value = %s)", (string) $examId) : '';
     return $wpdb->get_col($wpdb->prepare(
         "SELECT DISTINCT pm.meta_value FROM {$wpdb->postmeta} pm
          JOIN {$wpdb->posts} p ON p.ID = pm.post_id
          WHERE p.post_type = %s AND p.post_status IN ('publish','draft')
-           AND pm.meta_key = %s AND pm.meta_value <> '' ORDER BY pm.meta_value",
+           AND pm.meta_key = %s AND pm.meta_value <> ''",
         $postType, $metaKey
-    ));
+    ) . $scope . ' ORDER BY pm.meta_value');
 }
 
 /** GET 파라미터 → meta_query 조각 (순수 — 훅과 테스트가 공유). */
@@ -318,6 +333,21 @@ function qd_admin_filter_meta_query(array $get): array
     return $meta;
 }
 
+/** 주제 필터 옵션 — 시험 지정 시 그 시험의 주제만, 아니면 시험별 optgroup(체계가 시험 스코프). */
+function qd_admin_topic_options(int $examId): array
+{
+    if ($examId) {
+        $v = qd_admin_distinct_meta('qd_question', 'qd_topic', $examId);
+        return array_combine($v, $v) ?: [];
+    }
+    $out = [];
+    foreach (get_posts(['post_type' => 'qd_exam', 'post_status' => ['publish', 'draft'], 'numberposts' => -1, 'orderby' => 'title']) as $e) {
+        $v = qd_admin_distinct_meta('qd_question', 'qd_topic', $e->ID);
+        if ($v) $out[$e->post_title] = array_combine($v, $v);
+    }
+    return $out;
+}
+
 add_action('restrict_manage_posts', function (string $postType): void {
     $examOptions = function (): array {
         $out = [];
@@ -329,7 +359,7 @@ add_action('restrict_manage_posts', function (string $postType): void {
     $defs = match ($postType) {
         'qd_exam'     => ['qd_f_provider' => ['provider 전체', array_combine($v = qd_admin_distinct_meta('qd_exam', 'qd_provider'), $v)]],
         'qd_question' => ['qd_f_exam' => ['문제집 전체', $examOptions()],
-                          'qd_f_topic' => ['주제 전체', array_combine($v = qd_admin_distinct_meta('qd_question', 'qd_topic'), $v)]],
+                          'qd_f_topic' => ['주제 전체', qd_admin_topic_options((int) ($_GET['qd_f_exam'] ?? 0))]],
         'qd_concept'  => ['qd_f_exam' => ['문제집 전체', $examOptions()],
                           'qd_f_cat' => ['분류 전체', array_combine($v = qd_admin_distinct_meta('qd_concept', 'qd_cat'), $v)],
                           'qd_f_ref' => ['참조 상태 전체', ['ref' => '서비스 참조됨', 'unref' => '미참조(편집 큐)']]],
@@ -345,6 +375,14 @@ add_action('restrict_manage_posts', function (string $postType): void {
         echo '<select name="' . esc_attr($param) . '">';
         echo '<option value="">' . esc_html($placeholder) . '</option>';
         foreach ((array) $options as $value => $label) {
+            if (is_array($label)) { // optgroup — 시험별 주제 구분(전체 보기에서 체계 섞임 방지)
+                echo '<optgroup label="' . esc_attr((string) $value) . '">';
+                foreach ($label as $v2 => $l2) {
+                    printf('<option value="%s"%s>%s</option>', esc_attr((string) $v2), selected($current, (string) $v2, false), esc_html((string) $l2));
+                }
+                echo '</optgroup>';
+                continue;
+            }
             printf('<option value="%s"%s>%s</option>', esc_attr((string) $value), selected($current, (string) $value, false), esc_html((string) $label));
         }
         echo '</select>';
