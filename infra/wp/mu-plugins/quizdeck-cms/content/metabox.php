@@ -67,16 +67,27 @@ function qd_render_metabox(WP_Post $post): void
             }
             echo '<option value="__new__">+ 새 주제 직접 입력…</option>';
             echo '</select>';
-            printf('<input type="text" name="qd_topic_new" class="regular-text" placeholder="새 주제 (예: 📦 스토리지)" style="display:none;margin-left:6px" data-qd-topic-new>');
+            // 새 주제 입력 — select 아래 자체 줄(WP 카테고리 '새로 추가' 관례), 표시 시 자동 포커스,
+            // 다른 선택으로 되돌아가면 값 비움(잔존값이 다음에 열릴 때 혼란 주지 않게 — 저장엔 어차피 무영향).
+            echo '<div data-qd-topic-new-wrap style="display:none;margin-top:6px">';
+            printf('<input type="text" name="qd_topic_new" class="regular-text" aria-label="새 주제 이름" data-qd-topic-new>');
+            echo '<p class="description">이모지 + 이름 관례를 따르세요 (예: 📦 스토리지) — 저장하면 이 시험의 주제 목록에 추가됩니다.</p>';
+            echo '</div>';
             ?>
             <script>
             (function () {
               const sel = document.querySelector('[data-qd-topic-select]');
+              const wrap = document.querySelector('[data-qd-topic-new-wrap]');
               const txt = document.querySelector('[data-qd-topic-new]');
-              if (!sel || !txt) return;
-              const sync = () => { txt.style.display = sel.value === '__new__' ? 'inline-block' : 'none'; };
-              sel.addEventListener('change', sync);
-              sync();
+              if (!sel || !wrap || !txt) return;
+              const sync = (focus) => {
+                const isNew = sel.value === '__new__';
+                wrap.style.display = isNew ? 'block' : 'none';
+                if (isNew && focus) txt.focus();
+                if (!isNew) txt.value = '';
+              };
+              sel.addEventListener('change', () => sync(true));
+              sync(false);
             })();
             </script>
             <?php

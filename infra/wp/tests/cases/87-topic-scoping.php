@@ -42,6 +42,10 @@ t_assert(substr_count($html, '<option value="📦') === 1 && !str_contains($html
 t_assert(str_contains($html, 'selected'), '현재값 선택 상태');
 t_assert(!str_contains($html, 'data-qd-topic-chips') && !str_contains($html, '<datalist id="qd-topic-options"'),
     '칩·datalist 제거됨');
+t_assert(str_contains($html, 'data-qd-topic-new-wrap') && str_contains($html, 'class="description"'),
+    '새 주제 = 자체 줄 + WP description 안내');
+t_assert(str_contains($html, 'txt.focus()') && str_contains($html, "txt.value = ''"),
+    '자동 포커스 + 되돌아가면 값 비움');
 
 // 5) 저장 정규화(순수 함수) — select 값 그대로 / __new__ 면 새 텍스트
 t_assert(qd_topic_from_post(['qd_topic' => '📦 스토리지']) === '📦 스토리지', '정규화: 기존 선택');
