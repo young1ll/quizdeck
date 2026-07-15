@@ -65,9 +65,9 @@ function qd_rest_projection(int $postId, string $type): array
         if ($thumb) $out['icon'] = $thumb; // 이미지 아이콘 우선(서비스와 같은 유효 아이콘 규율)
         // get_the_title 은 wptexturize 로 하이픈→&#8211; 등 원문을 바꾼다(diff 실사) — raw 로.
         $out['name']     = get_post_field('post_title', $postId, 'raw');
-        // svc_icons = 레거시 블롭 위에 레지스트리 파생 오버레이(카드→첫 참조 서비스의 아이콘).
-        // 서비스에서 아이콘을 고치면 참조하는 모든 시험 카드에 반영된다(ADR-0026).
-        $out['svc_icons'] = qd_derived_icons($postId) + (is_array($out['svc_icons'] ?? null) ? $out['svc_icons'] : []);
+        // svc_icons = 엔티티 파생(카드 오버라이드 > 서비스 대표이미지 > 서비스 qd_icon)
+        // + 휴면 레거시 블롭 폴백(이관 후 잉여 — 편집 표면 없음, 가역성용).
+        $out['svc_icons'] = qd_derived_icons($postId) + (json_decode($meta('qd_svc_icons'), true) ?: []);
         // diagrams = qd_diagram CPT 파생(봉투 계약 = 구 블롭과 동일 — 앱 무변경).
         $out['diagrams'] = qd_derived_diagrams($postId);
     }
