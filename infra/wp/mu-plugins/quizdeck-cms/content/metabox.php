@@ -55,10 +55,8 @@ function qd_render_metabox(WP_Post $post): void
             // 기존 주제 선택 or 새 주제 입력 — WP 표준 관례(부모 페이지 드롭다운 류): 기본 select
             // + '새 주제 직접 입력' 선택 시 텍스트 필드 노출. 옵션은 소속 시험 스코프(Topic 은
             // 시험 스코프 개념), 새 문항은 전 시험 합집합. 저장 정규화는 save.php(qd_topic_from_post).
-            $examId = (int) get_post_meta($post->ID, 'qd_exam_id', true);
-            $topics = $examId
-                ? qd_admin_distinct_meta('qd_question', 'qd_topic', $examId)
-                : qd_admin_distinct_meta('qd_question', 'qd_topic');
+            // 옵션 = provider 스코프(통일 체계 — 새 시험도 같은 목록에서 시작). 시험 미지정은 전역.
+            $topics = qd_admin_topic_choices((int) get_post_meta($post->ID, 'qd_exam_id', true));
             if ($value !== '' && !in_array($value, $topics, true)) $topics[] = $value; // 현재값 보존
             echo '<select name="qd_topic" data-qd-topic-select>';
             echo '<option value="">— 없음 —</option>';
@@ -363,19 +361,26 @@ function qd_admin_filter_meta_query(array $get): array
     return $meta;
 }
 
-/** 주제 필터 옵션 — 시험 지정 시 그 시험의 주제만, 아니면 시험별 optgroup(체계가 시험 스코프). */
+/** 주제 필터 옵션 — 평면 전역 목록(시험 구분 없음 — 라벨 체계 provider 통일, 2026-07-15 확정). */
 function qd_admin_topic_options(int $examId): array
 {
-    if ($examId) {
-        $v = qd_admin_distinct_meta('qd_question', 'qd_topic', $examId);
-        return array_combine($v, $v) ?: [];
+    $v = qd_admin_distinct_meta('qd_question', 'qd_topic');
+    return array_combine($v, $v) ?: [];
+}
+
+/** 편집 화면 주제 선택지 — 소속 시험의 provider 에 속한 전 시험의 주제(통일 체계). */
+function qd_admin_topic_choices(int $examId): array
+{
+    if (!$examId) return qd_admin_distinct_meta('qd_question', 'qd_topic');
+    $provider = (string) get_post_meta($examId, 'qd_provider', true);
+    $topics = [];
+    foreach (get_posts(['post_type' => 'qd_exam', 'post_status' => ['publish', 'draft'], 'numberposts' => -1, 'fields' => 'ids',
+        'meta_query' => [['key' => 'qd_provider', 'value' => $provider]]]) as $eid) {
+        $topics = array_merge($topics, qd_admin_distinct_meta('qd_question', 'qd_topic', (int) $eid));
     }
-    $out = [];
-    foreach (get_posts(['post_type' => 'qd_exam', 'post_status' => ['publish', 'draft'], 'numberposts' => -1, 'orderby' => 'title']) as $e) {
-        $v = qd_admin_distinct_meta('qd_question', 'qd_topic', $e->ID);
-        if ($v) $out[$e->post_title] = array_combine($v, $v);
-    }
-    return $out;
+    $topics = array_values(array_unique($topics));
+    sort($topics);
+    return $topics;
 }
 
 add_action('restrict_manage_posts', function (string $postType): void {
