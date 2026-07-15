@@ -32,6 +32,40 @@ add_action('admin_menu', function (): void {
     usort($submenu['quizdeck-cms'], fn(array $a, array $b): int => $rank($a) <=> $rank($b));
 }, 999);
 
+/** 학습 앱 공개 URL — 행 액션·대시보드의 '앱에서 보기' 대상. env 로 오버라이드 가능. */
+function qd_app_url(): string
+{
+    return rtrim(getenv('QD_APP_URL') ?: 'https://myquizdeck.com', '/');
+}
+
+/** 콘텐츠의 프론트 URL — 없으면 null(예: 시험 미지정). */
+function qd_frontend_url(WP_Post $post): ?string
+{
+    $meta = fn(int $id, string $k): string => (string) get_post_meta($id, $k, true);
+    $examKey = function () use ($post, $meta): string {
+        $eid = (int) $meta($post->ID, 'qd_exam_id');
+        return $eid ? $meta($eid, 'qd_exam_key') : '';
+    };
+    $path = match ($post->post_type) {
+        'qd_exam'     => ($k = $meta($post->ID, 'qd_exam_key')) !== '' ? "/{$k}/" : null,
+        'qd_question' => ($k = $examKey()) !== '' ? "/{$k}/" : null,
+        'qd_concept'  => ($k = $examKey()) !== '' ? "/{$k}/concepts?seed=" . rawurlencode($meta($post->ID, 'qd_svc')) : null,
+        'qd_diagram'  => ($k = $examKey()) !== '' ? "/{$k}/diagrams/" : null,
+        'qd_service'  => ($p = $meta($post->ID, 'qd_provider')) !== '' ? "/{$p}/map/" : null,
+        default       => null,
+    };
+    return $path === null ? null : qd_app_url() . $path;
+}
+
+// 목록 행 액션 — admin → 앱 방향 연결(프론트-admin 연결성, 2026-07-15)
+add_filter('post_row_actions', function (array $actions, WP_Post $post): array {
+    $url = qd_frontend_url($post);
+    if ($url !== null) {
+        $actions['qd_view_app'] = '<a href="' . esc_url($url) . '" target="_blank" rel="noreferrer">앱에서 보기</a>';
+    }
+    return $actions;
+}, 10, 2);
+
 /** 플러그인 버전 — 로더 헤더가 단일 소스. */
 function qd_plugin_version(): string
 {
@@ -164,7 +198,8 @@ function qd_render_dashboard(): void
     ?>
     <div class="wrap">
       <h1>QuizDeck CMS <span style="font-size:14px;color:#666">v<?php echo esc_html(qd_plugin_version()); ?></span></h1>
-      <p>headless CMS 운영 대시보드 — 자격증명·서빙 계약은 env(Secret)가 소유하며 여기서는 상태 확인과 운영 액션만 합니다 (ADR-0025/0026).</p>
+      <p>headless CMS 운영 대시보드 — 자격증명·서빙 계약은 env(Secret)가 소유하며 여기서는 상태 확인과 운영 액션만 합니다 (ADR-0025/0026).
+         <a href="<?php echo esc_url(qd_app_url()); ?>" target="_blank" rel="noreferrer">학습 앱 열기 ↗</a></p>
 
       <h2>모듈</h2>
       <table class="widefat striped" style="max-width:760px">

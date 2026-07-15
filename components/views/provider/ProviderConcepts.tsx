@@ -7,6 +7,7 @@ import { TextInput } from "@astryxdesign/core/TextInput";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import Markdown from "@/components/Markdown";
 import ServiceIcon from "./ServiceIcon";
+import AdminEditLink from "@/components/AdminEditLink";
 import type { ProviderContent } from "@/lib/content-localize";
 
 // provider 개념 목록 — 서비스맵과 같은 데이터의 목록형: 서비스(정체성) 아래 시험별 카드(노트).
@@ -55,6 +56,7 @@ export default function ProviderConcepts({ data }: { data: ProviderContent }) {
                     >
                       시험에서 자세히 →
                     </Link>
+                    <AdminEditLink wpId={card.slot?.wpId} />
                   </div>
                   <p className="md text-sm leading-relaxed">
                     <Markdown text={card.slot?.deff ?? ""} />

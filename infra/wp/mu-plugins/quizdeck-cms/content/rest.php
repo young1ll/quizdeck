@@ -22,7 +22,7 @@ add_action('rest_api_init', function () {
 function qd_rest_projection(int $postId, string $type): array
 {
     $meta = fn(string $k): string => (string) get_post_meta($postId, $k, true);
-    $out  = [];
+    $out  = ['wp_id' => $postId]; // 앱의 admin 편집 딥링크(post.php?post=) 용
 
     foreach (qd_field_schema()[$type] as $key => $def) {
         $raw  = $meta($key);
@@ -91,6 +91,7 @@ function qd_derived_diagrams(int $examId): array
     ]);
     foreach ($posts as $p) {
         $item = [
+            'wp_id'   => $p->ID,
             'id'      => (string) get_post_meta($p->ID, 'qd_diag_id', true),
             'title'   => get_post_field('post_title', $p->ID, 'raw'),
             'cat'     => (string) get_post_meta($p->ID, 'qd_cat', true),

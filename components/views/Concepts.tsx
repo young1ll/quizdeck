@@ -10,6 +10,7 @@ import { useExam } from "@/lib/exam-context";
 import { useNav } from "@/lib/nav-context";
 import Icon from "@/components/Icon";
 import Markdown from "@/components/Markdown";
+import AdminEditLink from "@/components/AdminEditLink";
 
 /** 검색 매칭용으로 마크다운 기호(* _ `)를 제거하고 소문자화 */
 function normalize(text: string): string {
@@ -138,8 +139,9 @@ function ConceptCard({
             </span>
           )}
         </div>
-        <span className="shrink-0 rounded-full bg-[var(--panel-2)] px-2.5 py-1 text-xs text-[var(--muted)]">
-          {c.cat}
+        <span className="flex shrink-0 items-center gap-2">
+          <AdminEditLink wpId={c.wpId} />
+          <span className="rounded-full bg-[var(--panel-2)] px-2.5 py-1 text-xs text-[var(--muted)]">{c.cat}</span>
         </span>
       </div>
 

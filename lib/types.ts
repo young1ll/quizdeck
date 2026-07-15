@@ -39,6 +39,8 @@ export interface Concept {
   reln?: number;
   /** 카드 이미지 URL(WP 대표이미지 → R2 offload). 언어 무관. */
   image?: string;
+  /** WP 포스트 id — admin 편집 딥링크(admin 사용자에게만 표시). */
+  wpId?: number;
 }
 
 export interface Diagram {
@@ -50,6 +52,8 @@ export interface Diagram {
   svg?: string;
   /** 래스터 이미지 URL(WP 대표이미지 → R2) — SVG 의 대안 */
   image?: string;
+  /** WP 포스트 id — admin 편집 딥링크 */
+  wpId?: number;
 }
 
 /** provider 귀속 서비스(레지스트리 투영 — ADR-0026). icon 은 유효 아이콘(이미지 URL 우선). */
@@ -59,6 +63,8 @@ export interface ProviderService {
   abbr?: string;
   cat?: string;
   icon?: string;
+  /** WP 포스트 id — admin 편집 딥링크 */
+  wpId?: number;
 }
 
 /** 시험 트랙(자격 계열) — 카탈로그 묶음. id 는 언어 무관 안정 키(그룹/정렬), name 은 표시 라벨.
@@ -80,6 +86,8 @@ export interface ExamMeta {
   /** 트랙(자격 계열). 없으면 카탈로그가 provider 묶음으로 폴백. */
   track?: ExamTrack;
   counts: { questions: number; concepts: number; diagrams: number };
+  /** WP 포스트 id — admin 편집 딥링크 */
+  wpId?: number;
 }
 
 // (콘텐츠 i18n 후 ExamData 는 LocalizedExamData(lib/content-localize.ts) 로 대체됨 — #28)
