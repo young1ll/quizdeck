@@ -3,7 +3,13 @@ import { notFound } from "next/navigation";
 import ProviderConcepts from "@/components/views/provider/ProviderConcepts";
 import { loadProviderContentCms } from "@/cms/serve";
 
+// generateStaticParams 없인 revalidate 가 무시되고 ƒ Dynamic 으로 떨어진다 — 빈 배열로
+// 온디맨드 ISR 게이트를 연다(exam layout 과 동일 패턴).
 export const revalidate = 3600;
+export const dynamicParams = true;
+export function generateStaticParams() {
+  return [];
+}
 
 export default async function ProviderConceptsPage({ params }: { params: Promise<{ provider: string }> }) {
   const { provider } = await params;
