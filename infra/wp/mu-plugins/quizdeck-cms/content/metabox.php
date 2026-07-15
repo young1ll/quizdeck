@@ -127,6 +127,38 @@ function qd_question_js(): void
     <?php
 }
 
+// 목록 컬럼: 서비스 — 아이콘·provider·분류가 한눈에 (2026-07-15). 아이콘은 유효 아이콘
+// (대표이미지 > qd_icon — REST 파생과 같은 우선순위)을 24px 로 렌더.
+add_filter('manage_qd_service_posts_columns', function ($cols) {
+    return array_slice($cols, 0, 2, true)
+        + ['qd_svc_icon' => '아이콘', 'qd_provider' => 'provider', 'qd_cat' => '분류'] + $cols;
+});
+add_action('manage_qd_service_posts_custom_column', function ($col, $postId) {
+    if ($col === 'qd_svc_icon') {
+        $icon = get_the_post_thumbnail_url($postId, 'thumbnail')
+            ?: (string) get_post_meta($postId, 'qd_icon', true);
+        if ($icon === '') {
+            echo '—';
+        } elseif (preg_match('#^(https?://|/|data:image/)#', $icon)) {
+            // data: URI 는 esc_url 이 프로토콜 화이트리스트로 제거한다 — esc_attr 로(자체 meta 값)
+            printf('<img src="%s" style="width:24px;height:24px;object-fit:contain" alt="">', esc_attr($icon));
+        } else {
+            echo '<span style="font-size:20px">' . esc_html($icon) . '</span>'; // 이모지
+        }
+    }
+    if ($col === 'qd_provider') echo esc_html((string) get_post_meta($postId, 'qd_provider', true) ?: '—');
+    if ($col === 'qd_cat') echo esc_html((string) get_post_meta($postId, 'qd_cat', true) ?: '—');
+}, 10, 2);
+add_filter('manage_edit-qd_service_sortable_columns', fn($cols) => $cols + ['qd_provider' => 'qd_provider', 'qd_cat' => 'qd_cat']);
+add_action('pre_get_posts', function (WP_Query $q): void {
+    if (!is_admin() || !$q->is_main_query()) return;
+    $orderby = $q->get('orderby');
+    if (in_array($orderby, ['qd_provider', 'qd_cat'], true)) {
+        $q->set('meta_key', $orderby);
+        $q->set('orderby', 'meta_value');
+    }
+});
+
 // 목록 컬럼: 문항 — 문제집·번호가 한눈에 (제목은 저장 시 자동 생성이라 보조 정보 노출이 중요)
 add_filter('manage_qd_question_posts_columns', function ($cols) {
     return array_slice($cols, 0, 2, true) + ['qd_exam' => '문제집', 'qd_qn' => '번호'] + $cols;
