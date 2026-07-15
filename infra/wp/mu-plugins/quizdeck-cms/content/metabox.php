@@ -127,46 +127,107 @@ function qd_question_js(): void
     <?php
 }
 
-// 목록 컬럼: 서비스 — 아이콘·provider·분류가 한눈에 (2026-07-15). 아이콘은 유효 아이콘
-// (대표이미지 > qd_icon — REST 파생과 같은 우선순위)을 24px 로 렌더.
-add_filter('manage_qd_service_posts_columns', function ($cols) {
-    return array_slice($cols, 0, 2, true)
-        + ['qd_svc_icon' => '아이콘', 'qd_provider' => 'provider', 'qd_cat' => '분류'] + $cols;
-});
-add_action('manage_qd_service_posts_custom_column', function ($col, $postId) {
-    if ($col === 'qd_svc_icon') {
-        $icon = get_the_post_thumbnail_url($postId, 'thumbnail')
-            ?: (string) get_post_meta($postId, 'qd_icon', true);
-        if ($icon === '') {
-            echo '—';
-        } elseif (preg_match('#^(https?://|/|data:image/)#', $icon)) {
-            // data: URI 는 esc_url 이 프로토콜 화이트리스트로 제거한다 — esc_attr 로(자체 meta 값)
-            printf('<img src="%s" style="width:24px;height:24px;object-fit:contain" alt="">', esc_attr($icon));
-        } else {
-            echo '<span style="font-size:20px">' . esc_html($icon) . '</span>'; // 이모지
-        }
+// ── 목록 컬럼 (2026-07-15 전 CPT 통일) — 각 유형의 식별·상태 정보를 목록에서 바로.
+//    아이콘 셀은 유효 아이콘 규율(REST 파생과 동일 우선순위) 공유.
+
+/** 아이콘 셀 렌더 — 이미지(URL·data URI)는 24px img, 이모지는 텍스트, 없으면 —.
+ *  data: URI 는 esc_url 이 프로토콜 화이트리스트로 제거한다 — 자체 meta 값이라 esc_attr. */
+function qd_admin_icon_cell(string $icon): void
+{
+    if ($icon === '') {
+        echo '—';
+    } elseif (preg_match('#^(https?://|/|data:image/)#', $icon)) {
+        printf('<img src="%s" style="width:24px;height:24px;object-fit:contain" alt="">', esc_attr($icon));
+    } else {
+        echo '<span style="font-size:20px">' . esc_html($icon) . '</span>';
     }
+}
+
+/** 유효 아이콘 — 대표이미지 > qd_icon. 카드는 qd_icon > 첫 참조 서비스(파생과 동일). */
+function qd_admin_effective_icon(int $postId): string
+{
+    if ($thumb = get_the_post_thumbnail_url($postId, 'thumbnail')) return $thumb;
+    $own = (string) get_post_meta($postId, 'qd_icon', true);
+    if ($own !== '' || get_post_type($postId) !== 'qd_concept') return $own;
+    $sids = json_decode((string) get_post_meta($postId, 'qd_service_ids', true), true) ?: [];
+    $examId = (int) get_post_meta($postId, 'qd_exam_id', true);
+    $provider = $examId ? (string) get_post_meta($examId, 'qd_provider', true) : '';
+    if (!$sids || !is_string($sids[0]) || $provider === '') return '';
+    $svc = qd_find_service($provider, $sids[0]);
+    return $svc ? (get_the_post_thumbnail_url($svc, 'thumbnail') ?: (string) get_post_meta($svc, 'qd_icon', true)) : '';
+}
+
+function qd_admin_exam_cell(int $postId): void
+{
+    $examId = (int) get_post_meta($postId, 'qd_exam_id', true);
+    echo $examId ? esc_html(get_the_title($examId)) : '—';
+}
+
+add_filter('manage_qd_exam_posts_columns', fn($cols) => array_slice($cols, 0, 2, true)
+    + ['qd_col_icon' => '아이콘', 'qd_provider' => 'provider', 'qd_code' => '코드', 'qd_col_qcount' => '문항 수'] + $cols);
+add_action('manage_qd_exam_posts_custom_column', function ($col, $postId) {
+    if ($col === 'qd_col_icon') qd_admin_icon_cell(qd_admin_effective_icon($postId));
+    if ($col === 'qd_provider') echo esc_html((string) get_post_meta($postId, 'qd_provider', true) ?: '—');
+    if ($col === 'qd_code') echo esc_html((string) get_post_meta($postId, 'qd_code', true) ?: '—');
+    if ($col === 'qd_col_qcount') {
+        echo count(get_posts(['post_type' => 'qd_question', 'post_status' => 'publish', 'numberposts' => -1,
+            'fields' => 'ids', 'meta_query' => [['key' => 'qd_exam_id', 'value' => (string) $postId]]]));
+    }
+}, 10, 2);
+add_filter('manage_edit-qd_exam_sortable_columns', fn($cols) => $cols + ['qd_provider' => 'qd_provider', 'qd_code' => 'qd_code']);
+
+add_filter('manage_qd_question_posts_columns', fn($cols) => array_slice($cols, 0, 2, true)
+    + ['qd_exam' => '문제집', 'qd_qn' => '번호', 'qd_topic' => '주제', 'qd_col_icon' => '이미지'] + $cols);
+add_action('manage_qd_question_posts_custom_column', function ($col, $postId) {
+    if ($col === 'qd_exam') qd_admin_exam_cell($postId);
+    if ($col === 'qd_qn') echo esc_html((string) get_post_meta($postId, 'qd_qn', true));
+    if ($col === 'qd_topic') echo esc_html((string) get_post_meta($postId, 'qd_topic', true) ?: '—');
+    if ($col === 'qd_col_icon') qd_admin_icon_cell((string) get_the_post_thumbnail_url($postId, 'thumbnail'));
+}, 10, 2);
+add_filter('manage_edit-qd_question_sortable_columns', fn($cols) => $cols + ['qd_qn' => 'qd_qn']);
+
+add_filter('manage_qd_concept_posts_columns', fn($cols) => array_slice($cols, 0, 2, true)
+    + ['qd_col_icon' => '아이콘', 'qd_exam' => '문제집', 'qd_cat' => '분류', 'qd_col_services' => '참조 서비스'] + $cols);
+add_action('manage_qd_concept_posts_custom_column', function ($col, $postId) {
+    if ($col === 'qd_col_icon') qd_admin_icon_cell(qd_admin_effective_icon($postId));
+    if ($col === 'qd_exam') qd_admin_exam_cell($postId);
+    if ($col === 'qd_cat') echo esc_html((string) get_post_meta($postId, 'qd_cat', true) ?: '—');
+    if ($col === 'qd_col_services') {
+        $sids = json_decode((string) get_post_meta($postId, 'qd_service_ids', true), true) ?: [];
+        echo $sids ? esc_html(implode(', ', $sids)) : '<span style="color:#b32d2e">미참조</span>';
+    }
+}, 10, 2);
+add_filter('manage_edit-qd_concept_sortable_columns', fn($cols) => $cols + ['qd_cat' => 'qd_cat']);
+
+add_filter('manage_qd_diagram_posts_columns', fn($cols) => array_slice($cols, 0, 2, true)
+    + ['qd_exam' => '문제집', 'qd_cat' => '분류', 'qd_col_format' => '형식', 'qd_ord' => '순서'] + $cols);
+add_action('manage_qd_diagram_posts_custom_column', function ($col, $postId) {
+    if ($col === 'qd_exam') qd_admin_exam_cell($postId);
+    if ($col === 'qd_cat') echo esc_html((string) get_post_meta($postId, 'qd_cat', true) ?: '—');
+    if ($col === 'qd_col_format') {
+        $hasSvg = str_contains((string) get_post_meta($postId, 'qd_svg', true), '<svg');
+        $hasImg = has_post_thumbnail($postId);
+        echo esc_html($hasSvg && $hasImg ? 'SVG+이미지' : ($hasImg ? '이미지' : 'SVG'));
+    }
+    if ($col === 'qd_ord') echo esc_html((string) get_post_meta($postId, 'qd_ord', true));
+}, 10, 2);
+add_filter('manage_edit-qd_diagram_sortable_columns', fn($cols) => $cols + ['qd_ord' => 'qd_ord', 'qd_cat' => 'qd_cat']);
+
+add_filter('manage_qd_service_posts_columns', fn($cols) => array_slice($cols, 0, 2, true)
+    + ['qd_col_icon' => '아이콘', 'qd_provider' => 'provider', 'qd_cat' => '분류'] + $cols);
+add_action('manage_qd_service_posts_custom_column', function ($col, $postId) {
+    if ($col === 'qd_col_icon') qd_admin_icon_cell(qd_admin_effective_icon($postId));
     if ($col === 'qd_provider') echo esc_html((string) get_post_meta($postId, 'qd_provider', true) ?: '—');
     if ($col === 'qd_cat') echo esc_html((string) get_post_meta($postId, 'qd_cat', true) ?: '—');
 }, 10, 2);
 add_filter('manage_edit-qd_service_sortable_columns', fn($cols) => $cols + ['qd_provider' => 'qd_provider', 'qd_cat' => 'qd_cat']);
+
+// meta 정렬 실행 — 텍스트/숫자 구분
 add_action('pre_get_posts', function (WP_Query $q): void {
     if (!is_admin() || !$q->is_main_query()) return;
     $orderby = $q->get('orderby');
-    if (in_array($orderby, ['qd_provider', 'qd_cat'], true)) {
-        $q->set('meta_key', $orderby);
-        $q->set('orderby', 'meta_value');
-    }
+    $text = ['qd_provider', 'qd_cat', 'qd_code'];
+    $num  = ['qd_qn', 'qd_ord'];
+    if (in_array($orderby, $text, true)) { $q->set('meta_key', $orderby); $q->set('orderby', 'meta_value'); }
+    if (in_array($orderby, $num, true))  { $q->set('meta_key', $orderby); $q->set('orderby', 'meta_value_num'); }
 });
-
-// 목록 컬럼: 문항 — 문제집·번호가 한눈에 (제목은 저장 시 자동 생성이라 보조 정보 노출이 중요)
-add_filter('manage_qd_question_posts_columns', function ($cols) {
-    return array_slice($cols, 0, 2, true) + ['qd_exam' => '문제집', 'qd_qn' => '번호'] + $cols;
-});
-add_action('manage_qd_question_posts_custom_column', function ($col, $postId) {
-    if ($col === 'qd_exam') {
-        $examId = (int) get_post_meta($postId, 'qd_exam_id', true);
-        echo $examId ? esc_html(get_the_title($examId)) : '—';
-    }
-    if ($col === 'qd_qn') echo esc_html((string) get_post_meta($postId, 'qd_qn', true));
-}, 10, 2);
