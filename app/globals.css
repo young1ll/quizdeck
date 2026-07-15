@@ -104,6 +104,31 @@ body {
     outline-offset: 2px;
   }
 
+  /* 인터랙션 전환 floor — 산재한 hover:* 유틸(색만 정의, transition 없음)이 부드럽게 전환되도록
+     base 에 한 번만 깐다. base 는 최하위 레이어라 astryx(자체 transition 선언)·Tailwind 유틸이
+     항상 위에서 이긴다 — 아무것도 안 깔린 곳의 기본값만 채우는 규칙. */
+  a[href],
+  button,
+  [role="button"],
+  summary {
+    transition:
+      color var(--default-transition-duration) var(--default-transition-timing-function),
+      background-color var(--default-transition-duration) var(--default-transition-timing-function),
+      border-color var(--default-transition-duration) var(--default-transition-timing-function),
+      box-shadow var(--default-transition-duration) var(--default-transition-timing-function),
+      opacity var(--default-transition-duration) var(--default-transition-timing-function),
+      transform var(--default-transition-duration) var(--default-transition-timing-function);
+  }
+
+  /* press 피드백 — "클릭이 먹었다"는 즉각 신호(터치 포함). 내비게이션 지연 체감을 줄이는 가장 값싼
+     장치. inline 요소엔 transform 이 적용되지 않아 본문 텍스트 링크는 자연히 제외된다. */
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active,
+  a[href]:not([aria-disabled="true"]):active,
+  summary:active {
+    transform: scale(0.98);
+  }
+
   /* 모션 축소 선호 (ADR-0008 결정 5 · #48) — 장식용 transition 은 즉시로 줄이고, 기능적
      애니메이션(로딩 스피너 등)은 유지한다(animation 은 건드리지 않는다). */
   @media (prefers-reduced-motion: reduce) {
@@ -127,10 +152,98 @@ body {
   border-color: color-mix(in srgb, var(--warn) 40%, transparent);
 }
 .astryx-card.card-interactive {
-  transition: border-color var(--default-transition-duration) var(--default-transition-timing-function);
+  transition:
+    border-color var(--default-transition-duration) var(--default-transition-timing-function),
+    transform var(--default-transition-duration) var(--default-transition-timing-function),
+    box-shadow var(--default-transition-duration) var(--default-transition-timing-function);
 }
 .astryx-card.card-interactive:hover {
   border-color: var(--accent);
+}
+/* lift 는 hover 가능한 포인터에서만 — 터치 기기의 sticky hover(탭 후 떠 있는 잔상) 방지. */
+@media (hover: hover) {
+  .astryx-card.card-interactive:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.25);
+  }
+}
+
+/* 라우트 전환 스켈레톤 — loading.tsx 골격 블록. 헤더는 shell 이 유지하고 본문 자리만 펄스.
+   기능적 피드백(로딩 중)이라 reduced-motion 에서도 유지(기존 정책: animation 은 안 건드림). */
+.skeleton {
+  border-radius: var(--radius-card);
+  background: var(--panel);
+  animation: skeleton-pulse 1.6s var(--default-transition-timing-function) infinite;
+}
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* 링크 pending 피드백 (ui/PendingLink) — useLinkStatus pending 동안 딤 + 코너 스피너.
+   둘 다 지연 후 등장(딤 150ms·스피너 300ms) — prefetch 된 빠른 내비에선 아예 안 보이고,
+   서버 왕복이 걸리는 내비에서만 "받았다" 신호가 뜬다. 해제는 지연 없이 즉시. */
+.pending-scope {
+  position: relative;
+  display: block;
+}
+.pending-scope[data-pending] {
+  opacity: 0.6;
+  transition: opacity var(--default-transition-duration) var(--default-transition-timing-function) 150ms;
+}
+.pending-scope > .pending-spinner {
+  position: absolute;
+  top: 0.875rem;
+  right: 0.875rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 9999px;
+  opacity: 0;
+}
+.pending-scope[data-pending] > .pending-spinner {
+  opacity: 1;
+  transition: opacity var(--default-transition-duration) var(--default-transition-timing-function) 300ms;
+  animation: pending-spin 0.7s linear infinite;
+}
+@keyframes pending-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 페이지 전환 (View Transitions) — PageTransition 이 (learner) 본문에 vt-page 클래스를 건다.
+   90ms 아웃 + 180ms 인(크로스페이드 + 4px 상승), 절제 톤. 미지원 브라우저는 @supports 로 지금과
+   동일(무애니). 플래그(next.config viewTransition)를 꺼도 이 블록은 무해한 사문이다. */
+@supports (view-transition-name: root) {
+  ::view-transition-old(.vt-page) {
+    animation: vt-page-out 90ms var(--default-transition-timing-function) both;
+  }
+  ::view-transition-new(.vt-page) {
+    animation: vt-page-in 180ms var(--default-transition-timing-function) both;
+  }
+  @keyframes vt-page-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes vt-page-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+  /* 모션 축소 — view transition 은 transition 이 아니라 animation 이라 별도로 꺼야 한다. */
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-image-pair(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation: none !important;
+    }
+  }
 }
 
 /* PDF 인쇄 영역 — 화면 숨김, 인쇄 시 본문 대체 */

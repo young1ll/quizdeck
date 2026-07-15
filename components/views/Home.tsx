@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { IconType } from "react-icons";
 import { LuFlame, LuPause, LuBookOpen, LuMap, LuNetwork, LuFolderOpen } from "react-icons/lu";
 import { Card } from "@/components/ui/Card";
+import { PendingLink } from "@/components/ui/PendingLink";
 import { useExam } from "@/lib/exam-context";
 import { MODE_LABEL, useStore, type Mode } from "@/lib/store";
 import { MODE_ICON } from "@/lib/mode-icons";
@@ -197,7 +198,8 @@ function NavGroup({ title, children }: { title: string; children: React.ReactNod
   );
 }
 
-// 참조/복습 네비 타일 — Link>astryx Card(muted 서피스, 클라이언트 내비 유지). 아이콘=Lucide, 뱃지는 카운트 pill.
+// 참조/복습 네비 타일 — PendingLink>astryx Card(muted 서피스, 클라이언트 내비 유지 + pending 딤·스피너).
+// 아이콘=Lucide, 뱃지는 카운트 pill.
 function NavLink({
   href,
   icon: Icon,
@@ -210,7 +212,7 @@ function NavLink({
   badge?: number;
 }) {
   return (
-    <Link href={href} className="block">
+    <PendingLink href={href} className="block">
       <Card padding={0} variant="muted" interactive>
         <div className="flex min-h-[44px] items-center justify-center gap-2 p-3 text-sm">
           <Icon className="size-4 shrink-0 text-[var(--muted)]" aria-hidden />
@@ -222,6 +224,6 @@ function NavLink({
           )}
         </div>
       </Card>
-    </Link>
+    </PendingLink>
   );
 }

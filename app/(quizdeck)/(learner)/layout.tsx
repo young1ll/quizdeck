@@ -1,6 +1,7 @@
 import { HeaderSlotProvider } from "@/lib/header-slot";
 import LearnerHeader from "@/components/LearnerHeader";
 import NoticeBanner from "@/components/NoticeBanner";
+import PageTransition from "@/components/PageTransition";
 import { getSiteConfigCms } from "@/cms/serve";
 
 // (learner) 섹션 shell (ADR-0010 결정 2·7 · ADR-0012 결정 6). 적응형 단일 헤더 — 기본은 QuizDeck+계정,
@@ -16,7 +17,8 @@ export default async function LearnerLayout({ children }: { children: React.Reac
       <div className="min-h-dvh">
         {site.notice.enabled && <NoticeBanner text={site.notice.text} tone={site.notice.tone} />}
         <LearnerHeader />
-        {children}
+        {/* 본문만 View Transition 으로 감싼다 — 헤더·배너는 전환 밖(정적). 설계 2026-07-15. */}
+        <PageTransition>{children}</PageTransition>
       </div>
     </HeaderSlotProvider>
   );
