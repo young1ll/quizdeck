@@ -50,6 +50,9 @@ function qd_field_schema(): array
             // 비교·묶음 카드 여러 개, 전략 카드 0개. rel/reln 은 저장하지 않는다 — q2svc 단일
             // 소스에서 REST 투영이 파생(구 저장 필드는 드리프트 실사로 폐기).
             'qd_service_ids' => ['type' => 'json', 'label' => '참조 서비스 id (JSON 배열)', 'desc' => '예: ["amazon-efs"]', 'default' => '[]'],
+            // 카드 자체 아이콘(오버라이드) — 비우면 첫 참조 서비스에서 파생(ADR-0026 확장:
+            // 정체성은 서비스 소유, 카드는 명시 오버라이드 가능 — 미참조 카드의 아이콘 경로).
+            'qd_icon'        => ['type' => 'text', 'label' => '아이콘(이모지·이미지 URL — 선택)', 'desc' => '비우면 참조 서비스 아이콘'],
         ],
         // exam 귀속 다이어그램 — 구 exam 블롭에서 CPT 승격(개별 편집·게이트·리비전·웹훅).
         // 제목은 post_title(사용자 소유 — exam name 과 같은 규율).

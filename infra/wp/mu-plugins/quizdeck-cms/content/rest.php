@@ -61,6 +61,8 @@ function qd_rest_projection(int $postId, string $type): array
     }
     if ($type === 'qd_exam') {
         $out['exam_key'] = $meta('qd_exam_key') ?: null;
+        $thumb = get_the_post_thumbnail_url($postId, 'full');
+        if ($thumb) $out['icon'] = $thumb; // 이미지 아이콘 우선(서비스와 같은 유효 아이콘 규율)
         // get_the_title 은 wptexturize 로 하이픈→&#8211; 등 원문을 바꾼다(diff 실사) — raw 로.
         $out['name']     = get_post_field('post_title', $postId, 'raw');
         // svc_icons = 레거시 블롭 위에 레지스트리 파생 오버레이(카드→첫 참조 서비스의 아이콘).
@@ -149,13 +151,14 @@ function qd_derived_icons(int $examId): array
             'meta_query'  => [['key' => 'qd_exam_id', 'value' => (string) $examId]],
         ]);
         foreach ($cards as $cid) {
-            $sids = json_decode((string) get_post_meta($cid, 'qd_service_ids', true), true) ?: [];
-            if (!$sids || !is_string($sids[0])) continue;
-            $serviceId = qd_find_service($provider, $sids[0]);
-            $icon = '';
-            if ($serviceId) {
-                $icon = get_the_post_thumbnail_url($serviceId, 'full') // 이미지 아이콘 우선(R2 URL)
-                    ?: (string) get_post_meta($serviceId, 'qd_icon', true);
+            // 우선순위: 카드 자체 아이콘(오버라이드) > 첫 참조 서비스의 대표이미지 > 서비스 qd_icon
+            $icon = (string) get_post_meta($cid, 'qd_icon', true);
+            if ($icon === '') {
+                $sids = json_decode((string) get_post_meta($cid, 'qd_service_ids', true), true) ?: [];
+                if ($sids && is_string($sids[0]) && ($serviceId = qd_find_service($provider, $sids[0]))) {
+                    $icon = get_the_post_thumbnail_url($serviceId, 'full')
+                        ?: (string) get_post_meta($serviceId, 'qd_icon', true);
+                }
             }
             if ($icon !== '') $icons[(string) get_post_meta($cid, 'qd_svc', true)] = $icon;
         }
