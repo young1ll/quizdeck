@@ -17,6 +17,7 @@ add_action('init', function () {
         'labels'    => qd_labels('문제집'),
         'menu_icon' => 'dashicons-portfolio',
         'rest_base' => 'qd-exams',
+        'supports'  => ['title', 'thumbnail'], // thumbnail = 이미지 아이콘(이모지 오버라이드)
     ]);
 
     register_post_type('qd_question', $common + [
