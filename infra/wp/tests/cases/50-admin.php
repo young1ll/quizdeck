@@ -23,4 +23,23 @@ qd_render_dashboard();
 $html = ob_get_clean();
 t_assert(str_contains($html, 'QuizDeck CMS') && str_contains($html, qd_plugin_version()), '대시보드 렌더 (이름·버전)');
 t_assert(str_contains($html, 'ALB vs NLB'), '대시보드에 편집 큐 노출');
+
+// admin → 앱 연결 — CPT 별 프론트 URL 매핑 + 어드민바 노드 + 게시 박스 링크 (2026-07-16)
+$examId = (int) get_option('qd_test_exam_id');
+t_assert(qd_frontend_url(get_post($examId)) === qd_app_url() . '/aws/test-01/', '프론트 URL: 문제집 → 시험 허브');
+$svcPost = get_post((int) get_option('qd_test_service_id'));
+t_assert(qd_frontend_url($svcPost) === qd_app_url() . '/aws/map/', '프론트 URL: 서비스 → provider 서비스맵');
+$cardPost = get_posts(['post_type' => 'qd_concept', 'title' => 'Amazon EFS', 'post_status' => 'publish', 'numberposts' => 1])[0];
+t_assert(str_starts_with((string) qd_frontend_url($cardPost), qd_app_url() . '/aws/test-01/concepts?seed='), '프론트 URL: 카드 → 개념 화면 시드');
+
+require_once ABSPATH . WPINC . '/class-wp-admin-bar.php';
+$bar = new WP_Admin_Bar();
+qd_admin_bar_app_link($bar);
+$node = $bar->get_node('qd-app');
+t_assert($node !== null && $node->href === qd_app_url(), '어드민바 학습 앱 노드 (편집 맥락 밖 = 앱 홈)');
+
+ob_start();
+do_action('post_submitbox_misc_actions', get_post($examId));
+$html = ob_get_clean();
+t_assert(str_contains($html, 'qd-view-app') && str_contains($html, '/aws/test-01/'), '게시 박스 앱에서 보기 링크');
 echo "OK\n";
