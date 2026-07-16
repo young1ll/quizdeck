@@ -310,16 +310,20 @@ add_action('manage_qd_diagram_posts_custom_column', function ($col, $postId) {
 }, 10, 2);
 add_filter('manage_edit-qd_diagram_sortable_columns', fn($cols) => $cols + ['qd_ord' => 'qd_ord', 'qd_cat' => 'qd_cat']);
 
-// ── 다이어그램 순서 이동 (2026-07-16) — 순서는 시스템 소유(fields.php 스키마 제외 참조).
-//    목록 행 액션 ↑/↓ 가 시험 스코프 서열에서 인접 항목과 자리를 바꾼다. 이동 전 1..N 정규화가
-//    레거시 중복/공백을 자가 치유한다(중복 ord 는 정렬 비결정이었다 — 도입 동기).
+// ── 순서 이동 (2026-07-16, 다이어그램·개념 카드) — 순서는 시스템 소유(fields.php 스키마 제외
+//    참조). 목록 행 액션 ↑/↓ 가 시험 스코프 서열에서 인접 항목과 자리를 바꾼다. 이동 전 1..N
+//    정규화가 레거시 중복/공백을 자가 치유한다(중복 ord 는 정렬 비결정이었다 — 도입 동기).
+
+const QD_ORDERED_TYPES = ['qd_diagram', 'qd_concept'];
 
 /** 시험 스코프 서열 이동 + 정규화. 경계(맨 위에서 ↑ 등)는 정규화만 하고 성공 반환. */
-function qd_diag_move(int $postId, string $dir): bool
+function qd_ord_move(int $postId, string $dir): bool
 {
+    $type = get_post_type($postId);
+    if (!in_array($type, QD_ORDERED_TYPES, true)) return false;
     $eid = (int) get_post_meta($postId, 'qd_exam_id', true);
     if (!$eid) return false;
-    $ids = get_posts(['post_type' => 'qd_diagram', 'post_status' => ['publish', 'draft', 'pending', 'future'],
+    $ids = get_posts(['post_type' => $type, 'post_status' => ['publish', 'draft', 'pending', 'future'],
         'numberposts' => -1, 'fields' => 'ids',
         'meta_query' => [['key' => 'qd_exam_id', 'value' => (string) $eid]]]);
     // 현 서열(ord 없음은 뒤, 동률은 ID)로 정렬 — meta_key 정렬은 ord 없는 글을 누락시켜 못 쓴다.
@@ -337,26 +341,27 @@ function qd_diag_move(int $postId, string $dir): bool
         }
     }
     // update_post_meta 직행이라 save_post 훅이 안 돈다 — 서빙 파생 캐시·앱 revalidate 를 직접.
-    delete_transient("qd_diagrams_{$eid}");
+    // (개념 카드는 파생 트랜지언트 없음 — REST 가 매 요청 ord 정렬로 읽는다.)
+    if ($type === 'qd_diagram') delete_transient("qd_diagrams_{$eid}");
     qd_fire_revalidate(get_post($postId));
     return true;
 }
 
 add_filter('post_row_actions', function (array $actions, WP_Post $post): array {
-    if ($post->post_type !== 'qd_diagram' || !current_user_can('edit_post', $post->ID)) return $actions;
+    if (!in_array($post->post_type, QD_ORDERED_TYPES, true) || !current_user_can('edit_post', $post->ID)) return $actions;
     foreach (['up' => '↑ 위로', 'down' => '↓ 아래로'] as $dir => $label) {
-        $url = wp_nonce_url(admin_url("admin-post.php?action=qd_diag_move&post={$post->ID}&dir={$dir}"), "qd_diag_move_{$post->ID}");
+        $url = wp_nonce_url(admin_url("admin-post.php?action=qd_ord_move&post={$post->ID}&dir={$dir}"), "qd_ord_move_{$post->ID}");
         $actions["qd_move_{$dir}"] = '<a href="' . esc_url($url) . '">' . esc_html($label) . '</a>';
     }
     return $actions;
 }, 10, 2);
 
-add_action('admin_post_qd_diag_move', function (): void {
+add_action('admin_post_qd_ord_move', function (): void {
     $postId = (int) ($_GET['post'] ?? 0);
     if (!current_user_can('edit_post', $postId)) wp_die('권한 없음');
-    check_admin_referer("qd_diag_move_{$postId}");
-    qd_diag_move($postId, ($_GET['dir'] ?? '') === 'down' ? 'down' : 'up');
-    wp_safe_redirect(wp_get_referer() ?: admin_url('edit.php?post_type=qd_diagram'));
+    check_admin_referer("qd_ord_move_{$postId}");
+    qd_ord_move($postId, ($_GET['dir'] ?? '') === 'down' ? 'down' : 'up');
+    wp_safe_redirect(wp_get_referer() ?: admin_url('edit.php?post_type=' . get_post_type($postId)));
     exit;
 });
 
@@ -365,7 +370,7 @@ add_action('admin_post_qd_diag_move', function (): void {
 // 숨기는 함정이 있어 기본값(날짜)을 유지한다.
 add_action('pre_get_posts', function (WP_Query $q): void {
     if (!is_admin() || !$q->is_main_query()) return;
-    if ($q->get('post_type') !== 'qd_diagram' || $q->get('orderby') !== '') return;
+    if (!in_array($q->get('post_type'), QD_ORDERED_TYPES, true) || $q->get('orderby') !== '') return;
     if (empty($_GET['qd_f_exam'])) return;
     $q->set('meta_key', 'qd_ord');
     $q->set('orderby', 'meta_value_num');
