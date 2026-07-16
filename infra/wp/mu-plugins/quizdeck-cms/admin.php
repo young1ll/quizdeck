@@ -48,7 +48,10 @@ function qd_frontend_url(WP_Post $post): ?string
     };
     $path = match ($post->post_type) {
         'qd_exam'     => ($k = $meta($post->ID, 'qd_exam_key')) !== '' ? "/{$k}/" : null,
-        'qd_question' => ($k = $examKey()) !== '' ? "/{$k}/" : null,
+        // 문항 = 퀴즈 딥엔트리(/quiz?set=qn, ADR-0022 S1.5) — 그 문항만으로 곧장 학습 시작.
+        // qn 미지정(비정상)만 허브 폴백.
+        'qd_question' => ($k = $examKey()) === '' ? null
+            : (($q = $meta($post->ID, 'qd_qn')) !== '' ? "/{$k}/quiz?set={$q}" : "/{$k}/"),
         'qd_concept'  => ($k = $examKey()) !== '' ? "/{$k}/concepts?seed=" . rawurlencode($meta($post->ID, 'qd_svc')) : null,
         'qd_diagram'  => ($k = $examKey()) !== '' ? "/{$k}/diagrams/" : null,
         'qd_service'  => ($p = $meta($post->ID, 'qd_provider')) !== '' ? "/{$p}/map/" : null,
