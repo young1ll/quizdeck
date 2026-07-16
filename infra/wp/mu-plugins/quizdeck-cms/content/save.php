@@ -67,6 +67,13 @@ function qd_handle_save(int $postId, WP_Post $post): void
         }
     }
 
+    // 다이어그램 순서 자동 부여(2026-07-16) — 순서는 시스템 소유(fields.php 스키마 제외 참조).
+    // 폼 저장·직접 삽입(wp_insert_post 후 publish) 공통 경로. REST 이관 표면은 rest.php 가 담당.
+    if ($post->post_type === 'qd_diagram' && (string) get_post_meta($postId, 'qd_ord', true) === '') {
+        $eid = (int) get_post_meta($postId, 'qd_exam_id', true);
+        if ($eid) update_post_meta($postId, 'qd_ord', (string) qd_diag_next_ord($eid));
+    }
+
     $errors = array_merge($errors, qd_validate($postId, $post->post_type));
 
     // ── 제목 자동 생성(식별 표면) + 검증 실패 시 draft 강등 ──
@@ -87,6 +94,18 @@ function qd_handle_save(int $postId, WP_Post $post): void
     if (!$errors && $post->post_status === 'publish' && $post->post_type === 'qd_question') {
         update_post_meta($postId, 'qd_qn_published', (string) get_post_meta($postId, 'qd_qn', true));
     }
+}
+
+/** 다이어그램 다음 순서 — 시험 스코프 max+1(휴지통 제외 전 상태 — 초안도 서열을 점유). */
+function qd_diag_next_ord(int $examId): int
+{
+    $max = 0;
+    foreach (get_posts(['post_type' => 'qd_diagram', 'post_status' => ['publish', 'draft', 'pending', 'future'],
+        'numberposts' => -1, 'fields' => 'ids',
+        'meta_query' => [['key' => 'qd_exam_id', 'value' => (string) $examId]]]) as $id) {
+        $max = max($max, (int) get_post_meta($id, 'qd_ord', true));
+    }
+    return $max + 1;
 }
 
 /** 자동 강등 진행 중 플래그 — transition 훅이 사용자 초안 전환과 구분하는 데 쓴다. */
