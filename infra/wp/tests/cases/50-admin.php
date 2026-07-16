@@ -41,6 +41,14 @@ qd_admin_bar_app_link($bar);
 $node = $bar->get_node('qd-app');
 t_assert($node !== null && $node->href === qd_app_url(), '어드민바 학습 앱 노드 (편집 맥락 밖 = 앱 홈)');
 
+// '사이트 방문' 재지정 — core 가 다는 노드(프론트 href)를 흉내 내고 콜백 후 앱 href 인지
+$bar->add_node(['id' => 'site-name', 'title' => 't', 'href' => home_url('/')]);
+$bar->add_node(['id' => 'view-site', 'parent' => 'site-name', 'title' => '사이트 방문', 'href' => home_url('/')]);
+qd_admin_bar_site_visit_to_app($bar);
+t_assert($bar->get_node('site-name')->href === qd_app_url() && $bar->get_node('view-site')->href === qd_app_url(),
+    "'사이트 방문'·사이트명 → 학습 앱 재지정");
+t_assert(($bar->get_node('view-site')->meta['target'] ?? '') === '_blank', "'사이트 방문' 새 탭");
+
 ob_start();
 do_action('post_submitbox_misc_actions', get_post($examId));
 $html = ob_get_clean();
