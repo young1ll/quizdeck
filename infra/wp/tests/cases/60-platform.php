@@ -7,6 +7,12 @@ t_assert(defined('DISALLOW_FILE_MODS') && DISALLOW_FILE_MODS === true, 'DISALLOW
 t_assert(defined('AUTOMATIC_UPDATER_DISABLED') && AUTOMATIC_UPDATER_DISABLED === true, 'AUTOMATIC_UPDATER_DISABLED — 플러그인이 정의');
 
 t_assert(current_theme_supports('post-thumbnails'), '대표이미지 지원 — 테마 무관 플러그인 선언');
+// $common + [...] 병합 함정 회귀 가드 — supports 가 공통에 끼면 타입별 thumbnail 선언이 조용히 죽는다.
+$thumbOk = true;
+foreach (['qd_exam', 'qd_question', 'qd_concept', 'qd_diagram', 'qd_service'] as $t) {
+    $thumbOk = $thumbOk && post_type_supports($t, 'thumbnail');
+}
+t_assert($thumbOk, '전 CPT thumbnail supports 등록(대표이미지 박스 게이트)');
 
 t_assert(apply_filters('xmlrpc_enabled', true) === false, 'XML-RPC 비활성');
 t_assert(apply_filters('pings_open', true, 0) === false, '핑백 차단');
