@@ -4,12 +4,14 @@
 defined('ABSPATH') || exit;
 
 add_action('init', function () {
+    // ⚠️ supports 는 여기 두지 않는다 — `$common + [...]` 의 + 는 왼쪽 키가 이겨, 공통에 있으면
+    //    각 타입의 'supports' 선언이 통째로 무시된다(thumbnail 지원이 조용히 죽어 대표이미지
+    //    박스가 전 CPT 에서 안 떴던 실제 사고 — 2026-07-16). 타입마다 명시한다.
     $common = [
         'public'       => false,
         'show_ui'      => true,
         'show_in_menu' => 'quizdeck-cms', // 최상위 QuizDeck 메뉴(admin.php)의 서브메뉴로 — 메뉴트리 단일화
         'show_in_rest' => true, // published = 익명 read, draft = 인증 필요 (WP 기본 — 서빙 계약)
-        'supports'     => ['title'],
         'map_meta_cap' => true,
     ];
 
