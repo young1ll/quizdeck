@@ -32,6 +32,17 @@
    **미디어 공개 도메인(1회, Cloudflare 대시보드)**: R2 → media 버킷 → Custom Domains 에
    `media.myquizdeck.com` 연결(프록시 자동). r2.dev 공개 URL 은 쓰지 않는다(프로덕션 부적격
    — 레이트 리밋 + 계정 해시 종속 URL).
+   ```sh
+   # ④ 회원 주석 관리(ADR-0027) — 앱 admin API 공유 토큰. 앱 쪽 quizdeck-auth 의
+   #    ADMIN_API_TOKEN 과 같은 값이어야 한다(한 번에 생성해 양쪽 주입). revalidate 토큰과
+   #    분리 — 권한 등급(캐시 무효화 vs 회원 데이터 뮤테이션)이 다르다. 없으면 wp-admin
+   #    '회원 주석' 화면만 미설정 안내(optional Secret, 앱 API 는 fail-closed 401).
+   TOKEN=$(openssl rand -hex 32)
+   kubectl -n wordpress create secret generic wp-admin-api \
+     --from-literal=QD_ADMIN_API_TOKEN="$TOKEN"
+   kubectl -n quizdeck patch secret quizdeck-auth --type merge \
+     -p "{\"stringData\":{\"ADMIN_API_TOKEN\":\"$TOKEN\"}}"
+   ```
 3. **DNS(grey-cloud)**: Cloudflare 에 `wp.myquizdeck.com` A 레코드 → `100.81.230.113`
    (k3s-home Tailscale IP), **프록시 OFF(DNS-only·회색 구름)** — argocd 선례(ADR-0020).
    orange 로 뒤집으면 인터넷에 열린다.
