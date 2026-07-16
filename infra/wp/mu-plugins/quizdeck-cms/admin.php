@@ -66,6 +66,32 @@ add_filter('post_row_actions', function (array $actions, WP_Post $post): array {
     return $actions;
 }, 10, 2);
 
+// 어드민바 "학습 앱 ↗" — 어느 admin 화면에서든 항상 보이는 앱 진입점(프론트-admin 연결성 확장,
+// 2026-07-16). WP 기본 '사이트 방문'은 headless 라 빈 WP 프론트를 가리켜 무용 — 교체 대신 병행
+// (core 노드 제거는 다른 플러그인/관례와 충돌 여지). qd CPT 편집 화면에서는 그 콘텐츠의 프론트
+// URL 로 딥링크, 그 외에는 앱 홈.
+function qd_admin_bar_app_link(WP_Admin_Bar $bar): void
+{
+    $post = get_post();
+    $url = ($post instanceof WP_Post ? qd_frontend_url($post) : null) ?? qd_app_url();
+    $bar->add_node([
+        'id'    => 'qd-app',
+        'title' => '학습 앱 ↗',
+        'href'  => $url,
+        'meta'  => ['target' => '_blank', 'rel' => 'noreferrer'],
+    ]);
+}
+add_action('admin_bar_menu', 'qd_admin_bar_app_link', 35);
+
+// 편집 화면 게시 박스 "앱에서 보기" — 행 액션은 목록에서만 보인다. 편집 중에도 이 콘텐츠가
+// 서빙되는 앱 화면으로 바로 갈 수 있게 게시 박스(misc actions)에 같은 대상 링크를 둔다.
+add_action('post_submitbox_misc_actions', function (WP_Post $post): void {
+    $url = qd_frontend_url($post);
+    if ($url === null) return;
+    echo '<div class="misc-pub-section qd-view-app">'
+        . '<a href="' . esc_url($url) . '" target="_blank" rel="noreferrer">앱에서 보기 ↗</a></div>';
+});
+
 /** 플러그인 버전 — 로더 헤더가 단일 소스. */
 function qd_plugin_version(): string
 {
