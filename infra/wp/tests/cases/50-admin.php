@@ -27,6 +27,9 @@ t_assert(str_contains($html, 'ALB vs NLB'), '대시보드에 편집 큐 노출')
 // admin → 앱 연결 — CPT 별 프론트 URL 매핑 + 어드민바 노드 + 게시 박스 링크 (2026-07-16)
 $examId = (int) get_option('qd_test_exam_id');
 t_assert(qd_frontend_url(get_post($examId)) === qd_app_url() . '/aws/test-01/', '프론트 URL: 문제집 → 시험 허브');
+$q1 = get_posts(['post_type' => 'qd_question', 'post_status' => 'publish', 'numberposts' => 1,
+    'meta_query' => [['key' => 'qd_qn', 'value' => '1']]])[0];
+t_assert(qd_frontend_url($q1) === qd_app_url() . '/aws/test-01/quiz?set=1', '프론트 URL: 문항 → 퀴즈 딥엔트리(set=qn)');
 $svcPost = get_post((int) get_option('qd_test_service_id'));
 t_assert(qd_frontend_url($svcPost) === qd_app_url() . '/aws/map/', '프론트 URL: 서비스 → provider 서비스맵');
 $cardPost = get_posts(['post_type' => 'qd_concept', 'title' => 'Amazon EFS', 'post_status' => 'publish', 'numberposts' => 1])[0];
