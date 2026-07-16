@@ -65,5 +65,19 @@ $id = t_post('qd_exam', 'BAD', ['qd_provider' => 'aws', 'qd_slug' => 'map', 'qd_
 t_assert(get_post_status($id) === 'draft', "slug 'map' 예약어 → draft 강등");
 wp_delete_post($id, true);
 
+// 문항 이미지 2종(2026-07-16) — image = 지문(qd_image, 비면 썸네일 폴백), thumb = 썸네일(대표이미지)
+$q1 = get_posts(['post_type' => 'qd_question', 'post_status' => 'publish', 'numberposts' => 1,
+    'meta_query' => [['key' => 'qd_qn', 'value' => '1']]])[0]->ID;
+set_post_thumbnail($q1, $att);
+$qRest = fn(): array => t_rest('/wp/v2/qd-questions', ['qd_exam' => $exam, 'qd_qn_in' => '1'])[0]['qd'];
+$qd = $qRest();
+t_assert($qd['image'] === $mediaUrl && $qd['thumb'] === $mediaUrl, '문항: 썸네일만 → image 폴백(구 계약 보존) + thumb');
+update_post_meta($q1, 'qd_image', 'https://media.test.invalid/body.png');
+$qd = $qRest();
+t_assert($qd['image'] === 'https://media.test.invalid/body.png' && $qd['thumb'] === $mediaUrl,
+    '문항: 지문 이미지 지정 → image=qd_image · thumb=썸네일 분리');
+delete_post_meta($q1, 'qd_image');
+delete_post_thumbnail($q1);
+
 wp_delete_attachment($att, true);
 echo "OK\n";

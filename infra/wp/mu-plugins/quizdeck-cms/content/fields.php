@@ -30,6 +30,9 @@ function qd_field_schema(): array
             'qd_qn'          => ['type' => 'int', 'label' => '문항 번호', 'desc' => '문제집 내 유일', 'required' => true],
             'qd_topic'       => ['type' => 'text', 'label' => '주제', 'desc' => '예: 📦 스토리지'],
             'qd_q'           => ['type' => 'textarea', 'label' => '지문', 'desc' => '**굵게** 마크업 허용', 'required' => true],
+            // 지문 이미지(2026-07-16) — 대표이미지(썸네일 용도)와 분리. 미디어 픽커는 metabox.php.
+            // 비우면 서빙이 썸네일로 폴백(rest.php — 구 계약 '대표이미지=지문' 데이터 보존).
+            'qd_image'       => ['type' => 'text', 'label' => '지문 이미지(문제 내용)', 'desc' => '지문 아래 렌더 — 미디어에서 선택 또는 URL. 비우면 썸네일 이미지로 폴백'],
             'qd_explanation' => ['type' => 'textarea', 'label' => '해설'],
             'qd_tip'         => ['type' => 'textarea', 'label' => '팁'],
             'qd_page'        => ['type' => 'int', 'label' => '페이지'],

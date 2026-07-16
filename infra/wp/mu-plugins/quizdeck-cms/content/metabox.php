@@ -14,6 +14,13 @@ add_action('add_meta_boxes', function () {
     }
 });
 
+// 지문 이미지 픽커의 wp.media 프레임 — 문항 편집 화면에서만 로드(2026-07-16).
+add_action('admin_enqueue_scripts', function (string $hook): void {
+    if (!in_array($hook, ['post.php', 'post-new.php'], true)) return;
+    $screen = get_current_screen();
+    if ($screen && $screen->post_type === 'qd_question') wp_enqueue_media();
+});
+
 function qd_render_metabox(WP_Post $post): void
 {
     wp_nonce_field('qd_save', 'qd_nonce');
@@ -91,11 +98,17 @@ function qd_render_metabox(WP_Post $post): void
             <?php
         } else {
             printf('<input type="text" name="%s" value="%s"%s>', esc_attr($key), esc_attr($value),
-                $key === 'qd_icon' ? ' data-qd-icon-src' : '');
+                $key === 'qd_icon' ? ' data-qd-icon-src' : ($key === 'qd_image' ? ' data-qd-media-src' : ''));
         }
         if ($key === 'qd_icon') {
             // 아이콘 실시간 미리보기 — 목록 컬럼과 같은 유효 표시 규칙(이미지/데이터 URI = img, 그 외 텍스트)
             echo '<div class="desc" style="margin-top:6px">미리보기: <span data-qd-icon-preview style="display:inline-block;vertical-align:middle;min-width:28px"></span></div>';
+        }
+        if ($key === 'qd_image') {
+            // 지문 이미지 픽커(2026-07-16) — wp.media 프레임으로 선택해 URL 을 채운다 + 미리보기.
+            printf('<p style="margin:6px 0 0"><button type="button" class="button" data-qd-media-pick>미디어에서 선택</button>'
+                . '<img data-qd-media-preview src="%s" alt="" style="max-height:60px;vertical-align:middle;margin-left:8px;%s"></p>',
+                esc_url($value), $value === '' ? 'display:none;' : '');
         }
         if (!empty($def['desc'])) echo '<div class="desc">' . esc_html($def['desc']) . '</div>';
         echo '</div>';
@@ -109,6 +122,31 @@ function qd_render_metabox(WP_Post $post): void
     }
     if (isset($schema['qd_svg']) || isset($schema['qd_icon'])) {
         qd_preview_js();
+    }
+
+    // ── 지문 이미지 픽커 JS (문항) — wp.media 는 admin_enqueue(아래)에서 로드 ──
+    if (isset($schema['qd_image'])) {
+        ?>
+        <script>
+        (function () {
+          const pick = document.querySelector('[data-qd-media-pick]');
+          const src  = document.querySelector('[data-qd-media-src]');
+          const prev = document.querySelector('[data-qd-media-preview]');
+          if (!pick || !src || !prev) return;
+          const sync = () => { prev.src = src.value; prev.style.display = src.value ? '' : 'none'; };
+          src.addEventListener('input', sync);
+          pick.addEventListener('click', () => {
+            if (!window.wp || !wp.media) return;
+            const frame = wp.media({ title: '지문 이미지', library: { type: 'image' }, multiple: false });
+            frame.on('select', () => {
+              src.value = frame.state().get('selection').first().toJSON().url;
+              sync();
+            });
+            frame.open();
+          });
+        })();
+        </script>
+        <?php
     }
 
     // ── 문항 전용: 보기 repeater + 정답 체크박스 ──

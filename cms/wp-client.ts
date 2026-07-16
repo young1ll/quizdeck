@@ -94,6 +94,7 @@ function questionEnvelope(w: WpPost): LocalizedQuestion {
     explanation: und(qd.explanation as string | null),
     tip: und(qd.tip as string | null),
     image: und(qd.image as string | null),
+    thumb: und(qd.thumb as string | null),
     page: und(qd.page as number | null),
     deeplink: und(qd.deeplink as string | null),
   }) as QuestionSlot;

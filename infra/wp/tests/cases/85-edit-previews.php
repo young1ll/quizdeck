@@ -27,4 +27,10 @@ t_assert(str_contains($render($card), 'data-qd-icon-preview'), '카드 아이콘
 // 문제집: qd_icon 필드 보유 → 미리보기
 $exam = (int) get_option('qd_test_exam_id');
 t_assert(str_contains($render($exam), 'data-qd-icon-preview'), '문제집 아이콘 미리보기');
+
+// 문항: 지문 이미지 픽커(2026-07-16) — URL 입력 + 미디어 선택 버튼 + 미리보기
+$q = get_posts(['post_type' => 'qd_question', 'post_status' => 'publish', 'numberposts' => 1])[0]->ID;
+$html = $render($q);
+t_assert(str_contains($html, 'name="qd_image"') && str_contains($html, 'data-qd-media-pick')
+    && str_contains($html, 'data-qd-media-preview'), '문항 지문 이미지 픽커(입력·버튼·미리보기)');
 echo "OK\n";

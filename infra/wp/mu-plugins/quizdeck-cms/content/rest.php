@@ -39,8 +39,11 @@ function qd_rest_projection(int $postId, string $type): array
         $out['exam_id'] = (int) $meta('qd_exam_id') ?: null;
         $out['options'] = json_decode($meta('qd_options'), true) ?: [];
         $out['answer']  = json_decode($meta('qd_answer'), true) ?: [];
-        $thumb = get_the_post_thumbnail_url($postId, 'full');
-        $out['image'] = $thumb ?: null;
+        // 이미지 2종(2026-07-16) — image = 지문(qd_image, 스키마 루프가 이미 투영), 비면 썸네일
+        // 폴백(구 계약 '대표이미지=지문' 보존). thumb = 썸네일(대표이미지) 그대로.
+        $thumb = get_the_post_thumbnail_url($postId, 'full') ?: null;
+        if (empty($out['image'])) $out['image'] = $thumb;
+        $out['thumb'] = $thumb;
     }
     if ($type === 'qd_diagram') {
         $out['exam_id'] = (int) $meta('qd_exam_id') ?: null;

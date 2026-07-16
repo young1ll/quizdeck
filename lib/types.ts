@@ -16,8 +16,10 @@ export interface Question {
   answer: string[];
   explanation?: string;
   tip?: string;
-  /** 지문 이미지 URL(WP 대표이미지 → media.myquizdeck.com R2 offload). 언어 무관. */
+  /** 지문 이미지 URL(qd_image, 없으면 대표이미지 폴백 — WP 서빙 계약. R2 offload). 언어 무관. */
   image?: string;
+  /** 썸네일 이미지 URL(WP 대표이미지) — 지문과 분리(2026-07-16). 목록/카드 표면용, 언어 무관. */
+  thumb?: string;
   page?: number | string;
   deeplink?: string;
 }

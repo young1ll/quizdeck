@@ -21,10 +21,17 @@ add_action('init', function () {
     ]);
 
     register_post_type('qd_question', $common + [
-        'labels'    => qd_labels('문항'),
+        // thumbnail = 썸네일 용도(2026-07-16 분리) — 지문(문제 내용) 이미지는 qd_image 필드.
+        // 서빙 폴백(image = qd_image ?: thumbnail)이 구 계약(대표이미지=지문)을 보존한다.
+        'labels'    => qd_labels('문항') + [
+            'featured_image'        => '썸네일 이미지',
+            'set_featured_image'    => '썸네일 이미지 설정',
+            'remove_featured_image' => '썸네일 이미지 제거',
+            'use_featured_image'    => '썸네일 이미지로 사용',
+        ],
         'menu_icon' => 'dashicons-editor-help',
         'rest_base' => 'qd-questions',
-        'supports'  => ['title', 'thumbnail'], // thumbnail = 지문 이미지(WP 네이티브 미디어)
+        'supports'  => ['title', 'thumbnail'],
     ]);
 
     register_post_type('qd_concept', $common + [
