@@ -70,9 +70,7 @@ add_filter('post_row_actions', function (array $actions, WP_Post $post): array {
 }, 10, 2);
 
 // 어드민바 "학습 앱 ↗" — 어느 admin 화면에서든 항상 보이는 앱 진입점(프론트-admin 연결성 확장,
-// 2026-07-16). WP 기본 '사이트 방문'은 headless 라 빈 WP 프론트를 가리켜 무용 — 교체 대신 병행
-// (core 노드 제거는 다른 플러그인/관례와 충돌 여지). qd CPT 편집 화면에서는 그 콘텐츠의 프론트
-// URL 로 딥링크, 그 외에는 앱 홈.
+// 2026-07-16). qd CPT 편집 화면에서는 그 콘텐츠의 프론트 URL 로 딥링크, 그 외에는 앱 홈.
 function qd_admin_bar_app_link(WP_Admin_Bar $bar): void
 {
     $post = get_post();
@@ -85,6 +83,23 @@ function qd_admin_bar_app_link(WP_Admin_Bar $bar): void
     ]);
 }
 add_action('admin_bar_menu', 'qd_admin_bar_app_link', 35);
+
+// WP 기본 '사이트 방문'·사이트명 링크 재지정 — 원래 WP 프론트로 가는데, headless 하드닝이
+// 프론트를 admin 으로 302 시켜(platform.php) 눌러도 제자리인 무동작이었다(사용자 보고
+// 2026-07-16). 이 WP 가 말하는 "사이트"는 학습 앱이다 — 두 노드의 href 만 앱으로 바꾼다
+// (노드 제거·타이틀 변경 없음, core wp_admin_bar_site_menu(30) 이후에 발화).
+function qd_admin_bar_site_visit_to_app(WP_Admin_Bar $bar): void
+{
+    foreach (['site-name', 'view-site'] as $id) {
+        $node = $bar->get_node($id);
+        if ($node === null) continue;
+        $arr = (array) $node;
+        $arr['href'] = qd_app_url();
+        $arr['meta'] = array_merge((array) ($arr['meta'] ?? []), ['target' => '_blank', 'rel' => 'noreferrer']);
+        $bar->add_node($arr);
+    }
+}
+add_action('admin_bar_menu', 'qd_admin_bar_site_visit_to_app', 80);
 
 // 편집 화면 게시 박스 "앱에서 보기" — 행 액션은 목록에서만 보인다. 편집 중에도 이 콘텐츠가
 // 서빙되는 앱 화면으로 바로 갈 수 있게 게시 박스(misc actions)에 같은 대상 링크를 둔다.
