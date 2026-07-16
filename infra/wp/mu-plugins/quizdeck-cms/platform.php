@@ -12,6 +12,13 @@ defined('ABSPATH') || exit;
 if (!defined('DISALLOW_FILE_MODS')) define('DISALLOW_FILE_MODS', true);
 if (!defined('AUTOMATIC_UPDATER_DISABLED')) define('AUTOMATIC_UPDATER_DISABLED', true);
 
+// ── 대표이미지 지원 — CPT 의 'thumbnail' supports 는 테마의 post-thumbnails 선언이 전제인데,
+//    headless 라 테마는 임의(환경 가변)다. 편집 화면의 대표이미지 박스(썸네일·아이콘·카드 이미지)가
+//    테마에 인질 잡히지 않게 플러그인이 직접 선언한다(제품 행동 — 사용자 보고 2026-07-16).
+add_action('after_setup_theme', function (): void {
+    add_theme_support('post-thumbnails');
+});
+
 // ── XML-RPC 차단 — 미사용 공격 표면(크리덴셜 브루트포스·핑백 증폭)
 add_filter('xmlrpc_enabled', '__return_false');
 add_filter('pings_open', '__return_false');
