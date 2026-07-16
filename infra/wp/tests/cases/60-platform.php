@@ -6,6 +6,8 @@ echo "[60-platform]\n";
 t_assert(defined('DISALLOW_FILE_MODS') && DISALLOW_FILE_MODS === true, 'DISALLOW_FILE_MODS — 플러그인이 정의');
 t_assert(defined('AUTOMATIC_UPDATER_DISABLED') && AUTOMATIC_UPDATER_DISABLED === true, 'AUTOMATIC_UPDATER_DISABLED — 플러그인이 정의');
 
+t_assert(current_theme_supports('post-thumbnails'), '대표이미지 지원 — 테마 무관 플러그인 선언');
+
 t_assert(apply_filters('xmlrpc_enabled', true) === false, 'XML-RPC 비활성');
 t_assert(apply_filters('pings_open', true, 0) === false, '핑백 차단');
 
