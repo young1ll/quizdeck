@@ -57,9 +57,11 @@ function qd_field_schema(): array
         ],
         // exam 귀속 다이어그램 — 구 exam 블롭에서 CPT 승격(개별 편집·게이트·리비전·웹훅).
         // 제목은 post_title(사용자 소유 — exam name 과 같은 규율).
+        // qd_ord 는 스키마에서 제외(2026-07-16) — 순서는 시스템 소유: 수동 숫자 입력은 중복
+        // (정렬 비결정)·삽입 renumber 를 낳았다. 자동 부여(save.php qd_diag_next_ord) + 목록
+        // ↑↓ 이동(metabox.php qd_diag_move)으로 대체. meta 키 자체는 정렬용으로 유지된다.
         'qd_diagram' => [
             'qd_diag_id'  => ['type' => 'text', 'label' => '다이어그램 id', 'desc' => '언어 무관 안정 키(시험 내 유일)', 'required' => true],
-            'qd_ord'      => ['type' => 'int', 'label' => '순서', 'required' => true],
             'qd_cat'      => ['type' => 'text', 'label' => '분류'],
             'qd_caption'  => ['type' => 'textarea', 'label' => '캡션'],
             'qd_svg'      => ['type' => 'textarea', 'label' => 'SVG 마크업', 'desc' => '인라인 <svg …> 전체 — 비우면 대표이미지가 필수'],

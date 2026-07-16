@@ -189,6 +189,11 @@ function qd_rest_ingest(array $value, WP_Post $post)
     }
 
     if (isset($value['exam_id'])) update_post_meta($post->ID, 'qd_exam_id', (string) (int) $value['exam_id']);
+    // 다이어그램 순서 자동 부여 — 스키마 제외(fields.php)로 REST 봉투에 ord 가 없다. exam 확정 직후 여기서.
+    if ($type === 'qd_diagram' && (string) get_post_meta($post->ID, 'qd_ord', true) === '') {
+        $eid = (int) get_post_meta($post->ID, 'qd_exam_id', true);
+        if ($eid) update_post_meta($post->ID, 'qd_ord', (string) qd_diag_next_ord($eid));
+    }
     if ($type === 'qd_question') {
         if (isset($value['options'])) update_post_meta($post->ID, 'qd_options', wp_slash(wp_json_encode($value['options'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)));
         if (isset($value['answer'])) update_post_meta($post->ID, 'qd_answer', wp_slash(wp_json_encode(array_values($value['answer']), JSON_UNESCAPED_UNICODE)));

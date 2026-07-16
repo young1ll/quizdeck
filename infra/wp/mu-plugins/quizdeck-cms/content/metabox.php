@@ -310,6 +310,68 @@ add_action('manage_qd_diagram_posts_custom_column', function ($col, $postId) {
 }, 10, 2);
 add_filter('manage_edit-qd_diagram_sortable_columns', fn($cols) => $cols + ['qd_ord' => 'qd_ord', 'qd_cat' => 'qd_cat']);
 
+// ── 다이어그램 순서 이동 (2026-07-16) — 순서는 시스템 소유(fields.php 스키마 제외 참조).
+//    목록 행 액션 ↑/↓ 가 시험 스코프 서열에서 인접 항목과 자리를 바꾼다. 이동 전 1..N 정규화가
+//    레거시 중복/공백을 자가 치유한다(중복 ord 는 정렬 비결정이었다 — 도입 동기).
+
+/** 시험 스코프 서열 이동 + 정규화. 경계(맨 위에서 ↑ 등)는 정규화만 하고 성공 반환. */
+function qd_diag_move(int $postId, string $dir): bool
+{
+    $eid = (int) get_post_meta($postId, 'qd_exam_id', true);
+    if (!$eid) return false;
+    $ids = get_posts(['post_type' => 'qd_diagram', 'post_status' => ['publish', 'draft', 'pending', 'future'],
+        'numberposts' => -1, 'fields' => 'ids',
+        'meta_query' => [['key' => 'qd_exam_id', 'value' => (string) $eid]]]);
+    // 현 서열(ord 없음은 뒤, 동률은 ID)로 정렬 — meta_key 정렬은 ord 없는 글을 누락시켜 못 쓴다.
+    usort($ids, function (int $a, int $b): int {
+        $ord = fn(int $id): int => ($v = (string) get_post_meta($id, 'qd_ord', true)) === '' ? PHP_INT_MAX : (int) $v;
+        return [$ord($a), $a] <=> [$ord($b), $b];
+    });
+    $i = array_search($postId, $ids, true);
+    if ($i === false) return false;
+    $j = $dir === 'down' ? $i + 1 : $i - 1;
+    if ($j >= 0 && $j < count($ids)) [$ids[$i], $ids[$j]] = [$ids[$j], $ids[$i]];
+    foreach ($ids as $k => $id) {
+        if ((string) get_post_meta($id, 'qd_ord', true) !== (string) ($k + 1)) {
+            update_post_meta($id, 'qd_ord', (string) ($k + 1));
+        }
+    }
+    // update_post_meta 직행이라 save_post 훅이 안 돈다 — 서빙 파생 캐시·앱 revalidate 를 직접.
+    delete_transient("qd_diagrams_{$eid}");
+    qd_fire_revalidate(get_post($postId));
+    return true;
+}
+
+add_filter('post_row_actions', function (array $actions, WP_Post $post): array {
+    if ($post->post_type !== 'qd_diagram' || !current_user_can('edit_post', $post->ID)) return $actions;
+    foreach (['up' => '↑ 위로', 'down' => '↓ 아래로'] as $dir => $label) {
+        $url = wp_nonce_url(admin_url("admin-post.php?action=qd_diag_move&post={$post->ID}&dir={$dir}"), "qd_diag_move_{$post->ID}");
+        $actions["qd_move_{$dir}"] = '<a href="' . esc_url($url) . '">' . esc_html($label) . '</a>';
+    }
+    return $actions;
+}, 10, 2);
+
+add_action('admin_post_qd_diag_move', function (): void {
+    $postId = (int) ($_GET['post'] ?? 0);
+    if (!current_user_can('edit_post', $postId)) wp_die('권한 없음');
+    check_admin_referer("qd_diag_move_{$postId}");
+    qd_diag_move($postId, ($_GET['dir'] ?? '') === 'down' ? 'down' : 'up');
+    wp_safe_redirect(wp_get_referer() ?: admin_url('edit.php?post_type=qd_diagram'));
+    exit;
+});
+
+// 문제집 필터 하의 기본 정렬 = 순서 — ↑↓ 이동 결과가 목록에 그대로 보인다. 필터 없는 전체
+// 목록은 시험이 섞여 ord 정렬이 무의미 + meta_key 정렬이 ord 없는 글(문제집 미지정 초안)을
+// 숨기는 함정이 있어 기본값(날짜)을 유지한다.
+add_action('pre_get_posts', function (WP_Query $q): void {
+    if (!is_admin() || !$q->is_main_query()) return;
+    if ($q->get('post_type') !== 'qd_diagram' || $q->get('orderby') !== '') return;
+    if (empty($_GET['qd_f_exam'])) return;
+    $q->set('meta_key', 'qd_ord');
+    $q->set('orderby', 'meta_value_num');
+    $q->set('order', 'ASC');
+});
+
 add_filter('manage_qd_service_posts_columns', fn($cols) => array_slice($cols, 0, 2, true)
     + ['qd_col_icon' => '아이콘', 'qd_provider' => 'provider', 'qd_cat' => '분류'] + $cols);
 add_action('manage_qd_service_posts_custom_column', function ($col, $postId) {
