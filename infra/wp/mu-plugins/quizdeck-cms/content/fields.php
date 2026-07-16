@@ -37,7 +37,8 @@ function qd_field_schema(): array
         ],
         'qd_concept' => [
             'qd_svc'    => ['type' => 'text', 'label' => '카드 식별자', 'desc' => 'q2svc 조인 키(시험 내 유일)', 'required' => true],
-            'qd_ord'    => ['type' => 'int', 'label' => '순서', 'required' => true],
+            // qd_ord 는 스키마에서 제외(2026-07-16) — 다이어그램과 같은 규율(순서는 시스템 소유,
+            // 자동 부여 + 목록 ↑↓ 이동). meta 키는 정렬용으로 유지.
             'qd_cat'    => ['type' => 'text', 'label' => '분류'],
             'qd_abbr'   => ['type' => 'text', 'label' => '축약'],
             'qd_deff'   => ['type' => 'textarea', 'label' => '정의', 'required' => true],
