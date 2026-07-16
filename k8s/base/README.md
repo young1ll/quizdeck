@@ -80,6 +80,13 @@ kubectl -n quizdeck patch secret quizdeck-auth --type merge -p "{\"stringData\":
 kubectl -n quizdeck rollout restart deploy/quizdeck
 ```
 
+### wp-admin 회원 주석 관리 토큰 (ADR-0027)
+
+`ADMIN_API_TOKEN` — wp-admin '회원 주석' 화면이 `/api/admin/*` 를 서버-서버 호출할 때의
+공유 토큰. WP 쪽 `wp-admin-api` Secret(`k8s/wp/README.md` ②의 ④)과 **같은 값**이어야
+하며, 생성 명령도 그쪽에 있다(한 번에 양쪽 주입). `optional: true` — 미설정이면
+`/api/admin/*` 전부 401(fail-closed)이고 파드는 정상 기동.
+
 ## `db-credentials` (이슈 #4 가 생성)
 
 DB VM postgres 접속 문자열(`DATABASE_URL`). 생성 절차는 #4 가 추가한

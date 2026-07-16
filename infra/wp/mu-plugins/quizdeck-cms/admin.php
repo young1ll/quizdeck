@@ -24,7 +24,8 @@ add_action('admin_menu', function (): void {
     global $submenu;
     if (empty($submenu['quizdeck-cms'])) return;
     $order = ['quizdeck-cms', 'edit.php?post_type=qd_exam', 'edit.php?post_type=qd_question',
-              'edit.php?post_type=qd_concept', 'edit.php?post_type=qd_diagram', 'edit.php?post_type=qd_service', 'qd-media-settings', 'qd-settings'];
+              'edit.php?post_type=qd_concept', 'edit.php?post_type=qd_diagram', 'edit.php?post_type=qd_service',
+              'qd-annotations', 'qd-media-settings', 'qd-settings'];
     $rank = function (array $item) use ($order): int {
         $i = array_search($item[2], $order, true);
         return $i === false ? 99 : $i; // ?: 는 인덱스 0(대시보드)을 삼킨다 — 명시 비교

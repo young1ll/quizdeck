@@ -41,6 +41,17 @@ spec:
                   name: wp-revalidate
                   key: QD_REVALIDATE_TOKEN
                   optional: true
+            # wp-admin '회원 주석' 관리(ADR-0027) — 앱 admin API 서버-서버. 토큰은 git 밖
+            # wp-admin-api Secret(앱 쪽 quizdeck-auth 의 ADMIN_API_TOKEN 과 같은 값 — README).
+            # revalidate 와 토큰 분리 — 권한 등급(캐시 무효화 vs 회원 데이터 뮤테이션)이 다르다.
+            - name: QD_ADMIN_API_URL
+              value: http://quizdeck.quizdeck.svc.cluster.local/api/admin
+            - name: QD_ADMIN_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: wp-admin-api
+                  key: QD_ADMIN_API_TOKEN
+                  optional: true
             # 환경값만 — 제품 행동(DISALLOW_FILE_MODS 등)은 플러그인 platform 모듈이 소유(흡수 2026-07-14)
             - name: WORDPRESS_CONFIG_EXTRA
               value: |

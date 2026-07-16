@@ -69,6 +69,26 @@ export function withAdmin(handler: AdminHandler): (req: Request) => Promise<Resp
   };
 }
 
+/** 서버-서버(wp-admin '회원 주석') 서비스 토큰 인가 — ADMIN_API_TOKEN 미설정 또는 X-QD-Token
+ * 불일치면 균일 401(fail-closed, revalidate-content 와 같은 결). 세션 신원이 없으므로 조작자는
+ * X-QD-Actor 헤더(감사 로그용)로만 흐른다 — 핸들러가 인가 판단에 쓰면 안 된다. ADR-0027. */
+export function withServiceToken(
+  handler: (req: Request) => Promise<Response>,
+): (req: Request) => Promise<Response> {
+  return async (req) => {
+    const expected = process.env.ADMIN_API_TOKEN;
+    if (!expected || req.headers.get("x-qd-token") !== expected) return unauthorized();
+    try {
+      return await handler(req);
+    } catch (e) {
+      if (e instanceof Response) return e;
+      // 예상 밖 예외(DB 장애·버그)는 여기서만 남는다 — withLearner/withAdmin 과 동일한 규율.
+      log.error("api 핸들러 예외", { method: req.method, path: new URL(req.url).pathname, err: e });
+      throw e;
+    }
+  };
+}
+
 // ── RSC 페이지 가드 (redirect/notFound 는 Next 가 throw 로 처리) ───────
 /** RSC — 검증된 Learner 세션을 반환, 아니면 홈으로 redirect. */
 export async function requireLearnerPage(): Promise<LearnerSession> {

@@ -102,6 +102,14 @@ spec:
                   name: quizdeck-auth
                   key: REVALIDATE_TOKEN
                   optional: true
+            # wp-admin '회원 주석' 관리 API 공유 토큰(ADR-0027) — WP 쪽 wp-admin-api Secret 과
+            # 같은 값. 미설정이면 /api/admin/* 는 전부 401(fail-closed).
+            - name: ADMIN_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: quizdeck-auth
+                  key: ADMIN_API_TOKEN
+                  optional: true
           # readiness — 앱이 요청 수용 준비됐음(ADR-0018). DB 무관: 공유 외부 DB 로 트래픽을 게이팅하면
           # replicas:1 에서 DB 순단이 전면 503 이 되고 롤아웃을 wedge 한다. trailingSlash:true 라 슬래시 포함.
           # 롤아웃 2단계(2026-07-08): sha-7f786a5(=/api/ready 도입 이미지)가 라이브 확인돼 /api/health/
