@@ -15,4 +15,5 @@ require_once __DIR__ . '/content/plugin.php';
 require_once __DIR__ . '/media/plugin.php';
 require_once __DIR__ . '/locale.php';
 require_once __DIR__ . '/annotations.php'; // 회원 주석 관리 — 앱 API 서버-서버(ADR-0027)
+require_once __DIR__ . '/sso.php'; // wp-admin SSO — 앱 계정 OIDC 로그인(ADR-0028)
 require_once __DIR__ . '/admin.php'; // 조합 계층 — 모듈을 읽는 대시보드(모듈은 admin 무의존)

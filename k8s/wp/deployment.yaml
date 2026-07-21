@@ -52,6 +52,17 @@ spec:
                   name: wp-admin-api
                   key: QD_ADMIN_API_TOKEN
                   optional: true
+            # wp-admin SSO(ADR-0028) — 앱 계정 OIDC 로그인. secret 은 앱 DB oauthClient 행의
+            # 해시와 쌍(생성·시드는 db/migrations/README.md 0012 절). 부재 시 SSO 만 no-op
+            # (로컬 로그인 폴백 유지).
+            - name: QD_SSO_CLIENT_ID
+              value: wordpress-admin
+            - name: QD_SSO_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: wp-sso
+                  key: QD_SSO_CLIENT_SECRET
+                  optional: true
             # 환경값만 — 제품 행동(DISALLOW_FILE_MODS 등)은 플러그인 platform 모듈이 소유(흡수 2026-07-14)
             - name: WORDPRESS_CONFIG_EXTRA
               value: |

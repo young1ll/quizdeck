@@ -43,6 +43,13 @@
    kubectl -n quizdeck patch secret quizdeck-auth --type merge \
      -p "{\"stringData\":{\"ADMIN_API_TOKEN\":\"$TOKEN\"}}"
    ```
+   ```sh
+   # ⑤ wp-admin SSO(ADR-0028) — 앱 계정 OIDC 로그인. client secret 은 앱 DB oauthClient 행
+   #    (해시)과 쌍 — 생성·시드 절차는 db/migrations/README.md 의 0012 절(마이그레이션 선적용
+   #    + INSERT + 아래 wp-sso Secret 까지 한 시퀀스). 없으면 SSO 만 no-op(로컬 로그인 폴백).
+   kubectl -n wordpress create secret generic wp-sso \
+     --from-literal=QD_SSO_CLIENT_SECRET="<db/migrations/README 0012 절에서 생성한 SECRET>"
+   ```
 3. **DNS(grey-cloud)**: Cloudflare 에 `wp.myquizdeck.com` A 레코드 → `100.81.230.113`
    (k3s-home Tailscale IP), **프록시 OFF(DNS-only·회색 구름)** — argocd 선례(ADR-0020).
    orange 로 뒤집으면 인터넷에 열린다.
