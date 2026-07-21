@@ -54,6 +54,33 @@ better-auth 스키마(`0001`)와 앱 도메인 스키마(`0002~`)를 담는다. 
   라이브러리 스키마(0001 처럼 CLI generate 산출). 같은 오리진에서 패스키 등록·인증을 받친다.
   > ⚠️ **`passkey()` 플러그인의 등록/로그인 API 가 이 테이블을 읽으므로 0007 을 앱 배포보다 먼저 적용**한다.
 
+`0012_oauth_provider.sql` — OAuth 2.1 provider(wp-admin SSO IdP, ADR-0028):
+
+- `oauthClient`·`oauthRefreshToken`·`oauthAccessToken`·`oauthConsent` 4종(`@better-auth/oauth-provider`
+  라이브러리 스키마 — CLI generate 산출) + 인덱스 10개. 소비자는 wp-admin SSO 단일.
+  > ⚠️ **`oauthProvider()` 플러그인이 이 테이블을 읽으므로 0012 를 앱 배포보다 먼저 적용**한다.
+- **클라이언트 시드(수동, git 밖 — secret 포함)**: WP 클라이언트는 DB 행이다. 0012 적용 후 1회,
+  kubectl 호스트(k3s-home)에서:
+
+  ```sh
+  SECRET=$(openssl rand -hex 32)
+  # oauth-provider 는 clientSecret 을 SHA-256 → base64url(패딩 없음)로 해시 저장한다.
+  HASH=$(printf %s "$SECRET" | openssl dgst -sha256 -binary | basenc --base64url | tr -d '=')
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "insert into \"oauthClient\"
+    (\"id\",\"clientId\",\"clientSecret\",\"disabled\",\"skipConsent\",\"redirectUris\",
+     \"tokenEndpointAuthMethod\",\"grantTypes\",\"responseTypes\",\"public\",\"type\",\"requirePKCE\",
+     \"name\",\"scopes\",\"createdAt\",\"updatedAt\")
+    values ('wordpress-admin','wordpress-admin','$HASH',false,true,
+     '[\"https://wp.myquizdeck.com/wp-admin/admin-ajax.php?action=openid-connect-authorize\"]'::jsonb,
+     'client_secret_post','[\"authorization_code\"]'::jsonb,'[\"code\"]'::jsonb,false,'web',false,
+     'wp-admin SSO','[\"openid\",\"profile\",\"email\"]'::jsonb,now(),now());"
+  # 평문 secret 은 WP 쪽 Secret 으로 (k8s/wp/README.md ⑤ — 같은 값이어야 한다)
+  kubectl -n wordpress create secret generic wp-sso --from-literal=QD_SSO_CLIENT_SECRET="$SECRET"
+  ```
+
+  `requirePKCE=false` 는 WP 클라이언트(openid-connect-generic)가 PKCE 를 지원하지 않아서다
+  (confidential client + client_secret_post 라 code flow 무결성은 유지 — ADR-0028).
+
 ## 어떻게 생성했나
 
 `lib/auth.ts` 설정을 introspect 해 better-auth CLI 가 SQL 을 뽑는다. 빈(또는 기존) DB 에
@@ -79,6 +106,7 @@ psql "$DATABASE_URL" -f db/migrations/0004_admin.sql   # 앱(admin 플러그인)
 psql "$DATABASE_URL" -f db/migrations/0005_annotation.sql  # 앱(주석 API) 배포보다 먼저!
 psql "$DATABASE_URL" -f db/migrations/0006_account_fk.sql  # 앱(탈퇴 플로우) 배포보다 먼저!
 psql "$DATABASE_URL" -f db/migrations/0007_passkey.sql    # 앱(패스키 API) 배포보다 먼저!
+psql "$DATABASE_URL" -f db/migrations/0012_oauth_provider.sql  # 앱(oauthProvider) 배포보다 먼저! + 클라이언트 시드(위 0012 절)
 ```
 
 `0002` 의 `progress.learner_id` 가 `user(id)` 를 참조하므로 `0001` 다음에 적용한다.

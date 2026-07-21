@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { jwt, admin, genericOAuth } from "better-auth/plugins";
 import { passkey } from "@better-auth/passkey";
 import { dash } from "@better-auth/infra";
+import { oauthProvider } from "@better-auth/oauth-provider";
 import { pool } from "./db";
 import { log } from "./log";
 import { resolveAuthConfig } from "./auth-config";
@@ -27,6 +28,27 @@ if (cfg.social.google) socialProviders.google = cfg.social.google;
 // Naver 만 generic OAuth — 구성됐을 때만 플러그인을 끼운다(빈 config 회피).
 const naverPlugins = cfg.social.naver
   ? [genericOAuth({ config: [naverGenericOAuth(cfg.social.naver)] })]
+  : [];
+
+// OAuth 2.1 provider(ADR-0028) — 앱을 OIDC IdP 로. 소비자는 wp-admin SSO 단일(클라이언트
+// 'wordpress-admin' 은 DB oauthClient 행 — 시드는 db/migrations/README 0012 절). ID 토큰
+// 서명·JWKS 는 기존 jwt() 재사용, role 클레임으로 WP 쪽이 admin 게이트를 건다. 테이블 4종은
+// 0012 — 앱 배포보다 먼저 적용(0007 규율). 플러그인 init 이 issuer(=baseURL)를 URL 파싱하므로
+// baseURL 미설정(무env 빌드·테스트)이면 끼우지 않는다(naverPlugins 와 같은 조건부 결).
+const oauthProviderPlugins = cfg.baseURL
+  ? [
+      oauthProvider({
+        loginPage: "/login",
+        // consent 는 클라이언트 skipConsent 로 생략된다 — 페이지는 형식 요건(전용 UI 없음).
+        consentPage: "/login",
+        customIdTokenClaims: ({ user }) => ({
+          role: (user as { role?: string | null }).role ?? null,
+        }),
+        customUserInfoClaims: ({ user }) => ({
+          role: (user as { role?: string | null }).role ?? null,
+        }),
+      }),
+    ]
   : [];
 
 if (cfg.missing.length > 0) {
@@ -119,5 +141,7 @@ export const auth = betterAuth({
     // Naver generic OAuth(#9) — 자격증명이 주입됐을 때만(naverPlugins). GitHub·Google 은
     // built-in 이라 위 socialProviders 로 충분하고 별도 플러그인이 필요 없다.
     ...naverPlugins,
+    // wp-admin SSO IdP(ADR-0028) — baseURL 있을 때만(위 oauthProviderPlugins 주석 참조).
+    ...oauthProviderPlugins,
   ],
 });

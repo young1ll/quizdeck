@@ -16,6 +16,7 @@
     "@astryxdesign/core": "0.1.2",
     "@astryxdesign/theme-neutral": "0.1.2",
     "@better-auth/infra": "^0.3.2",
+    "@better-auth/oauth-provider": "^1.6.23",
     "@better-auth/passkey": "^1.6.22",
     "better-auth": "^1.6.22",
     "next": "^16.2.10",
